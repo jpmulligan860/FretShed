@@ -1,0 +1,513 @@
+// QuizViewModel.swift
+// FretMaster — Presentation Layer
+
+import Foundation
+import OSLog
+import UIKit
+
+private let logger = Logger(subsystem: "com.jpm.fretmaster", category: "QuizViewModel")
+
+// MARK: - QuizPhase
+
+public enum QuizPhase: Equatable {
+    case idle
+    case active
+    case feedbackCorrect
+    case feedbackWrong
+    case complete
+}
+
+// MARK: - QuizQuestion
+
+public struct QuizQuestion: Equatable {
+    public let note: MusicalNote
+    public let string: Int
+    public let fret: Int
+}
+
+// MARK: - QuizViewModel
+
+@MainActor
+@Observable
+public final class QuizViewModel: Identifiable {
+
+    // MARK: - Identifiable
+    public nonisolated let id: UUID
+
+    // MARK: - Public State
+    public private(set) var phase: QuizPhase = .idle
+    public private(set) var currentQuestion: QuizQuestion?
+    public private(set) var attemptCount: Int = 0
+    public private(set) var correctCount: Int = 0
+    public private(set) var currentStreak: Int = 0
+    public private(set) var bestStreak: Int = 0
+    public private(set) var timeRemaining: Double = 0
+    public private(set) var lastAnswerWasCorrect: Bool = false
+    public private(set) var detectedNote: MusicalNote?
+    /// Current per-question time budget for Tempo mode (shrinks with each correct answer).
+    public private(set) var tempoTimeAllowance: Double = 10
+
+    // MARK: - Configuration
+    public let session: Session
+    public let fretboardMap: FretboardMap
+    public let settings: UserSettings
+
+    // MARK: - Private State
+    private let masteryRepository: any MasteryRepository
+    private let sessionRepository: any SessionRepository
+    private let attemptRepository: any AttemptRepository
+    private var allScores: [MasteryScore] = []
+    private var lastQuestion: QuizQuestion?
+    private var questionStartTime: Date = Date()
+    private var feedbackTask: Task<Void, Never>?
+    private var timerTask: Task<Void, Never>?
+    /// Current position in the circle of fourths/fifths sequence (0 = C).
+    /// Only used when focusMode is .circleOfFourths or .circleOfFifths.
+    private var circleNoteIndex: Int = 0
+    /// Index of the current chord in the chord progression (0-based).
+    private var chordIndex: Int = 0
+    /// Index of the current tone within the chord: 0 = root, 1 = third, 2 = fifth.
+    private var chordToneIndex: Int = 0
+    /// The fret chosen for the root of the current chord triad, used to keep
+    /// the 3rd and 5th physically close on the fretboard (close voicing).
+    private var chordRootFret: Int? = nil
+
+    // MARK: - Chord Progression Public Context
+    /// The current chord being drilled, for display in the UI.
+    public private(set) var currentChord: ChordSlot? = nil
+    /// The current tone step label ("Root", "3rd", "5th"), for display in the UI.
+    public private(set) var currentToneLabel: String = ""
+
+    private static let feedbackDuration: TimeInterval = 0.9
+    private static let timerInterval: TimeInterval = 0.05
+    /// Tempo mode: each correct answer shaves this many seconds off the allowance.
+    private static let tempoDecrement: Double = 0.5
+    /// Tempo mode: the allowance will never drop below this floor (seconds).
+    private static let tempoFloor: Double = 2.0
+
+    // MARK: - Initializer
+
+    public init(
+        session: Session,
+        fretboardMap: FretboardMap,
+        settings: UserSettings,
+        masteryRepository: any MasteryRepository,
+        sessionRepository: any SessionRepository,
+        attemptRepository: any AttemptRepository
+    ) {
+        self.id = UUID()
+        self.session = session
+        self.fretboardMap = fretboardMap
+        self.settings = settings
+        self.masteryRepository = masteryRepository
+        self.sessionRepository = sessionRepository
+        self.attemptRepository = attemptRepository
+    }
+
+    // MARK: - Public Interface
+
+    public func start() {
+        guard phase == .idle else { return }
+        do {
+            allScores = try masteryRepository.allScores()
+        } catch {
+            logger.error("Failed to load mastery scores: \(error)")
+            allScores = []
+        }
+        // Initialise tempo allowance from settings so it resets cleanly on each session.
+        tempoTimeAllowance = Double(settings.defaultTimerDuration)
+        advanceToNextQuestion()
+    }
+
+    public func submit(detectedNote note: MusicalNote) {
+        guard phase == .active, let question = currentQuestion else { return }
+        detectedNote = note
+        let correct = note == question.note
+        let responseMs = Int(Date().timeIntervalSince(questionStartTime) * 1000)
+        attemptCount += 1
+        session.attemptCount += 1
+        lastAnswerWasCorrect = correct
+        if correct {
+            correctCount += 1
+            session.correctCount += 1
+            currentStreak += 1
+            bestStreak = max(bestStreak, currentStreak)
+            phase = .feedbackCorrect
+            if settings.hapticFeedbackEnabled {
+                UINotificationFeedbackGenerator().notificationOccurred(.success)
+            }
+            if settings.correctSoundEnabled {
+                MetroDroneEngine.shared.playSoundCue(.correct, volume: settings.correctSoundVolume)
+            }
+            // Advance to the next note in the circle after a correct answer.
+            if session.focusMode == .circleOfFourths || session.focusMode == .circleOfFifths {
+                circleNoteIndex = (circleNoteIndex + 1) % 12
+            }
+            // Chord progression: advance tone within chord, then move to next chord.
+            if session.focusMode == .chordProgression {
+                let chordCount = session.chordProgression?.chords.count ?? 1
+                chordToneIndex += 1
+                if chordToneIndex >= 3 {
+                    chordToneIndex = 0
+                    chordRootFret = nil
+                    chordIndex = (chordIndex + 1) % chordCount
+                }
+            }
+            // Tempo mode: tighten the per-question budget after each correct answer.
+            if session.gameMode == .tempo {
+                tempoTimeAllowance = max(Self.tempoFloor,
+                                        tempoTimeAllowance - Self.tempoDecrement)
+            }
+        } else {
+            currentStreak = 0
+            phase = .feedbackWrong
+            if settings.hapticFeedbackEnabled {
+                UINotificationFeedbackGenerator().notificationOccurred(.error)
+            }
+            if settings.incorrectSoundEnabled {
+                MetroDroneEngine.shared.playSoundCue(.incorrect, volume: settings.correctSoundVolume)
+            }
+        }
+        timerTask?.cancel()
+        Task { recordAttempt(question: question, playedNote: note, correct: correct, responseMs: responseMs) }
+        // Streak mode: one wrong answer ends the session after showing feedback.
+        if !correct && session.gameMode == .streak {
+            scheduleFeedbackAdvance(thenComplete: true)
+            return
+        }
+        scheduleFeedbackAdvance()
+    }
+
+    public func advanceManually() {
+        guard phase == .feedbackCorrect || phase == .feedbackWrong else { return }
+        feedbackTask?.cancel()
+        advanceOrComplete()
+    }
+
+    public func endSession() async {
+        feedbackTask?.cancel()
+        timerTask?.cancel()
+        phase = .complete
+        finaliseSession()
+    }
+
+    public func discardSession() async {
+        feedbackTask?.cancel()
+        timerTask?.cancel()
+        do {
+            try attemptRepository.deleteAttempts(forSession: session.id)
+            try sessionRepository.delete(session)
+            // Rebuild mastery from all remaining attempts.
+            var allAttempts: [Attempt] = []
+            for note in MusicalNote.allCases {
+                let batch = try attemptRepository.attempts(forNote: note, limit: nil)
+                allAttempts.append(contentsOf: batch)
+            }
+            try masteryRepository.rebuild(from: allAttempts)
+        } catch {
+            logger.error("Failed to discard session: \(error)")
+        }
+        phase = .complete
+    }
+
+    // MARK: - Private: Question Flow
+
+    private func advanceToNextQuestion() {
+        let question = selectQuestion()
+        currentQuestion = question
+        lastQuestion = question
+        questionStartTime = Date()
+        phase = .active
+        switch session.gameMode {
+        case .timed:
+            timeRemaining = Double(settings.defaultTimerDuration)
+            startTimer()
+        case .tempo:
+            timeRemaining = tempoTimeAllowance
+            startTimer()
+        case .untimed, .streak:
+            break
+        }
+    }
+
+    private func advanceOrComplete() {
+        if attemptCount >= settings.defaultSessionLength {
+            phase = .complete
+            finaliseSession()
+        } else {
+            advanceToNextQuestion()
+        }
+    }
+
+    private func selectQuestion() -> QuizQuestion {
+        // Circle modes use strict ordering instead of mastery-weighted random selection.
+        switch session.focusMode {
+        case .circleOfFourths:
+            return selectCircleQuestion(from: MusicalNote.circleOfFourths)
+        case .circleOfFifths:
+            return selectCircleQuestion(from: MusicalNote.circleOfFifths)
+        case .chordProgression:
+            return selectChordProgressionQuestion()
+        default:
+            break
+        }
+
+        let candidates = buildCandidates()
+        let filtered = filter(candidates: candidates)
+        guard !filtered.isEmpty else { return QuizQuestion(note: .e, string: 1, fret: 0) }
+
+        let pool: [QuizQuestion]
+        let weights: [Double]
+
+        if session.isAdaptive {
+            // Adaptive weighting: skip mastered cells, heavily weight struggling ones.
+            let unmastered = filtered.filter { c in
+                guard let score = allScores.first(where: {
+                    $0.noteRaw == c.note.rawValue && $0.stringNumber == c.string
+                }) else { return true }
+                return !score.isMastered
+            }
+            pool = unmastered.isEmpty ? filtered : unmastered
+
+            weights = pool.map { c -> Double in
+                guard let score = allScores.first(where: {
+                    $0.noteRaw == c.note.rawValue && $0.stringNumber == c.string
+                }) else {
+                    return 1.0
+                }
+                if score.isStruggling { return 5.0 }
+                return max(pow(1.0 - score.score, 2.0), 0.001)
+            }
+        } else {
+            pool = filtered
+            weights = pool.map { c -> Double in
+                let score = masteryScore(for: c)
+                return max(pow(1.0 - score, 2.0), 0.001)
+            }
+        }
+
+        let total = weights.reduce(0, +)
+        var r = Double.random(in: 0..<total)
+
+        for (candidate, weight) in zip(pool, weights) {
+            r -= weight
+            if r <= 0 {
+                if let last = lastQuestion,
+                   last.note == candidate.note && last.string == candidate.string,
+                   pool.count > 1 { continue }
+                return candidate
+            }
+        }
+        return pool.last ?? QuizQuestion(note: .e, string: 1, fret: 0)
+    }
+
+    /// Chord Progression mode: strictly drills root → third → fifth for each chord
+    /// in the session's chosen ChordProgression, then advances to the next chord.
+    /// Falls back to a C-major I–IV–V if no progression was stored on the session.
+    private func selectChordProgressionQuestion() -> QuizQuestion {
+        let progression = session.chordProgression ?? ChordProgression.presets[0]
+        guard !progression.chords.isEmpty else {
+            return QuizQuestion(note: .c, string: 1, fret: 0)
+        }
+
+        let chord = progression.chords[chordIndex % progression.chords.count]
+        let tones = chord.tones                          // [root, third, fifth]
+        let toneIdx = chordToneIndex % tones.count
+        let targetNote = tones[toneIdx]
+
+        // Publish context so the UI can label the prompt correctly.
+        currentChord = chord
+        currentToneLabel = ["Root", "3rd", "5th"][chordToneIndex % 3]
+
+        let allCandidates = buildCandidates().filter { $0.note == targetNote }
+        guard !allCandidates.isEmpty else {
+            return QuizQuestion(note: targetNote, string: 1, fret: 0)
+        }
+
+        // Close voicing: keep the 3rd and 5th within a few frets of the root.
+        let candidates: [QuizQuestion]
+        if toneIdx == 0 {
+            // Root: pick freely, then remember the fret for the rest of the triad.
+            let noRepeat = allCandidates.filter { c in
+                guard let last = lastQuestion else { return true }
+                return !(last.note == c.note && last.string == c.string)
+            }
+            let pick = (noRepeat.isEmpty ? allCandidates : noRepeat).randomElement()!
+            chordRootFret = pick.fret
+            return pick
+        } else if let rootFret = chordRootFret {
+            // 3rd / 5th: prefer positions within 4 frets of the root.
+            let closeWindow = 4
+            let close = allCandidates.filter {
+                abs($0.fret - rootFret) <= closeWindow
+            }
+            candidates = close.isEmpty ? allCandidates : close
+        } else {
+            candidates = allCandidates
+        }
+
+        let choices = candidates.filter { c in
+            guard let last = lastQuestion else { return true }
+            return !(last.note == c.note && last.string == c.string)
+        }
+        return (choices.isEmpty ? candidates : choices).randomElement()!
+    }
+
+    /// Returns a question for the current circle position, picking a random
+    /// string/fret that produces the target note. Stays on the same note when
+    /// the previous answer was wrong (index is only advanced in `submit`).
+    private func selectCircleQuestion(from circle: [MusicalNote]) -> QuizQuestion {
+        let targetNote = circle[circleNoteIndex]
+        var candidates = buildCandidates().filter { $0.note == targetNote }
+        // Constrain to target strings when the user selected specific strings for circles.
+        if !session.targetStrings.isEmpty {
+            let sf = candidates.filter { session.targetStrings.contains($0.string) }
+            if !sf.isEmpty { candidates = sf }
+        }
+        guard !candidates.isEmpty else { return QuizQuestion(note: targetNote, string: 1, fret: 0) }
+        let choices = candidates.filter { c in
+            guard let last = lastQuestion else { return true }
+            return !(last.note == c.note && last.string == c.string)
+        }
+        return (choices.isEmpty ? candidates : choices).randomElement()!
+    }
+
+    private func buildCandidates() -> [QuizQuestion] {
+        var questions: [QuizQuestion] = []
+        let fretStart = session.fretRangeStart
+        let fretEnd   = session.fretRangeEnd
+        for stringNum in 1...kStringCount {
+            guard let fretMap = fretboardMap.map[stringNum] else { continue }
+            for fret in fretStart...fretEnd {
+                guard let note = fretMap[fret] else { continue }
+                questions.append(QuizQuestion(note: note, string: stringNum, fret: fret))
+            }
+        }
+        return questions
+    }
+
+    private func filter(candidates: [QuizQuestion]) -> [QuizQuestion] {
+        switch session.focusMode {
+        case .singleNote:
+            let targetNotes = session.notes.compactMap { MusicalNote(rawValue: $0) }
+            if targetNotes.isEmpty { return candidates }
+            return candidates.filter { targetNotes.contains($0.note) }
+        case .singleString:
+            let targetStrings = session.targetStrings
+            if targetStrings.isEmpty { return candidates }
+            return candidates.filter { targetStrings.contains($0.string) }
+        case .circleOfFourths, .circleOfFifths:
+            // Handled in selectCircleQuestion; fall through to all candidates.
+            return candidates
+        case .fullFretboard, .chordProgression, .fretboardPosition:
+            return candidates
+        }
+    }
+
+    private func masteryScore(for question: QuizQuestion) -> Double {
+        guard let score = allScores.first(where: {
+            $0.noteRaw == question.note.rawValue && $0.stringNumber == question.string
+        }) else {
+            return MasteryScore.alpha / (MasteryScore.alpha + MasteryScore.beta)
+        }
+        return score.score
+    }
+
+    // MARK: - Private: Timer
+
+    private func startTimer() {
+        timerTask?.cancel()
+        // Play an initial countdown tick when the timer starts.
+        MetroDroneEngine.shared.playCountdownTick(volume: settings.metronomeVolume)
+        timerTask = Task {
+            var elapsed = 0.0
+            while timeRemaining > 0 {
+                try? await Task.sleep(for: .seconds(Self.timerInterval))
+                guard !Task.isCancelled else { return }
+                timeRemaining = max(0, timeRemaining - Self.timerInterval)
+                elapsed += Self.timerInterval
+                if elapsed >= 1.0 && timeRemaining > 0 {
+                    elapsed -= 1.0
+                    MetroDroneEngine.shared.playCountdownTick(volume: settings.metronomeVolume)
+                }
+                if timeRemaining == 0 { handleTimeout() }
+            }
+        }
+    }
+
+    private func handleTimeout() {
+        guard phase == .active, let question = currentQuestion else { return }
+        detectedNote = nil
+        lastAnswerWasCorrect = false
+        attemptCount += 1
+        session.attemptCount += 1
+        currentStreak = 0
+        phase = .feedbackWrong
+        // Record the timeout as a wrong attempt so it appears on heatmaps.
+        let responseMs = Int(Date().timeIntervalSince(questionStartTime) * 1000)
+        Task { recordAttempt(question: question, playedNote: question.note.transposed(by: 1), correct: false, responseMs: responseMs) }
+        // Streak mode: a timeout is also a failure — end after showing feedback.
+        if session.gameMode == .streak {
+            scheduleFeedbackAdvance(thenComplete: true)
+        } else {
+            scheduleFeedbackAdvance()
+        }
+    }
+
+    private func scheduleFeedbackAdvance(thenComplete: Bool = false) {
+        feedbackTask = Task {
+            try? await Task.sleep(for: .seconds(Self.feedbackDuration))
+            guard !Task.isCancelled else { return }
+            if thenComplete {
+                phase = .complete
+                finaliseSession()
+            } else {
+                advanceOrComplete()
+            }
+        }
+    }
+
+    // MARK: - Private: Persistence
+
+    private func recordAttempt(question: QuizQuestion, playedNote: MusicalNote, correct: Bool, responseMs: Int) {
+        let attempt = Attempt(
+            targetNote: question.note,
+            targetString: question.string,
+            targetFret: question.fret,
+            playedNote: playedNote,
+            playedString: nil,
+            responseTimeMs: responseMs,
+            wasCorrect: correct,
+            sessionID: session.id,
+            gameMode: session.gameMode,
+            acceptedAnyString: settings.defaultNoteAcceptanceMode == .anyString
+        )
+        do { try attemptRepository.save(attempt) } catch {
+            logger.error("Failed to save attempt: \(error)")
+        }
+        do {
+            let score = try masteryRepository.score(forNote: question.note, string: question.string)
+            score.record(wasCorrect: correct)
+            score.updateBestStreak(bestStreak)
+            try masteryRepository.save(score)
+            if let idx = allScores.firstIndex(where: {
+                $0.noteRaw == question.note.rawValue && $0.stringNumber == question.string
+            }) {
+                allScores[idx] = score
+            } else {
+                allScores.append(score)
+            }
+        } catch {
+            logger.error("Failed to update mastery score: \(error)")
+        }
+    }
+
+    private func finaliseSession() {
+        session.overallMasteryAtEnd = MasteryCalculator.overallScore(from: allScores)
+        session.isCompleted = true
+        session.endTime = Date()
+        do { try sessionRepository.complete(session) } catch {
+            logger.error("Failed to complete session: \(error)")
+        }
+    }
+}

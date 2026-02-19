@@ -1,0 +1,95 @@
+# ============================
+# Xcode
+# ============================
+
+# Build artifacts
+build/
+DerivedData/
+*.o
+*.d
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# User-specific Xcode settings (cursors, breakpoints, window layout)
+xcuserdata/
+*.xcuserstate
+*.xccheckout
+
+# Xcode auto-generated scheme files (keep manually created schemes if any)
+*.xcodeproj/xcuserdata/
+*.xcodeproj/project.xcworkspace/xcuserdata/
+
+# Xcode workspace settings (safe to ignore unless you use shared settings)
+*.xcworkspace/contents.xcworkspacedata
+
+# Playground output
+playground.xcworkspace
+
+# ============================
+# macOS
+# ============================
+
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+.fseventsd
+
+# Icon files with custom resource fork
+Icon?
+
+# ============================
+# SwiftData / CoreData
+# ============================
+
+# SwiftData/CoreData generated files (auto-recreated at build time)
+*.mom
+*.momd
+*.omo
+
+# Simulator data stores (never commit)
+*/Library/Application Support/*/default.store
+*/Library/Application Support/*/default.store-shm
+*/Library/Application Support/*/default.store-wal
+
+# ============================
+# Swift Package Manager
+# ============================
+
+# (Not used — Xcode project, not SPM — included for safety)
+.build/
+.swiftpm/
+
+# ============================
+# CocoaPods (not used, included for safety)
+# ============================
+
+Pods/
+*.xcworkspace
+
+# ============================
+# Fastlane (not used yet)
+# ============================
+
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output/
+
+# ============================
+# Misc
+# ============================
+
+# Sensitive environment files
+*.env
+.env.*
+
+# Test results
+*.xcresult
+
+# Generated file manifests (regenerate with: find . -name "*.swift" | sort)
+FILE_MANIFEST.txt

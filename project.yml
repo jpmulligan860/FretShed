@@ -1,0 +1,44 @@
+name: FretMaster
+options:
+  bundleIdPrefix: com.jpm
+  deploymentTarget:
+    iOS: "17.0"
+  xcodeVersion: "16.0"
+  swift: "6.0"
+
+targets:
+  FretMaster:
+    type: application
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - FretMaster
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.jpm.fretmaster
+        SWIFT_VERSION: 6.0
+        SWIFT_STRICT_CONCURRENCY: complete
+        DEVELOPMENT_TEAM: ""
+        ENABLE_HARDENED_RUNTIME: YES
+        MARKETING_VERSION: "1.0.0"
+        CURRENT_PROJECT_VERSION: "1"
+        INFOPLIST_KEY_UILaunchStoryboardName: ""
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: UIInterfaceOrientationPortrait
+        INFOPLIST_KEY_NSMicrophoneUsageDescription: "FretMaster uses the microphone to detect the notes you play on your guitar."
+    info:
+      path: FretMaster/Resources/Info.plist
+      properties:
+        CFBundleDisplayName: FretMaster
+        NSMicrophoneUsageDescription: "FretMaster uses the microphone to detect the notes you play on your guitar."
+
+  FretMasterTests:
+    type: bundle.unit-test
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - FretMasterTests
+    dependencies:
+      - target: FretMaster
+    settings:
+      base:
+        SWIFT_VERSION: 6.0

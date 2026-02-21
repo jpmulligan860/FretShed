@@ -1,115 +1,185 @@
-# FretMaster
+# FretShed — Claude Development Guide
 
-iOS guitar fretboard learning app built with SwiftUI (iOS 17.0+) and SwiftData. Helps users master note identification through interactive quizzes, progress tracking, and practice tools.
+## Start of Every Session
+1. Read this file fully
+2. Read ROADMAP.md to know current task status
+3. Run `find . -name "*.swift" | sort > FILE_MANIFEST.txt` and review it
+4. Confirm which task we are working on before writing any code
 
-**Goal**: App Store launch. See `ROADMAP.md` for the 5-phase plan (Cleanup → Design System → Onboarding → Monetization → Submission).
+---
 
-> **Naming note**: The Xcode project/scheme is `FretMaster`. The target product name is `FretSmart`. The bundle ID must be decided before Phase 4 — it is permanent once submitted to App Store Connect.
+## Project Overview
+FretShed is an iOS guitar fretboard training application that helps guitarists memorize notes across the fretboard. Core differentiator: **reliable pitch detection + adaptive learning** — "the only fretboard trainer that listens to you play."
 
-## Project Type
+**App Store name:** FretShed: Guitar Fretboard  
+**Subtitle:** Note Trainer & Ear Training  
+**Bundle ID:** com.jpm.fretshed (set in App Store Connect — do not change once submitted)
 
-Xcode iOS project (not SPM). Swift 6.0 strict concurrency. Deployment target: iOS 17.0. Test target: `FretMasterTests`.
+---
 
-```bash
-# Build
-xcodebuild -scheme FretMaster -destination 'platform=iOS Simulator,name=iPhone 16 Pro' build
+## Technical Stack
+- **Platform:** iOS 17+ (minimum deployment target — do not raise to iOS 18)
+- **UI:** SwiftUI with @Observable architecture
+- **Data:** SwiftData
+- **Concurrency:** async/await throughout
+- **Pitch Detection:** AccelerateYIN algorithm (Accelerate framework)
+- **Signal Processing:** Accelerate vDSP (RMS, FFT, biquad IIR filters)
+- **Mastery Scoring:** Bayesian scoring algorithm
+- **Fretboard UI:** Canvas-based rendering
+- **Monetization:** StoreKit 2
+- **Audio:** AVAudioEngine + AVAudioSession
 
-# Test (189 tests)
-xcodebuild test -scheme FretMaster -destination 'platform=iOS Simulator,name=iPhone 16 Pro'
+## Key Architecture
+- **AppContainer:** Dependency injection container — all services injected here
+- **EntitlementManager:** Central authority for feature access (free vs. premium)
+- **AudioProfileStore:** Persists calibration profiles per input source (SwiftData)
+- **CalibrationEngine:** Orchestrates the full calibration procedure
+- **AdaptiveMonitor:** Real-time signal quality monitoring during quiz sessions
+
+---
+
+## App Structure (5 Tabs)
+1. **Practice** — Session setup and quiz launch
+2. **Progress** — Heatmap, mastery rings, session history
+3. **Tuner** — AccelerateYIN-powered chromatic tuner
+4. **MetroDrone** — Metronome + drone tone
+5. **Settings** — Display, Audio, Quiz Defaults, Data Management, **Audio Setup (new)**
+
+---
+
+## Audio Calibration System (New — Added Feb 2026)
+
+FretShed includes a full audio calibration system that characterizes each user's guitar, input source, and environment before quiz sessions begin. This is the feature that makes pitch detection reliable across all guitar types (including hollow body) and all input sources.
+
+### Signal Processing Chain (in order)
+```
+Input Source → Input Gain Stage → Noise Gate → Transient Suppressor 
+→ High-Pass Filter (70Hz) → Harmonic Weighter → AccelerateYIN → Note Decision
 ```
 
-## Architecture
+### Input Sources Supported
+- `builtInMic` — Built-in iPhone microphone
+- `usbInterface` — External USB audio interface (via Lightning/USB-C)
+- `bluetoothAudio` — Bluetooth audio input (simplified profile — see note)
+- `wiredHeadset` — Wired headset with inline microphone
 
+> **Bluetooth note:** Due to Bluetooth latency characteristics, Bluetooth input uses a simplified fixed-gain profile without per-string harmonic calibration. Display a note to the user: "Bluetooth audio may affect detection accuracy."
+
+### AudioCalibrationProfile (SwiftData model)
+```swift
+// Per input source — stored and loaded automatically on route change
+var inputSource: AudioInputSource
+var inputGainMultiplier: Float       // Pre-calculated gain to reach −18 to −12 dBFS RMS
+var noiseGateThresholdDB: Float      // Auto (noise floor + 12dB) + userGateTrimDB
+var noiseGateReleaseSeconds: Float   // Default 0.080
+var harmonicWeightingProfile: [Float] // Per-string (6 values), index 0 = low E
+var calibrationDate: Date
+var signalQualityScore: Float        // 0.0–1.0
+var userGainTrimDB: Float            // Manual user delta, default 0.0, range ±6dB
+var userGateTrimDB: Float            // Manual user delta, default 0.0, range ±6dB
 ```
-App/                 # @main entry, TabView, AppContainer (DI)
-Audio/               # MetroDroneEngine (singleton — metronome, drone, sound cues)
-Domain/Models/       # SwiftData models: Session, Attempt, MasteryScore, UserSettings
-Domain/Repositories/ # Repository protocols (AttemptRepository, SessionRepository, etc.)
-Data/SwiftData/      # Repository implementations
-Quiz/                # Quiz feature: QuizView, QuizViewModel, SessionSetupView, FretboardView
-Tuner/               # PitchDetector (AccelerateYIN), TunerView, SettingsView
-Progress/            # ProgressTabView, heatmap, session history, cell detail
-MetroDrone/          # Metronome + drone generator UI and view model
-~~Presentation/~~    # DELETED — legacy duplicates removed in Phase 1 cleanup.
-```
 
-**Planned additions (Phases 2–4)**:
-- `DesignSystem.swift` — centralized colors, typography, spacing (Phase 2)
-- `Onboarding/OnboardingView.swift` — 4-screen first-launch flow (Phase 3)
-- `Monetization/EntitlementManager.swift` — StoreKit 2, exposes `isPremium: Bool` (Phase 4)
-- `Monetization/PaywallView.swift` — subscription UI (Phase 4)
+### Signal Processing Parameters
+| Stage | Key Parameters |
+|---|---|
+| Input Gain | Target RMS: −18 to −12 dBFS |
+| Noise Gate | Threshold = noise floor + 12dB; Release = 80ms |
+| Transient Suppressor | Attack = 1ms, Release = 40ms, Ratio 4:1 |
+| High-Pass Filter | 70Hz, 2nd-order Butterworth via vDSP biquad IIR |
+| Harmonic Weighter | Per-string FFT weighting; fundamental emphasis |
 
-**DI**: `AppContainer` holds repositories + `FretboardMap`, injected via `@Environment(\.appContainer)`. When adding `EntitlementManager` (Phase 4), inject it the same way.
+### AdaptiveMonitor — Bounded Adjustment Rules (session-only, never writes to profile)
+- RMS rises >6dB above calibrated baseline → reduce gain by up to 4dB
+- Noise floor rises >6dB → raise gate threshold by up to 4dB  
+- YIN confidence <0.3 for 5+ consecutive detections → raise amplitude threshold
+- False trigger rate >20% → tighten gate release by 20ms
 
-**View Models**: `@MainActor @Observable` — QuizViewModel, ProgressViewModel, MetroDroneViewModel, PitchDetector.
+### Signal Quality Indicator (quiz UI)
+- 🟢 Green — operating at calibrated accuracy
+- 🟡 Yellow — degraded, monitor adapting
+- 🔴 Red — significantly degraded, show notification banner
 
-## Five Tabs
+### Calibration Onboarding Sequence (Screens 4–7)
+1. **Screen 4:** Input source detection — show active source, allow switching
+2. **Screen 5:** Silence measurement — 3 seconds, shows live dB meter, sets noise gate
+3. **Screen 6:** Open string test — play each string low E to high e, captures per-string profile
+4. **Screen 7:** Results summary — green checkmarks, option to re-run or proceed
 
-1. **Practice** — Hero card, quick-start grid (Single Note, String Selector, Full Fretboard), full SessionSetupView for custom config. Launches QuizView full-screen.
-2. **Progress** — 6x12 mastery heatmap (note x string), overall mastery ring, accuracy trend chart, recent sessions list with swipe-to-delete.
-3. **Tuner** — Live pitch detection via mic (AccelerateYIN FFT autocorrelation), needle/strobe display, configurable reference A.
-4. **MetroDrone** — Metronome (BPM 20-300, time signatures, beat accents, speed trainer) + drone generator (key, voicing, LFO, low-pass filter).
-5. **Settings** — Display, tuner, audio, quiz defaults, sounds/haptics, notifications, data management.
+### Re-Calibration from Settings
+Settings > Audio Setup shows: current source, calibration date, quality score.  
+Controls: Input Gain trim slider (±6dB), Noise Gate trim slider (±6dB).  
+Buttons: Re-Calibrate (opens screens 5–7 as modal), Reset to defaults.
 
-## Quiz System
+---
 
-**7 Focus Modes**: Full Fretboard, Single Note, Single String, Fret Position, Circle of Fourths, Circle of Fifths, Chord Progression.
+## Monetization Model (Phase 4)
+- **Free tier:** Single Note mode, strings 4–6, frets 0–7, tap input, 7-day history, built-in mic calibration
+- **Premium ($4.99/mo or $29.99/yr):** Full fretboard, all input source calibration profiles, chord progressions, extended history, unlimited audio detection sessions
+- **Trial:** 7-day free trial on both plans
+- **Subscription Group:** "FretShed Premium"
+- **Product IDs:** `com.jpm.fretshed.premium.monthly`, `com.jpm.fretshed.premium.annual`
 
-**4 Game Modes**: Relaxed (untimed), Timed, Streak (one wrong ends it), Tempo (shrinking timer).
+---
 
-**Adaptive weighting** (`session.isAdaptive`): Cross-cutting toggle ("Prioritize Weak Spots") that composes with any spatial focus mode. Skips mastered cells, heavily weights struggling ones (5x boost). Hidden for circle and chord progression modes.
+## Coding Standards
+- Use @Observable (not ObservableObject) for all view models and services
+- Use async/await for all asynchronous operations — no completion handlers
+- Use SwiftData for all persistence — no CoreData, no UserDefaults for data (UserDefaults only for flags like `hasCompletedOnboarding`)
+- Target iOS 17 API only — do not use iOS 18-exclusive APIs without a `#available` check
+- Use Accelerate/vDSP for all signal processing — not custom loops
+- All new audio processing code must be unit testable — extract pure functions from AVAudioEngine callbacks
+- Always check for existing files in FILE_MANIFEST.txt before creating new Swift files
 
-**Circle sub-constraints**: Circle modes have a segmented picker (Full Fretboard / Strings / Position) to constrain which frets/strings are drilled while maintaining circle note order.
+## File Creation Rules
+- **Always check FILE_MANIFEST.txt first** to avoid creating duplicate files
+- New files go in the appropriate group folder matching the existing project structure
+- Signal processing utilities → `Audio/` group
+- Calibration classes → `Audio/Calibration/` group
+- SwiftData models → `Models/` group
+- Views → appropriate tab subfolder under `Views/`
 
-**Chord Progression**: 8 presets + custom builder, transposable to any key. Drills root, 3rd, 5th in close voicing for each chord.
-
-**QuizViewModel state machine**: idle → active → feedbackCorrect/Wrong → complete. Pitch detection via PitchDetector feeds `submit(detectedNote:)`.
-
-## Data Layer
-
-**SwiftData schema**: Session, Attempt, MasteryScore, UserSettings.
-
-**Bayesian mastery**: `(correct + alpha) / (total + alpha + beta)` where alpha=2, beta=1. Mastered: score >= 0.90 AND >= 15 attempts. Struggling: score < 0.50 AND >= 5 attempts.
-
-**FretboardMap**: Pre-computed lookup table — 6 strings x 25 frets (standard tuning). Instant note-at-position and all-positions-for-note lookups.
-
-## Audio
-
-**MetroDroneEngine** (singleton): Shared between MetroDrone tab and Quiz. Click synthesis (noise + tonal), drone (additive harmonics + LFO + LPF), sound cues (correct/incorrect). Set `onBeat` before starting, clear after stopping.
-
-**PitchDetector**: AccelerateYIN algorithm, raw-pointer ring buffer (1024 hop / 4096 window), route change handling. No Bluetooth HFP — uses `.allowBluetoothA2DP` only.
-
-**Audio session**: `.playAndRecord` / `.measurement` with `.mixWithOthers` + `.allowBluetoothA2DP`.
-
-## Critical Patterns
-
-**Audio**:
-- **Audio tap closures must be `@Sendable` free functions** — never formed inside `@MainActor` methods (runtime crash).
-- **Never use Swift arrays in audio-thread shared state** — copy-on-write causes data races. Use fixed-size scalar fields (`freq0/freq1/freq2`), naturally atomic on ARM64.
-- **Use `UnsafeMutablePointer<Float>`** for vDSP buffers and ring buffers to avoid pointer lifetime issues.
-- **`@unchecked Sendable`** for mutable state shared with audio thread.
-
-**Swift 6 / Observable**:
-- **Never self-assign in `didSet` with `@Observable`** — `x = x.clamped(...)` inside `didSet` re-enters `withMutation`, crashing under Swift 6. Let UI controls constrain values instead.
-
-**Monetization (Phase 4)**:
-- Use StoreKit 2 (`Product.products`, `Transaction.currentEntitlements`) — not the old StoreKit 1 API.
-- `EntitlementManager` must be `@MainActor @Observable` and injected via `AppContainer`.
-- Free tier: Single Note mode, strings 4–6, frets 0–7, tap input, 7-day history. Everything else is premium.
-- Paywall must include legal text: trial length, post-trial price, cancellation instructions (required — Apple will reject without it).
-
-**App Store**:
-- `PrivacyInfo.xcprivacy` must declare microphone usage and `NSUserDefaults` access before submission or the build will be auto-rejected.
+---
 
 ## Testing
+- Test suite: 189 tests (may grow as calibration tests are added)
+- Run: `xcodebuild test -scheme FretShed`
+- All tests must pass before marking any task complete
+- New audio processing functions (gain, gate, transient, HPF, harmonic weighter) should each have unit tests using pre-recorded PCM buffer fixtures
 
-189 unit tests in `FretMasterTests/UnitTests/`. Uses in-memory SwiftData (`makeModelContainer(inMemory: true)`). Key test files:
-- `QuizViewModelTests.swift` — state machine, focus modes, adaptive, streaks, tempo
-- `MasteryAlgorithmTests.swift` — Bayesian scoring
-- `MusicalNoteTests.swift` — note arithmetic, circles, transposition
-- `ProgressViewModelTests.swift` — heatmap data, trends
-- `FretboardMapTests.swift` — lookup table correctness
-- `SettingsTests.swift` — persistence round-trips
-- `PracticeLogTests.swift` — session logging
+---
 
-New tests should follow the same in-memory SwiftData pattern. When adding `EntitlementManager`, mock StoreKit with `StoreKitTest` framework rather than hitting the real sandbox.
+## Project Management
+- **ROADMAP.md** — Source of truth for task status. Update it at the end of every session.
+- **BUGLOG.md** — All device-testing issues logged here. Fix before shipping.
+- **GitHub** — Commit after every completed task with message: `[Task X.Y] description`
+- **MVP Checklist** — Canonical task list with descriptions and time estimates (stored in Claude.ai project)
+- **Audio Calibration Feature Plan** — Full implementation spec for all calibration tasks (stored in Claude.ai project)
+
+### Task Status Format (ROADMAP.md)
+```
+[x] = Complete
+[-] = In Progress  
+[ ] = Not Started
+```
+
+---
+
+## Current Status (as of Feb 2026)
+**Phase 1:** Tasks 1.1–1.8 complete ✅. Phase 1 done.
+**Phase 2:** Not started
+**Phase 3:** Not started (includes full Audio Calibration System — largest phase)
+**Phase 4:** Not started
+**Phase 5:** Not started
+
+**Next task:** 2.1 — Create `DesignSystem.swift` — centralized colors, typography, spacing constants.
+
+---
+
+## Known Issues (from BUGLOG.md)
+Update this section when new bugs are discovered during device testing.
+
+---
+
+## Reference Documents (in Claude.ai Project)
+- `FretShed_MVP_Checklist_v2.docx` — Full task list with all calibration tasks integrated
+- `FretShed_AudioCalibration_Plan.docx` — Detailed implementation spec for calibration system

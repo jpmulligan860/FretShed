@@ -1,4 +1,4 @@
-name: FretMaster
+name: FretShed
 options:
   bundleIdPrefix: com.jpm
   deploymentTarget:
@@ -7,15 +7,19 @@ options:
   swift: "6.0"
 
 targets:
-  FretMaster:
+  FretShed:
     type: application
     platform: iOS
     deploymentTarget: "17.0"
     sources:
-      - FretMaster
+      - path: FretShed
+        excludes:
+          - "Progress/Repositories.swift"
+          - "Data/SwiftData/Repositories.swift"
+      - NotificationScheduler.swift
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.jpm.fretmaster
+        PRODUCT_BUNDLE_IDENTIFIER: com.jpm.fretshed
         SWIFT_VERSION: 6.0
         SWIFT_STRICT_CONCURRENCY: complete
         DEVELOPMENT_TEAM: ""
@@ -24,21 +28,22 @@ targets:
         CURRENT_PROJECT_VERSION: "1"
         INFOPLIST_KEY_UILaunchStoryboardName: ""
         INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: UIInterfaceOrientationPortrait
-        INFOPLIST_KEY_NSMicrophoneUsageDescription: "FretMaster uses the microphone to detect the notes you play on your guitar."
+        INFOPLIST_KEY_NSMicrophoneUsageDescription: "FretShed uses the microphone to detect the notes you play on your guitar."
     info:
-      path: FretMaster/Resources/Info.plist
+      path: FretShed/Resources/Info.plist
       properties:
-        CFBundleDisplayName: FretMaster
-        NSMicrophoneUsageDescription: "FretMaster uses the microphone to detect the notes you play on your guitar."
+        CFBundleDisplayName: FretShed
+        NSMicrophoneUsageDescription: "FretShed uses the microphone to detect the notes you play on your guitar."
 
-  FretMasterTests:
+  FretShedTests:
     type: bundle.unit-test
     platform: iOS
     deploymentTarget: "17.0"
     sources:
-      - FretMasterTests
+      - FretShedTests
     dependencies:
-      - target: FretMaster
+      - target: FretShed
     settings:
       base:
         SWIFT_VERSION: 6.0
+        GENERATE_INFOPLIST_FILE: YES

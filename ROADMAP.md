@@ -1,4 +1,4 @@
-# FretMaster — App Store Roadmap
+# FretShed — App Store Roadmap
 
 > **Goal**: App Store submission and first paying users.
 > **Estimate**: 58–80 hours total · 12–20 weeks at 4–5 hrs/week · 7–10 weeks at 8 hrs/week
@@ -19,7 +19,7 @@ The core product is feature-complete and well-architected:
 - 189 passing unit tests
 - Swift 6 strict concurrency
 
-> **Note on naming**: The Xcode project is `FretMaster`; the MVP plan targets the `FretSmart` brand. Decide on a final product name before Phase 4 (bundle IDs are permanent once submitted).
+> **Note on naming**: The Xcode project is `FretShed`; the MVP plan targets the `FretShed` brand. Decide on a final product name before Phase 4 (bundle IDs are permanent once submitted).
 
 ---
 
@@ -35,8 +35,9 @@ Estimated: 6–9 hours
 | 1.3 | Audit Settings tab — trim to essentials (Display, Audio, Quiz Defaults, Data Management only) | 1–2 hrs | ✅ |
 | 1.4 | Fix all Xcode warnings — run a clean build and resolve every yellow warning | 1–2 hrs | ✅ |
 | 1.5 | Run full test suite — confirm all 189 tests pass | 30 min | ✅ |
-| 1.6 | Test every tab on a physical iPhone | 1 hr | 🔲 |
-| 1.7 | Create `BUGLOG.md` in the project root — track all discovered issues | 30 min | 🔲 |
+| 1.6 | Test every tab on a physical iPhone | 1 hr | ✅ |
+| 1.7 | Create `BUGLOG.md` in the project root — track all discovered issues | 30 min | ✅ |
+| 1.8 | Extract signal measurement utilities (`SignalMeasurement.swift`) — RMS, dBFS, noise floor, gate threshold; 17 unit tests | 1 hr | ✅ |
 
 ---
 
@@ -106,7 +107,7 @@ Estimated: 6–8 hours
 **StoreKit 2 paywall — your revenue engine.**
 Estimated: 10–13 hours
 
-> **Decide your product name before this phase.** The bundle ID (`com.yourname.fretsmart` or `com.yourname.fretmaster`) is permanent once set in App Store Connect.
+> **Decide your product name before this phase.** The bundle ID (`com.yourname.fretshed`) is permanent once set in App Store Connect.
 
 ### 4A — Business Setup (No Coding Required)
 
@@ -155,8 +156,8 @@ Estimated: 18–25 hours
 | # | Task | Est. | Status |
 |---|---|---|---|
 | 5.5 | Privacy Policy — termly.io (free); specify mic use, local storage only, no third-party sharing | 1 hr | 🔲 |
-| 5.6 | Host Privacy Policy — e.g. Carrd.co (free), at `fretsmart.carrd.co/privacy` | 30 min | 🔲 |
-| 5.7 | Support URL — `fretsmart.carrd.co/support` (required by Apple) | 30 min | 🔲 |
+| 5.6 | Host Privacy Policy — e.g. Carrd.co (free), at `fretshed.carrd.co/privacy` | 30 min | 🔲 |
+| 5.7 | Support URL — `fretshed.carrd.co/support` (required by Apple) | 30 min | 🔲 |
 | 5.8 | Add `PrivacyInfo.xcprivacy` to project — declare microphone usage and `NSUserDefaults` access (missing = auto-rejection) | 1 hr | 🔲 |
 | 5.9 | Complete App Store privacy nutrition label — data not collected (on-device only) | 30 min | 🔲 |
 

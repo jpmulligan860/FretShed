@@ -50,10 +50,10 @@ Estimated: 18–25 hours
 
 | # | Task | Est. | Status |
 |---|---|---|---|
-| 2.1 | Create `DesignSystem.swift` — centralized colors, typography, spacing constants | 1 hr | 🔲 |
-| 2.2 | Define color palette — primary accent, background, surface, text, success, error | 30 min | 🔲 |
-| 2.3 | Define typography scale — Title, Headline, Body, Caption as `Font` extensions | 30 min | 🔲 |
-| 2.4 | Define spacing constants — xs(4pt), sm(8pt), md(16pt), lg(24pt), xl(32pt) | 30 min | 🔲 |
+| 2.1 | Create `DesignSystem.swift` — centralized colors, typography, spacing constants | 1 hr | ✅ |
+| 2.2 | Define color palette — primary accent, background, surface, text, success, error | 30 min | ✅ |
+| 2.3 | Define typography scale — Title, Headline, Body, Caption as `Font` extensions | 30 min | ✅ |
+| 2.4 | Define spacing constants — xs(4pt), sm(8pt), md(16pt), lg(24pt), xl(32pt) | 30 min | ✅ |
 
 ### 2B — Apply Design System to Each Tab
 

@@ -33,6 +33,7 @@
 		90C6CE68DFA597F6BC629DCE /* CellDetailSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 334441AE15BE47671C39BF23 /* CellDetailSheet.swift */; };
 		94BC7C432D4A4DB84D559C90 /* ProgressTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A86D768D2FA40411BA07A9A4 /* ProgressTabView.swift */; };
 		961097F9A52C883CCA49FA31 /* SignalMeasurement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BFFA59339D000888D580604 /* SignalMeasurement.swift */; };
+		986007F6C27D088D6917833C /* DesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C90013F9A9FA6F14F8611B3 /* DesignSystem.swift */; };
 		993B1B1E58774A2F966F9502 /* MetroDroneModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2406449DF0972C37B03AE40 /* MetroDroneModels.swift */; };
 		A0251989488DE8BCDA4D42C2 /* QuizViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE39FECC070CD929CC8445FD /* QuizViewModel.swift */; };
 		A30A9F3E0E07877AF42A8560 /* ProgressViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5103ABD65D82C3BE8DF79C93 /* ProgressViewModel.swift */; };
@@ -70,6 +71,7 @@
 		1BFFA59339D000888D580604 /* SignalMeasurement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignalMeasurement.swift; sourceTree = "<group>"; };
 		1DE95D278240B6AAD1413451 /* FretboardMapTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FretboardMapTests.swift; sourceTree = "<group>"; };
 		1EF081CC52C037C265273111 /* SessionDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionDetailView.swift; sourceTree = "<group>"; };
+		2C90013F9A9FA6F14F8611B3 /* DesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem.swift; sourceTree = "<group>"; };
 		2E6D4D25DFA640399A966356 /* SwiftDataStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftDataStore.swift; sourceTree = "<group>"; };
 		334441AE15BE47671C39BF23 /* CellDetailSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CellDetailSheet.swift; sourceTree = "<group>"; };
 		368D92459DC9EF2DC0B7DC23 /* SessionHeatmapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionHeatmapView.swift; sourceTree = "<group>"; };
@@ -233,6 +235,7 @@
 			children = (
 				CBA577A659DD4B654B8F0FC8 /* AppContainer.swift */,
 				83CC05DC4F6BC279CF06E4BE /* ContentView.swift */,
+				2C90013F9A9FA6F14F8611B3 /* DesignSystem.swift */,
 				0B55D5F37496FC09E7CADD12 /* FretShedApp.swift */,
 			);
 			path = App;
@@ -303,7 +306,7 @@
 			path = Repositories;
 			sourceTree = "<group>";
 		};
-		"TEMP_A3CBEACD-BF58-47A9-B9BD-CCD18F5C0BD0" /* SnapshotTests */ = {
+		"TEMP_450928D5-704C-4E8E-806D-39BA25D5F338" /* SnapshotTests */ = {
 			isa = PBXGroup;
 			children = (
 			);
@@ -406,6 +409,7 @@
 				90C6CE68DFA597F6BC629DCE /* CellDetailSheet.swift in Sources */,
 				1D2ADF8BA76519EDEEBE5EF8 /* ChordProgression.swift in Sources */,
 				EC9621D6C7CD303C1C595ACF /* ContentView.swift in Sources */,
+				986007F6C27D088D6917833C /* DesignSystem.swift in Sources */,
 				A88252FEDB845EF461F7EE69 /* FretShedApp.swift in Sources */,
 				3679E6E6C395D4CF33C3B179 /* FretboardMap.swift in Sources */,
 				09D112BE6719523B554C46C1 /* FretboardView.swift in Sources */,

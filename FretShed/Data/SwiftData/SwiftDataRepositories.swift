@@ -205,6 +205,35 @@ public final class SwiftDataMasteryRepository: MasteryRepository {
     }
 }
 
+// MARK: - SwiftDataCalibrationRepository
+
+public final class SwiftDataCalibrationRepository: CalibrationProfileRepository {
+
+    private let context: ModelContext
+
+    public init(context: ModelContext) {
+        self.context = context
+    }
+
+    public func save(_ profile: AudioCalibrationProfile) throws {
+        context.insert(profile)
+        try context.save()
+    }
+
+    public func activeProfile() throws -> AudioCalibrationProfile? {
+        var descriptor = FetchDescriptor<AudioCalibrationProfile>(
+            sortBy: [SortDescriptor(\.calibrationDate, order: .reverse)]
+        )
+        descriptor.fetchLimit = 1
+        return try context.fetch(descriptor).first
+    }
+
+    public func deleteAll() throws {
+        try context.delete(model: AudioCalibrationProfile.self)
+        try context.save()
+    }
+}
+
 // MARK: - SwiftDataSettingsRepository
 
 public final class SwiftDataSettingsRepository: SettingsRepository {

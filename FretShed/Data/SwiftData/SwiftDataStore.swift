@@ -21,7 +21,8 @@ let fretMasterSchema = Schema([
     Attempt.self,
     Session.self,
     MasteryScore.self,
-    UserSettings.self
+    UserSettings.self,
+    AudioCalibrationProfile.self
 ])
 
 // MARK: - ModelContainer Factory

@@ -36,6 +36,7 @@ public final class AppContainer: ObservableObject {
     public let sessionRepository: any SessionRepository
     public let masteryRepository: any MasteryRepository
     public let settingsRepository: any SettingsRepository
+    public let calibrationRepository: any CalibrationProfileRepository
 
     // MARK: Domain Services
 
@@ -68,6 +69,7 @@ public final class AppContainer: ObservableObject {
         self.sessionRepository  = SwiftDataSessionRepository(context: sharedContext)
         self.masteryRepository  = SwiftDataMasteryRepository(context: sharedContext)
         self.settingsRepository = SwiftDataSettingsRepository(context: sharedContext)
+        self.calibrationRepository = SwiftDataCalibrationRepository(context: sharedContext)
 
         // 3. Pre-compute domain objects
         self.fretboardMap = FretboardMap()
@@ -95,6 +97,7 @@ public final class AppContainer: ObservableObject {
         self.sessionRepository  = SwiftDataSessionRepository(context: sharedContext)
         self.masteryRepository  = SwiftDataMasteryRepository(context: sharedContext)
         self.settingsRepository = SwiftDataSettingsRepository(context: sharedContext)
+        self.calibrationRepository = SwiftDataCalibrationRepository(context: sharedContext)
         self.fretboardMap = FretboardMap()
     }
 }

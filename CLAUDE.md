@@ -31,10 +31,10 @@ FretShed is an iOS guitar fretboard training application that helps guitarists m
 
 ## Key Architecture
 - **AppContainer:** Dependency injection container — all services injected here
-- **EntitlementManager:** Central authority for feature access (free vs. premium)
-- **AudioProfileStore:** Persists calibration profiles per input source (SwiftData)
-- **CalibrationEngine:** Orchestrates the full calibration procedure
-- **AdaptiveMonitor:** Real-time signal quality monitoring during quiz sessions
+- **EntitlementManager:** Central authority for feature access (free vs. premium) [Phase 4]
+- **CalibrationProfileRepository:** Persists single calibration profile (SwiftData)
+- **CalibrationEngine:** Orchestrates the calibration procedure (silence → 6 strings → save)
+- **PitchDetector:** Pre-seeded with calibrated noise floor + AGC gain on quiz start
 
 ---
 
@@ -47,68 +47,70 @@ FretShed is an iOS guitar fretboard training application that helps guitarists m
 
 ---
 
-## Audio Calibration System (New — Added Feb 2026)
+## Audio Calibration System (Implemented Feb 2026)
 
-FretShed includes a full audio calibration system that characterizes each user's guitar, input source, and environment before quiz sessions begin. This is the feature that makes pitch detection reliable across all guitar types (including hollow body) and all input sources.
+FretShed includes a full audio calibration system that measures the user's environment and guitar once, stores the results, and pre-seeds the pitch detector on quiz start — eliminating the 5-10 second adaptation warmup and improving first-note accuracy.
+
+### Architecture
+- **Single profile** — one `AudioCalibrationProfile` stored at a time; re-calibration overwrites it
+- **Required before quiz** — `hasCompletedCalibration` UserDefaults flag gates quiz launch
+- **All 6 strings required** — no skip during string test
 
 ### Signal Processing Chain (in order)
 ```
-Input Source → Input Gain Stage → Noise Gate → Transient Suppressor 
-→ High-Pass Filter (70Hz) → Harmonic Weighter → AccelerateYIN → Note Decision
+HPF (70Hz Butterworth) → Adaptive Noise Gate → AGC (target −18 dBFS) → AccelerateYIN → Note Decision
 ```
 
-### Input Sources Supported
+### Input Sources Detected
 - `builtInMic` — Built-in iPhone microphone
 - `usbInterface` — External USB audio interface (via Lightning/USB-C)
-- `bluetoothAudio` — Bluetooth audio input (simplified profile — see note)
+- `bluetoothAudio` — Bluetooth audio input
 - `wiredHeadset` — Wired headset with inline microphone
-
-> **Bluetooth note:** Due to Bluetooth latency characteristics, Bluetooth input uses a simplified fixed-gain profile without per-string harmonic calibration. Display a note to the user: "Bluetooth audio may affect detection accuracy."
 
 ### AudioCalibrationProfile (SwiftData model)
 ```swift
-// Per input source — stored and loaded automatically on route change
-var inputSource: AudioInputSource
-var inputGainMultiplier: Float       // Pre-calculated gain to reach −18 to −12 dBFS RMS
-var noiseGateThresholdDB: Float      // Auto (noise floor + 12dB) + userGateTrimDB
-var noiseGateReleaseSeconds: Float   // Default 0.080
-var harmonicWeightingProfile: [Float] // Per-string (6 values), index 0 = low E
-var calibrationDate: Date
-var signalQualityScore: Float        // 0.0–1.0
-var userGainTrimDB: Float            // Manual user delta, default 0.0, range ±6dB
-var userGateTrimDB: Float            // Manual user delta, default 0.0, range ±6dB
+@Model public final class AudioCalibrationProfile {
+    var inputSourceRaw: String            // AudioInputSource raw value
+    var measuredNoiseFloorRMS: Float      // Median of 30 readings over 3s silence
+    var measuredAGCGain: Float            // AGC gain captured after string test
+    var calibrationDate: Date
+    var signalQualityScore: Float         // 0.0–1.0 (fraction of strings detected)
+    var userGainTrimDB: Float             // Manual trim, ±6 dB, default 0.0
+    var userGateTrimDB: Float             // Manual trim, ±6 dB, default 0.0
+    var stringResultsData: Data           // JSON-encoded [Int: Bool] (string → passed)
+}
 ```
 
-### Signal Processing Parameters
-| Stage | Key Parameters |
-|---|---|
-| Input Gain | Target RMS: −18 to −12 dBFS |
-| Noise Gate | Threshold = noise floor + 12dB; Release = 80ms |
-| Transient Suppressor | Attack = 1ms, Release = 40ms, Ratio 4:1 |
-| High-Pass Filter | 70Hz, 2nd-order Butterworth via vDSP biquad IIR |
-| Harmonic Weighter | Per-string FFT weighting; fundamental emphasis |
+### CalibrationEngine Phases
+```
+.welcome → .measuringNoise(progress:) → .testingString(number:) → .complete
+```
+- **Silence:** Starts PitchDetector, samples `currentNoiseFloor` every 100ms for 3s (30 readings), takes median
+- **Strings:** Guides through all 6 open strings (6→1: E, A, D, G, B, E), marks passed when expected note detected
+- **Complete:** Captures AGC gain, builds profile, saves to SwiftData
 
-### AdaptiveMonitor — Bounded Adjustment Rules (session-only, never writes to profile)
-- RMS rises >6dB above calibrated baseline → reduce gain by up to 4dB
-- Noise floor rises >6dB → raise gate threshold by up to 4dB  
-- YIN confidence <0.3 for 5+ consecutive detections → raise amplitude threshold
-- False trigger rate >20% → tighten gate release by 20ms
+### CalibrationView (4-screen TabView(.page))
+| Screen | Content |
+|--------|---------|
+| 0 — Welcome | Explanation, detected input source, "Start" button |
+| 1 — Silence | "Stay quiet for 3 seconds", InputLevelBar, progress ring, auto-advances |
+| 2 — Strings | "Play String N (note)", live detection display, checkmarks |
+| 3 — Results | Quality score ring, per-string checkmarks, "Save & Close" button |
 
-### Signal Quality Indicator (quiz UI)
-- 🟢 Green — operating at calibrated accuracy
-- 🟡 Yellow — degraded, monitor adapting
-- 🔴 Red — significantly degraded, show notification banner
+### Quiz Integration
+QuizView `.task` loads `calibrationRepository.activeProfile()` and pre-seeds:
+- `detector.calibratedNoiseFloor = profile.measuredNoiseFloorRMS * gateTrimMultiplier`
+- `detector.calibratedAGCGain = profile.measuredAGCGain * gainTrimMultiplier`
 
-### Calibration Onboarding Sequence (Screens 4–7)
-1. **Screen 4:** Input source detection — show active source, allow switching
-2. **Screen 5:** Silence measurement — 3 seconds, shows live dB meter, sets noise gate
-3. **Screen 6:** Open string test — play each string low E to high e, captures per-string profile
-4. **Screen 7:** Results summary — green checkmarks, option to re-run or proceed
+### Practice Tab — Do This First Card
+- **Before calibration:** Full card with "Open Tuner" + "Calibrate Audio" buttons
+- **After calibration:** Compact status line with green checkmark + "Re-calibrate" link
 
-### Re-Calibration from Settings
-Settings > Audio Setup shows: current source, calibration date, quality score.  
-Controls: Input Gain trim slider (±6dB), Noise Gate trim slider (±6dB).  
-Buttons: Re-Calibrate (opens screens 5–7 as modal), Reset to defaults.
+### Settings > Audio Setup Section
+- Calibration status (Completed / Not Done)
+- If calibrated: input source, date, signal quality badge (green/yellow/red)
+- User trim sliders: Input Gain Trim (±6 dB), Noise Gate Trim (±6 dB)
+- "Re-Calibrate" / "Run Calibration" button → fullScreenCover
 
 ---
 
@@ -141,10 +143,10 @@ Buttons: Re-Calibrate (opens screens 5–7 as modal), Reset to defaults.
 ---
 
 ## Testing
-- Test suite: 206 tests passing
+- Test suite: 214 tests passing
 - Run: `xcodebuild test -scheme FretShed -destination 'platform=iOS Simulator,name=iPhone 16 Pro'`
 - All tests must pass before marking any task complete
-- New audio processing functions (gain, gate, transient, HPF, harmonic weighter) should each have unit tests using pre-recorded PCM buffer fixtures
+- New audio processing functions should have unit tests using pre-recorded PCM buffer fixtures
 
 ---
 
@@ -172,11 +174,9 @@ Buttons: Re-Calibrate (opens screens 5–7 as modal), Reset to defaults.
 **Phase 5:** Not started
 **Test suite:** 214 tests passing
 
-**All BUGLOG items resolved.** Q6 (results buttons) fixed via ZStack overlay + direct closures. All device-testing bugs (Practice, Progress, Tuner, MetroDrone, Settings, Quiz) fixed.
+**Audio Calibration System (F22) — IMPLEMENTED.** Full calibration flow: silence measurement → 6-string test → profile saved to SwiftData. Quiz launch gated on calibration. Do This First card with action buttons. Settings > Audio Setup with trim sliders. PitchDetector pre-seeded from calibration profile. Single profile (re-calibrate overwrites).
 
-**Progress tab enhancements (Feb 2026):** F2 (response time tracking), F9–F16 (section reorder, info buttons, filter-reactive charts/heatmap, dynamic cell count, toolbar filter with label).
-
-**Chord Progression enhancements (Feb 2026):** F5 (tone selection: Root Only / Root+3rd / Root+5th / Close Triad). F17 (position proximity chaining, persistent teal dots for answered tones, no duplicate strings, chord completion summary in untimed mode). F18 (Position constraint toggle + fret picker, String Group picker: All / 1–2–3 / 2–3–4 / 3–4–5 / 4–5–6).
+**All BUGLOG items resolved.** All device-testing bugs (Practice, Progress, Tuner, MetroDrone, Settings, Quiz) fixed. All feature ideas (F1–F22) complete.
 
 **Next task:** Task 3.7 (onboarding device test), then Phase 4.
 
@@ -194,7 +194,7 @@ Buttons: Re-Calibrate (opens screens 5–7 as modal), Reset to defaults.
 ---
 
 ## Known Issues (from BUGLOG.md)
-All device-testing bugs are resolved. All feature ideas (F1–F18) are complete.
+All device-testing bugs are resolved. All feature ideas (F1–F22) are complete.
 
 ---
 

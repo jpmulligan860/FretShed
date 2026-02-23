@@ -37,6 +37,11 @@ struct ContentView: View {
     @State private var showSetup = false
     @State private var pendingQuizVM: QuizViewModel?
     @State private var activeQuizVM: QuizViewModel?
+    @State private var showCalibration = false
+    @State private var showCalibrationGate = false
+
+    @AppStorage(LocalUserPreferences.Key.hasCompletedCalibration)
+    private var hasCompletedCalibration = false
 
     // MARK: - Tab Enum
 
@@ -121,6 +126,19 @@ struct ContentView: View {
             .receive(on: RunLoop.main)) { _ in
             selectedTab = .practice
         }
+
+        // ── Calibration cover ────────────────────────────────────────
+        .fullScreenCover(isPresented: $showCalibration) {
+            CalibrationView()
+        }
+
+        // ── Calibration gate alert ──────────────────────────────────
+        .alert("Calibrate Audio First", isPresented: $showCalibrationGate) {
+            Button("Calibrate Now") { showCalibration = true }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Audio calibration is required before starting a quiz. This measures your environment and guitar for accurate note detection.")
+        }
     }
 
     // MARK: - Quiz Overlay
@@ -159,6 +177,10 @@ struct ContentView: View {
     // MARK: - Quiz Launch
 
     private func launchQuiz(vm: QuizViewModel) {
+        guard hasCompletedCalibration else {
+            showCalibrationGate = true
+            return
+        }
         selectedTab = .practice
         activeQuizVM = vm
     }
@@ -193,8 +215,18 @@ struct ContentView: View {
 
     private var practiceTab: some View {
         NavigationStack {
-            PracticeHomeView(onStartPractice: { showSetup = true })
-                .toolbar(.hidden, for: .navigationBar)
+            PracticeHomeView(
+                onStartPractice: {
+                    guard hasCompletedCalibration else {
+                        showCalibrationGate = true
+                        return
+                    }
+                    showSetup = true
+                },
+                onOpenTuner: { selectedTab = .tuner },
+                onCalibrateAudio: { showCalibration = true }
+            )
+            .toolbar(.hidden, for: .navigationBar)
         }
     }
 
@@ -222,8 +254,13 @@ struct ContentView: View {
 struct PracticeHomeView: View {
 
     let onStartPractice: () -> Void
+    let onOpenTuner: () -> Void
+    let onCalibrateAudio: () -> Void
     @Environment(\.appContainer) private var container
     @State private var lastSession: Session?
+
+    @AppStorage(LocalUserPreferences.Key.hasCompletedCalibration)
+    private var hasCompletedCalibration = false
 
     var body: some View {
         ScrollView {
@@ -242,50 +279,98 @@ struct PracticeHomeView: View {
         }
     }
 
+    @ViewBuilder
     private var doThisFirstCard: some View {
-        ZStack(alignment: .bottomLeading) {
-            RoundedRectangle(cornerRadius: DesignSystem.Radius.xl)
-                .fill(
-                    LinearGradient(
-                        colors: [Color.orange, Color.yellow.opacity(0.7)],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-
-            VStack(alignment: .leading, spacing: DesignSystem.Spacing.sm) {
-                Text("Do This First")
-                    .font(DesignSystem.Typography.title)
-                    .foregroundStyle(.white)
-                Text("For the most accurate note detection:")
-                    .font(.subheadline)
-                    .foregroundStyle(.white.opacity(0.85))
-
-                VStack(alignment: .leading, spacing: 8) {
-                    Label {
-                        Text("Visit the Tuner tab and tune your guitar.")
-                            .font(.subheadline.weight(.medium))
-                    } icon: {
-                        Text("1.")
-                            .font(.subheadline.weight(.bold))
-                    }
-                    Label {
-                        Text("Perform an Audio Calibration session located in Audio Settings on the Settings tab.")
-                            .font(.subheadline.weight(.medium))
-                    } icon: {
-                        Text("2.")
-                            .font(.subheadline.weight(.bold))
-                    }
+        if hasCompletedCalibration {
+            // Compact "Calibrated" status line
+            HStack(spacing: 10) {
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundStyle(.green)
+                Text("Audio Calibrated")
+                    .font(.subheadline.weight(.semibold))
+                Spacer()
+                Button("Re-calibrate") {
+                    onCalibrateAudio()
                 }
-                .foregroundStyle(.white.opacity(0.95))
+                .font(.caption.weight(.medium))
+                .foregroundStyle(DesignSystem.Colors.primary)
             }
-            .padding(20)
-        }
-        .overlay(alignment: .topTrailing) {
-            Image(systemName: "checklist")
-                .font(.system(size: 60))
-                .foregroundStyle(.white.opacity(0.15))
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            .background(DesignSystem.Colors.surface, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
+        } else {
+            // Full "Do This First" card with action buttons
+            ZStack(alignment: .bottomLeading) {
+                RoundedRectangle(cornerRadius: DesignSystem.Radius.xl)
+                    .fill(
+                        LinearGradient(
+                            colors: [Color.orange, Color.yellow.opacity(0.7)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+
+                VStack(alignment: .leading, spacing: DesignSystem.Spacing.sm) {
+                    Text("Do This First")
+                        .font(DesignSystem.Typography.title)
+                        .foregroundStyle(.white)
+                    Text("For the most accurate note detection:")
+                        .font(.subheadline)
+                        .foregroundStyle(.white.opacity(0.85))
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        Label {
+                            Text("Tune your guitar.")
+                                .font(.subheadline.weight(.medium))
+                        } icon: {
+                            Text("1.")
+                                .font(.subheadline.weight(.bold))
+                        }
+                        Label {
+                            Text("Calibrate audio for your environment.")
+                                .font(.subheadline.weight(.medium))
+                        } icon: {
+                            Text("2.")
+                                .font(.subheadline.weight(.bold))
+                        }
+                    }
+                    .foregroundStyle(.white.opacity(0.95))
+
+                    HStack(spacing: 12) {
+                        Button {
+                            onOpenTuner()
+                        } label: {
+                            Label("Open Tuner", systemImage: "tuningfork")
+                                .font(.subheadline.weight(.semibold))
+                                .padding(.horizontal, 14)
+                                .padding(.vertical, 10)
+                                .background(.white.opacity(0.25), in: Capsule())
+                                .foregroundStyle(.white)
+                        }
+                        .buttonStyle(.plain)
+
+                        Button {
+                            onCalibrateAudio()
+                        } label: {
+                            Label("Calibrate Audio", systemImage: "waveform.badge.mic")
+                                .font(.subheadline.weight(.semibold))
+                                .padding(.horizontal, 14)
+                                .padding(.vertical, 10)
+                                .background(.white.opacity(0.25), in: Capsule())
+                                .foregroundStyle(.white)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .padding(.top, 4)
+                }
                 .padding(20)
+            }
+            .overlay(alignment: .topTrailing) {
+                Image(systemName: "checklist")
+                    .font(.system(size: 60))
+                    .foregroundStyle(.white.opacity(0.15))
+                    .padding(20)
+            }
         }
     }
 

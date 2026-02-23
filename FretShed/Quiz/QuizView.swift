@@ -182,6 +182,13 @@ public struct QuizView: View {
             if !vm.settings.tapModeEnabled && !vm.settings.tapToAnswerEnabled {
                 detector.confidenceThreshold = vm.settings.confidenceThreshold
                 detector.forceBuiltInMic = vm.settings.forceBuiltInMic
+                // Apply calibration profile to pre-seed the detector
+                if let profile = try? container.calibrationRepository.activeProfile() {
+                    let gateTrimMultiplier = pow(10.0, profile.userGateTrimDB / 20.0)
+                    detector.calibratedNoiseFloor = profile.measuredNoiseFloorRMS * gateTrimMultiplier
+                    let gainTrimMultiplier = pow(10.0, profile.userGainTrimDB / 20.0)
+                    detector.calibratedAGCGain = profile.measuredAGCGain * gainTrimMultiplier
+                }
                 try? await detector.start()
             }
         }

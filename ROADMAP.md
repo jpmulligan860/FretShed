@@ -17,6 +17,7 @@ The core product is feature-complete and well-architected:
 - Metronome + drone generator (AVAudioEngine)
 - SwiftData persistence + repository pattern
 - 214 passing unit tests
+- Full audio calibration system (F22) — required before quiz, pre-seeds PitchDetector
 - Swift 6 strict concurrency
 
 > **Note on naming**: The Xcode project is `FretShed`; the MVP plan targets the `FretShed` brand. Decide on a final product name before Phase 4 (bundle IDs are permanent once submitted).

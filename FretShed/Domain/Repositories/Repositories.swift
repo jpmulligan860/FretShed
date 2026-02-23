@@ -38,3 +38,10 @@ public protocol SettingsRepository {
     func loadSettings() throws -> UserSettings
     func saveSettings(_ settings: UserSettings) throws
 }
+
+@MainActor
+public protocol CalibrationProfileRepository {
+    func save(_ profile: AudioCalibrationProfile) throws
+    func activeProfile() throws -> AudioCalibrationProfile?
+    func deleteAll() throws
+}

@@ -244,6 +244,7 @@ public enum LocalUserPreferences {
         public static let defaultFretCount       = "defaultFretCount"
         public static let colorScheme            = "colorScheme"   // "light" / "dark" / "system"
         public static let lastActiveTab          = "lastActiveTab"
+        public static let hasCompletedCalibration = "hasCompletedCalibration"
     }
 
     /// Default values matching the spec.

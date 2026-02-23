@@ -16,8 +16,14 @@ public struct SettingsView: View {
 
     @State private var showDisplayInfo = false
     @State private var showAudioInfo = false
+    @State private var showAudioSetupInfo = false
     @State private var showQuizDefaultsInfo = false
     @State private var showDataInfo = false
+    @State private var showCalibration = false
+    @State private var calibrationProfile: AudioCalibrationProfile? = nil
+
+    @AppStorage(LocalUserPreferences.Key.hasCompletedCalibration)
+    private var hasCompletedCalibration = false
 
     @AppStorage(LocalUserPreferences.Key.noteNameFormat)
     private var noteNameFormatRaw: String = LocalUserPreferences.Default.noteNameFormat
@@ -57,6 +63,7 @@ public struct SettingsView: View {
         Form {
             displaySection
             audioSection(settings: settings)
+            audioSetupSection
             quizSection(settings: settings)
             dataSection
         }
@@ -288,6 +295,148 @@ public struct SettingsView: View {
         }
         .animation(.easeInOut(duration: 0.2), value: settings.correctSoundEnabled)
         .animation(.easeInOut(duration: 0.2), value: settings.isMetronomeEnabled)
+    }
+
+    // MARK: - Audio Setup Section
+
+    private var audioSetupSection: some View {
+        Section {
+            if hasCompletedCalibration, let profile = calibrationProfile {
+                // Status row
+                HStack {
+                    Text("Status")
+                    Spacer()
+                    Label("Completed", systemImage: "checkmark.circle.fill")
+                        .font(.subheadline)
+                        .foregroundStyle(.green)
+                }
+
+                // Input source
+                HStack {
+                    Text("Input Source")
+                    Spacer()
+                    Text(profile.inputSource.displayName)
+                        .foregroundStyle(.secondary)
+                }
+
+                // Last calibrated date
+                HStack {
+                    Text("Last Calibrated")
+                    Spacer()
+                    Text(profile.calibrationDate, style: .date)
+                        .foregroundStyle(.secondary)
+                }
+
+                // Signal quality badge
+                HStack {
+                    Text("Signal Quality")
+                    Spacer()
+                    HStack(spacing: 4) {
+                        Circle()
+                            .fill(qualityBadgeColor(profile.signalQualityScore))
+                            .frame(width: 8, height: 8)
+                        Text("\(Int(profile.signalQualityScore * 100))%")
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                // Input Gain Trim slider
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack {
+                        Text("Input Gain Trim")
+                        Spacer()
+                        Text(String(format: "%+.1f dB", profile.userGainTrimDB))
+                            .foregroundStyle(.secondary)
+                            .monospacedDigit()
+                    }
+                    Slider(
+                        value: Binding(
+                            get: { Double(profile.userGainTrimDB) },
+                            set: {
+                                profile.userGainTrimDB = Float($0)
+                                try? container.calibrationRepository.save(profile)
+                            }
+                        ),
+                        in: -6...6,
+                        step: 0.5
+                    )
+                }
+
+                // Noise Gate Trim slider
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack {
+                        Text("Noise Gate Trim")
+                        Spacer()
+                        Text(String(format: "%+.1f dB", profile.userGateTrimDB))
+                            .foregroundStyle(.secondary)
+                            .monospacedDigit()
+                    }
+                    Slider(
+                        value: Binding(
+                            get: { Double(profile.userGateTrimDB) },
+                            set: {
+                                profile.userGateTrimDB = Float($0)
+                                try? container.calibrationRepository.save(profile)
+                            }
+                        ),
+                        in: -6...6,
+                        step: 0.5
+                    )
+                }
+
+                Button {
+                    showCalibration = true
+                } label: {
+                    Label("Re-Calibrate", systemImage: "arrow.clockwise")
+                }
+            } else {
+                // Not calibrated
+                HStack {
+                    Text("Status")
+                    Spacer()
+                    Text("Not Done")
+                        .foregroundStyle(.orange)
+                }
+
+                Button {
+                    showCalibration = true
+                } label: {
+                    Label("Run Calibration", systemImage: "waveform.badge.mic")
+                }
+            }
+        } header: {
+            HStack {
+                Label("Audio Setup", systemImage: "waveform.badge.mic")
+                infoButton { showAudioSetupInfo = true }
+            }
+        } footer: {
+            Text("Calibrates the microphone for your guitar and environment. Adjust trims to fine-tune detection sensitivity.")
+        }
+        .fullScreenCover(isPresented: $showCalibration, onDismiss: {
+            // Reload profile after calibration
+            calibrationProfile = try? container.calibrationRepository.activeProfile()
+        }) {
+            CalibrationView(isRecalibration: hasCompletedCalibration)
+        }
+        .sheet(isPresented: $showAudioSetupInfo) {
+            SettingsInfoSheet(
+                title: "Audio Setup",
+                items: [
+                    ("Calibration", "Measures your environment's noise level and tests detection for each guitar string. Required before using audio detection in quizzes."),
+                    ("Input Gain Trim", "Fine-tune the input sensitivity. Increase if notes aren't being detected; decrease if you're getting false detections."),
+                    ("Noise Gate Trim", "Adjust the threshold that separates signal from background noise. Increase in noisy environments; decrease in quiet ones.")
+                ]
+            )
+        }
+        .task {
+            calibrationProfile = try? container.calibrationRepository.activeProfile()
+        }
+    }
+
+    private func qualityBadgeColor(_ score: Float) -> Color {
+        if score >= 0.8 { return .green }
+        if score >= 0.5 { return .orange }
+        return .red
     }
 
     // MARK: - Quiz Defaults Section

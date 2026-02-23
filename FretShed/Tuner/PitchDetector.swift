@@ -78,6 +78,22 @@ public final class PitchDetector {
     /// ignoring any connected Bluetooth or wired headset mic.
     public var forceBuiltInMic: Bool = false
 
+    // MARK: - Calibration
+
+    /// Pre-seeded noise floor from calibration profile. When set, the tap's
+    /// adaptive noise floor starts from this value instead of the default 0.01.
+    public var calibratedNoiseFloor: Float? = nil
+
+    /// Pre-seeded AGC gain from calibration profile. When set, the tap's
+    /// AGC starts from this value instead of the default 2.0.
+    public var calibratedAGCGain: Float? = nil
+
+    /// Current noise floor as reported by the realtime tap (read-only for UI).
+    public private(set) var currentNoiseFloor: Float = 0.01
+
+    /// Current AGC gain as reported by the realtime tap (read-only for UI).
+    public private(set) var currentAGCGain: Float = 2.0
+
     // MARK: - Audio Engine
 
     // Engine is a `var` so it can be recreated after interruptions or route changes.
@@ -192,12 +208,16 @@ public final class PitchDetector {
         // an implicit isolation assertion in its thunk — AVAudioEngine calls the
         // tap on a private realtime queue, which makes that assertion fatal.
         let playbackTS = MetroDroneEngine.lastPlaybackTime
+        let calNoiseFloor = calibratedNoiseFloor
+        let calAGCGain = calibratedAGCGain
         let tapClosure = makeTapClosure(
             isStopping: isStopping,
             confidenceThreshold: threshold,
             sampleRate: tapSampleRate,
             continuation: pitchContinuation,
-            playbackTimestamp: playbackTS
+            playbackTimestamp: playbackTS,
+            calibratedNoiseFloor: calNoiseFloor,
+            calibratedAGCGain: calAGCGain
         )
         inputNode.installTap(onBus: 0, bufferSize: bufferSize, format: tapFormat, block: tapClosure)
 
@@ -225,7 +245,10 @@ public final class PitchDetector {
                     self.centsDeviation = 0
                     self.inputLevel = 0
                     holdUntilDate = nil
-                case .silent(let rmsLevel):
+                case .silent(let rmsLevel, let noiseFloor, let agcGain):
+                    // Publish realtime signal state for calibration / diagnostics.
+                    self.currentNoiseFloor = noiseFloor
+                    self.currentAGCGain = agcGain
                     // Always update the level indicator (shows signal truly silent).
                     smoothedLevel = 0.3 * Double(rmsLevel) + 0.7 * smoothedLevel
                     self.inputLevel = smoothedLevel
@@ -237,7 +260,10 @@ public final class PitchDetector {
                     self.detectedFrequency = nil
                     self.centsDeviation = 0
                     holdUntilDate = nil
-                case .detected(let freq, let rmsLevel):
+                case .detected(let freq, let rmsLevel, let noiseFloor, let agcGain):
+                    // Publish realtime signal state for calibration / diagnostics.
+                    self.currentNoiseFloor = noiseFloor
+                    self.currentAGCGain = agcGain
                     // Median filter: detect note changes and maintain sliding window
                     if !freqHistory.isEmpty {
                         let currentMedian = freqHistory.sorted()[freqHistory.count / 2]
@@ -327,7 +353,9 @@ public final class PitchDetector {
                     confidenceThreshold: threshold,
                     sampleRate: sr,
                     continuation: pitchContinuation,
-                    playbackTimestamp: playbackTS
+                    playbackTimestamp: playbackTS,
+                    calibratedNoiseFloor: calNoiseFloor,
+                    calibratedAGCGain: calAGCGain
                 )
                 inputNode.installTap(onBus: 0, bufferSize: self.bufferSize, format: fmt, block: newTap)
                 try? self.engine.start()
@@ -412,8 +440,8 @@ private final class AudioAtomicFlag: @unchecked Sendable {
 /// pass frequency and RMS level from the tap.
 private enum DetectedPitch: Sendable {
     case none
-    case silent(rmsLevel: Float)
-    case detected(frequency: Double, rmsLevel: Float)
+    case silent(rmsLevel: Float, noiseFloor: Float, agcGain: Float)
+    case detected(frequency: Double, rmsLevel: Float, noiseFloor: Float, agcGain: Float)
 }
 
 // MARK: - AccelerateYIN
@@ -739,7 +767,9 @@ private func makeTapClosure(
     confidenceThreshold: Float,
     sampleRate: Double,
     continuation: AsyncStream<DetectedPitch>.Continuation,
-    playbackTimestamp: PlaybackTimestamp
+    playbackTimestamp: PlaybackTimestamp,
+    calibratedNoiseFloor: Float? = nil,
+    calibratedAGCGain: Float? = nil
 ) -> AVAudioNodeTapBlock {
     let windowSize = 4096
     let hopSize = 1024
@@ -753,6 +783,10 @@ private func makeTapClosure(
         ringCapacity: ringCapacity,
         sampleRate: sampleRate
     )
+
+    // Apply calibration values if available (pre-seeds the adaptive algorithms).
+    if let nf = calibratedNoiseFloor { tapState.noiseFloor = nf }
+    if let ag = calibratedAGCGain { tapState.agcGain = ag }
 
     // Clean up when the stream terminates
     continuation.onTermination = { @Sendable _ in
@@ -795,7 +829,7 @@ private func makeTapClosure(
         state.noiseFloor = SignalMeasurement.noiseFloorStep(current: state.noiseFloor, rms: rms)
         let gateThreshold = SignalMeasurement.gateThreshold(noiseFloor: state.noiseFloor)
         guard rms > gateThreshold else {
-            continuation.yield(.silent(rmsLevel: rmsLevel))
+            continuation.yield(.silent(rmsLevel: rmsLevel, noiseFloor: state.noiseFloor, agcGain: state.agcGain))
             return
         }
 
@@ -817,7 +851,7 @@ private func makeTapClosure(
         if lastPlayback > 0 {
             let elapsed = CFAbsoluteTimeGetCurrent() - lastPlayback
             if elapsed >= 0 && elapsed < 0.15 {
-                continuation.yield(.silent(rmsLevel: gainedLevel))
+                continuation.yield(.silent(rmsLevel: gainedLevel, noiseFloor: state.noiseFloor, agcGain: state.agcGain))
                 return
             }
         }
@@ -831,7 +865,7 @@ private func makeTapClosure(
             return
         }
 
-        continuation.yield(.detected(frequency: frequency, rmsLevel: gainedLevel))
+        continuation.yield(.detected(frequency: frequency, rmsLevel: gainedLevel, noiseFloor: state.noiseFloor, agcGain: state.agcGain))
     }
 }
 

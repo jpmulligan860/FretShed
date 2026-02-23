@@ -10,6 +10,7 @@
 		04EAC52BD44A0E963783AC41 /* SwiftDataRepositories.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5585D79AF4719978F1162821 /* SwiftDataRepositories.swift */; };
 		09D112BE6719523B554C46C1 /* FretboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84E518C2706797DAD952F6DB /* FretboardView.swift */; };
 		0ED47C8599C45EBD4037907C /* MusicalNote.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E09B79F825D97199C8FD5CE /* MusicalNote.swift */; };
+		12DAA222A1C52E3094C2C70A /* CalibrationEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4A56A5807EDBEDFF6EC3BBB /* CalibrationEngine.swift */; };
 		13665AD12E5FA35C52E3F932 /* QuizView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6FDEB3EA727B49B54ACBB1C /* QuizView.swift */; };
 		1C36DA7746079387FF7C0B8C /* ProgressViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C5E6B98AEE0090E92E72659 /* ProgressViewModelTests.swift */; };
 		1D2ADF8BA76519EDEEBE5EF8 /* ChordProgression.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97B0E4D90EBB4ECE1E66BA12 /* ChordProgression.swift */; };
@@ -22,6 +23,8 @@
 		41A8D1A0AB8A3E4CE8AA2D9B /* settings.local.json in Resources */ = {isa = PBXBuildFile; fileRef = 616D897D4D1484E19B0FEA2F /* settings.local.json */; };
 		4A962BA3BCC7B96F8E70CA59 /* SessionHeatmapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 368D92459DC9EF2DC0B7DC23 /* SessionHeatmapView.swift */; };
 		4B148157BFA6EBA776C958BF /* SessionSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC51F46F493695C683DED3DB /* SessionSetupView.swift */; };
+		4B5D130E35BADB2648D0E601 /* CalibrationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B90F2903BC076D7BFEF7665A /* CalibrationView.swift */; };
+		509F2DA23C4EB8FEB01F7D33 /* AudioCalibrationProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 307D70BE2E5AE3372D94B9EA /* AudioCalibrationProfile.swift */; };
 		5A38ACCB8262E273A762BB72 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = EA3068AF5B92B465B06046F8 /* Localizable.xcstrings */; };
 		60927EE7E18F6D291911D9A0 /* FretboardMapTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DE95D278240B6AAD1413451 /* FretboardMapTests.swift */; };
 		6228F3AEE08BA24949576161 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B249D088A3BF526B9663DD4D /* SettingsView.swift */; };
@@ -75,6 +78,7 @@
 		1EF081CC52C037C265273111 /* SessionDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionDetailView.swift; sourceTree = "<group>"; };
 		2C90013F9A9FA6F14F8611B3 /* DesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem.swift; sourceTree = "<group>"; };
 		2E6D4D25DFA640399A966356 /* SwiftDataStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftDataStore.swift; sourceTree = "<group>"; };
+		307D70BE2E5AE3372D94B9EA /* AudioCalibrationProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioCalibrationProfile.swift; sourceTree = "<group>"; };
 		334441AE15BE47671C39BF23 /* CellDetailSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CellDetailSheet.swift; sourceTree = "<group>"; };
 		3409FE657D2975DA48C4D978 /* ChordProgressionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChordProgressionTests.swift; sourceTree = "<group>"; };
 		368D92459DC9EF2DC0B7DC23 /* SessionHeatmapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionHeatmapView.swift; sourceTree = "<group>"; };
@@ -103,6 +107,7 @@
 		B249D088A3BF526B9663DD4D /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		B2BA6E158C16D88608168965 /* MetroDroneView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetroDroneView.swift; sourceTree = "<group>"; };
 		B6FDEB3EA727B49B54ACBB1C /* QuizView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuizView.swift; sourceTree = "<group>"; };
+		B90F2903BC076D7BFEF7665A /* CalibrationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalibrationView.swift; sourceTree = "<group>"; };
 		BD97CC80B02ADF5F5BAE2DAE /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		BF480B4836E1BCB9ED08BC78 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		C2A41CF0B30565F2D2FE92A7 /* MasteryAlgorithmTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MasteryAlgorithmTests.swift; sourceTree = "<group>"; };
@@ -114,12 +119,23 @@
 		EA3068AF5B92B465B06046F8 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		EE39FECC070CD929CC8445FD /* QuizViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuizViewModel.swift; sourceTree = "<group>"; };
 		F2406449DF0972C37B03AE40 /* MetroDroneModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetroDroneModels.swift; sourceTree = "<group>"; };
+		F4A56A5807EDBEDFF6EC3BBB /* CalibrationEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalibrationEngine.swift; sourceTree = "<group>"; };
 		FD139E6B657D0E39796CC232 /* FretShedTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = FretShedTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		FE2D409E59D0757557617013 /* NotificationScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationScheduler.swift; sourceTree = "<group>"; };
 		FF830EB86FB19BE84235BC01 /* Attempt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Attempt.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
+		048F14BFF7B3F6CDF335910A /* Calibration */ = {
+			isa = PBXGroup;
+			children = (
+				307D70BE2E5AE3372D94B9EA /* AudioCalibrationProfile.swift */,
+				F4A56A5807EDBEDFF6EC3BBB /* CalibrationEngine.swift */,
+				B90F2903BC076D7BFEF7665A /* CalibrationView.swift */,
+			);
+			path = Calibration;
+			sourceTree = "<group>";
+		};
 		081E770ECD554FF54BE510C6 /* Data */ = {
 			isa = PBXGroup;
 			children = (
@@ -273,6 +289,7 @@
 			children = (
 				9795F3F426B68D2C05721457 /* MetroDroneEngine.swift */,
 				1BFFA59339D000888D580604 /* SignalMeasurement.swift */,
+				048F14BFF7B3F6CDF335910A /* Calibration */,
 			);
 			path = Audio;
 			sourceTree = "<group>";
@@ -312,7 +329,7 @@
 			path = Repositories;
 			sourceTree = "<group>";
 		};
-		"TEMP_A40D3BCD-311A-4CD0-92DF-7ABC849B4471" /* SnapshotTests */ = {
+		"TEMP_E7943999-22DC-448E-85AC-C2D506704DC8" /* SnapshotTests */ = {
 			isa = PBXGroup;
 			children = (
 			);
@@ -412,6 +429,9 @@
 			files = (
 				721F80E6AEB10D3E83D48022 /* AppContainer.swift in Sources */,
 				C6CBB4F9D7052F2111DD9F7A /* Attempt.swift in Sources */,
+				509F2DA23C4EB8FEB01F7D33 /* AudioCalibrationProfile.swift in Sources */,
+				12DAA222A1C52E3094C2C70A /* CalibrationEngine.swift in Sources */,
+				4B5D130E35BADB2648D0E601 /* CalibrationView.swift in Sources */,
 				90C6CE68DFA597F6BC629DCE /* CellDetailSheet.swift in Sources */,
 				1D2ADF8BA76519EDEEBE5EF8 /* ChordProgression.swift in Sources */,
 				EC9621D6C7CD303C1C595ACF /* ContentView.swift in Sources */,

@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 63;
+	objectVersion = 77;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -30,7 +30,6 @@
 		721F80E6AEB10D3E83D48022 /* AppContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBA577A659DD4B654B8F0FC8 /* AppContainer.swift */; };
 		7BC1FC21CCA1EAF1B325D5CC /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E3FF02A66FF10C9470B4575 /* OnboardingView.swift */; };
 		83CA8031BF7C507EDA2148B6 /* SessionSummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6BFA7C97D6BCC3CC6978867E /* SessionSummaryView.swift */; };
-		8668C6F471DEB12210660EED /* QuizPresenterWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83C5824460098C776A8808C1 /* QuizPresenterWindow.swift */; };
 		8C67D2972E1BB431096B7236 /* TunerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 712A49EB16F90D326925F1C7 /* TunerView.swift */; };
 		90C6CE68DFA597F6BC629DCE /* CellDetailSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 334441AE15BE47671C39BF23 /* CellDetailSheet.swift */; };
 		94BC7C432D4A4DB84D559C90 /* ProgressTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A86D768D2FA40411BA07A9A4 /* ProgressTabView.swift */; };
@@ -70,7 +69,7 @@
 /* Begin PBXFileReference section */
 		0B55D5F37496FC09E7CADD12 /* FretShedApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FretShedApp.swift; sourceTree = "<group>"; };
 		0E09B79F825D97199C8FD5CE /* MusicalNote.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicalNote.swift; sourceTree = "<group>"; };
-		11D3BDBDA01662AE732E4282 /* FretShed.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FretShed.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		11D3BDBDA01662AE732E4282 /* FretShed.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = FretShed.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		1BFFA59339D000888D580604 /* SignalMeasurement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignalMeasurement.swift; sourceTree = "<group>"; };
 		1DE95D278240B6AAD1413451 /* FretboardMapTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FretboardMapTests.swift; sourceTree = "<group>"; };
 		1EF081CC52C037C265273111 /* SessionDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionDetailView.swift; sourceTree = "<group>"; };
@@ -87,7 +86,6 @@
 		6E3FF02A66FF10C9470B4575 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		712A49EB16F90D326925F1C7 /* TunerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TunerView.swift; sourceTree = "<group>"; };
 		7C5E6B98AEE0090E92E72659 /* ProgressViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressViewModelTests.swift; sourceTree = "<group>"; };
-		83C5824460098C776A8808C1 /* QuizPresenterWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuizPresenterWindow.swift; sourceTree = "<group>"; };
 		83CC05DC4F6BC279CF06E4BE /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		84E518C2706797DAD952F6DB /* FretboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FretboardView.swift; sourceTree = "<group>"; };
 		92DAA6EC80EF1378C99C5A2B /* PitchDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PitchDetector.swift; sourceTree = "<group>"; };
@@ -253,7 +251,6 @@
 			isa = PBXGroup;
 			children = (
 				84E518C2706797DAD952F6DB /* FretboardView.swift */,
-				83C5824460098C776A8808C1 /* QuizPresenterWindow.swift */,
 				B6FDEB3EA727B49B54ACBB1C /* QuizView.swift */,
 				EE39FECC070CD929CC8445FD /* QuizViewModel.swift */,
 				CC51F46F493695C683DED3DB /* SessionSetupView.swift */,
@@ -315,6 +312,13 @@
 			path = Repositories;
 			sourceTree = "<group>";
 		};
+		"TEMP_8231FC4D-DEFE-4BDB-A750-FC478C20F7AD" /* SnapshotTests */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = SnapshotTests;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -362,6 +366,11 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1600;
+				TargetAttributes = {
+					5F88877F67F73744122AA111 = {
+						DevelopmentTeam = "";
+					};
+				};
 			};
 			buildConfigurationList = C3EB24449BB91D4EA0C05F13 /* Build configuration list for PBXProject "FretShed" */;
 			compatibilityVersion = "Xcode 14.0";
@@ -373,6 +382,7 @@
 			);
 			mainGroup = 506BA9E636029B910BF8FF46;
 			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
@@ -421,7 +431,6 @@
 				F42692AFF7D645247CCBD61F /* PitchDetector.swift in Sources */,
 				94BC7C432D4A4DB84D559C90 /* ProgressTabView.swift in Sources */,
 				A30A9F3E0E07877AF42A8560 /* ProgressViewModel.swift in Sources */,
-				8668C6F471DEB12210660EED /* QuizPresenterWindow.swift in Sources */,
 				13665AD12E5FA35C52E3F932 /* QuizView.swift in Sources */,
 				A0251989488DE8BCDA4D42C2 /* QuizViewModel.swift in Sources */,
 				654D659635A6043E21B4FDAE /* Repositories.swift in Sources */,
@@ -472,7 +481,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = W86YKV677Z;
+				DEVELOPMENT_TEAM = "";
 				ENABLE_HARDENED_RUNTIME = YES;
 				INFOPLIST_FILE = FretShed/Resources/Info.plist;
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "FretShed uses the microphone to detect the notes you play on your guitar.";
@@ -516,7 +525,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = W86YKV677Z;
+				DEVELOPMENT_TEAM = "";
 				ENABLE_HARDENED_RUNTIME = YES;
 				INFOPLIST_FILE = FretShed/Resources/Info.plist;
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "FretShed uses the microphone to detect the notes you play on your guitar.";

@@ -475,9 +475,10 @@ final class ProgressViewModelTests: XCTestCase {
     }
 
     func test_accuracyTrend_twoSessionsSameDay_averagedIntoOnePoint() async throws {
-        // Both sessions are "today" (secondsAgo < 86400)
-        try seedSession(correct: 10, total: 10, secondsAgo: 100,  sessionRepo: sessionRepo)
-        try seedSession(correct: 0,  total: 10, secondsAgo: 200,  sessionRepo: sessionRepo)
+        // Both sessions end "now" so they always land on the same calendar day,
+        // even when tests run near midnight.
+        try seedSession(correct: 10, total: 10, secondsAgo: 0, sessionRepo: sessionRepo)
+        try seedSession(correct: 0,  total: 10, secondsAgo: 0, sessionRepo: sessionRepo)
         let vm = makeVM(container: container)
         await vm.load()
         // Two sessions on the same day → one data point with averaged accuracy (50%)

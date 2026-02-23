@@ -497,7 +497,6 @@ final class MetroDroneEngine {
         let beatCount = timeSignature.beats
         let interval = 60.0 / bpm
         let subCount = subdivision.count
-        let subInterval = interval / Double(subCount)
 
         let initialBeat = startingBeat ?? 0
         metronomeTask = Task { [weak self] in

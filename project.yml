@@ -26,7 +26,6 @@ targets:
         ENABLE_HARDENED_RUNTIME: YES
         MARKETING_VERSION: "1.0.0"
         CURRENT_PROJECT_VERSION: "1"
-        INFOPLIST_KEY_UILaunchStoryboardName: ""
         INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: UIInterfaceOrientationPortrait
         INFOPLIST_KEY_NSMicrophoneUsageDescription: "FretShed uses the microphone to detect the notes you play on your guitar."
     info:
@@ -34,6 +33,7 @@ targets:
       properties:
         CFBundleDisplayName: FretShed
         NSMicrophoneUsageDescription: "FretShed uses the microphone to detect the notes you play on your guitar."
+        UILaunchScreen: {}
 
   FretShedTests:
     type: bundle.unit-test

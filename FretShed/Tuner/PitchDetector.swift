@@ -207,10 +207,16 @@ public final class PitchDetector {
             var smoothedCents: Double = 0
             var smoothedLevel: Double = 0
             var freqHistory: [Double] = []
+            // Pitch hold: sustain the last detection briefly after the gate closes so the
+            // tuner needle doesn't snap back to centre as the note decays (fixes T2, T3).
+            var holdUntilDate: Date? = nil
+            let holdDuration: TimeInterval = 0.25   // 250 ms
             for await result in pitchStream {
                 guard let self else { break }
                 switch result {
                 case .none:
+                    // Within hold window: keep existing note/cents on screen.
+                    if let until = holdUntilDate, until > Date() { break }
                     smoothedCents = 0
                     smoothedLevel = 0
                     freqHistory.removeAll()
@@ -218,14 +224,19 @@ public final class PitchDetector {
                     self.detectedFrequency = nil
                     self.centsDeviation = 0
                     self.inputLevel = 0
+                    holdUntilDate = nil
                 case .silent(let rmsLevel):
-                    smoothedCents = 0
+                    // Always update the level indicator (shows signal truly silent).
                     smoothedLevel = 0.3 * Double(rmsLevel) + 0.7 * smoothedLevel
+                    self.inputLevel = smoothedLevel
+                    // Within hold window: keep existing note/cents on screen.
+                    if let until = holdUntilDate, until > Date() { break }
+                    smoothedCents = 0
                     freqHistory.removeAll()
                     self.detectedNote = nil
                     self.detectedFrequency = nil
                     self.centsDeviation = 0
-                    self.inputLevel = smoothedLevel
+                    holdUntilDate = nil
                 case .detected(let freq, let rmsLevel):
                     // Median filter: detect note changes and maintain sliding window
                     if !freqHistory.isEmpty {
@@ -249,6 +260,8 @@ public final class PitchDetector {
                     let (note, cents) = pitchDetectorNoteAndCents(frequency: useFreq, referenceA: self.referenceA)
                     smoothedCents = 0.3 * cents + 0.7 * smoothedCents
                     smoothedLevel = 0.3 * Double(rmsLevel) + 0.7 * smoothedLevel
+                    // Extend hold window on every fresh detection.
+                    holdUntilDate = Date().addingTimeInterval(holdDuration)
                     self.detectedNote = note
                     self.detectedFrequency = useFreq
                     // Dead-zone: skip sub-cent jitter
@@ -559,6 +572,19 @@ private final class AccelerateYIN: @unchecked Sendable {
 
         guard bestTau > 0 else { return nil }
 
+        // --- Step 3b: Octave error correction ---
+        // The absolute-threshold search picks the FIRST CMND minimum, which can
+        // land on a harmonic period (τ₀/2 → 2× fundamental) — especially on the
+        // low E and A strings through a built-in microphone.
+        // Fix: check if double-tau also has a strong local minimum. If so, prefer
+        // the lower frequency (larger τ = true fundamental).
+        let doubleTau = bestTau * 2
+        if doubleTau < maxTau {
+            var dt = doubleTau
+            while dt + 1 < maxTau && cmndBuf[dt + 1] < cmndBuf[dt] { dt += 1 }
+            if cmndBuf[dt] < 0.35 { bestTau = dt }
+        }
+
         // --- Step 4: Parabolic interpolation ---
         let interpolatedTau: Double
         if bestTau > 0 && bestTau < halfN - 1 {
@@ -660,6 +686,14 @@ private final class TapProcessingState: @unchecked Sendable {
 
     // Adaptive noise gate state
     var noiseFloor: Float = 0.01
+
+    // Auto-Gain Control: slow-adapting multiplier that normalises signal amplitude
+    // so YIN sees consistent levels regardless of guitar type, distance, or input source.
+    var agcGain: Float = 2.0          // initial ×2 boost for typical mic-to-guitar distance
+    let agcTargetRMS: Float = 0.126   // −18 dBFS target
+    let agcAdaptRate: Float = 0.002   // ~0.2% per frame → ~10 s to halve/double gain
+    let agcMinGain: Float = 0.5
+    let agcMaxGain: Float = 16.0
 
     init(windowSize: Int, hopSize: Int, ringCapacity: Int, sampleRate: Double) {
         self.windowSize = windowSize
@@ -765,13 +799,25 @@ private func makeTapClosure(
             return
         }
 
+        // Auto-Gain Control: adapt gain toward −18 dBFS target (only while gate is open).
+        // This normalises amplitude across guitar types, distances, and input sources.
+        let gainedRMS = rms * state.agcGain
+        if gainedRMS < state.agcTargetRMS {
+            state.agcGain = min(state.agcGain / (1.0 - state.agcAdaptRate), state.agcMaxGain)
+        } else if gainedRMS > state.agcTargetRMS * 2.0 {
+            state.agcGain = max(state.agcGain * (1.0 - state.agcAdaptRate), state.agcMinGain)
+        }
+        var agcMultiplier = state.agcGain
+        vDSP_vsmul(state.analysisBuffer, 1, &agcMultiplier, state.analysisBuffer, 1, vDSP_Length(windowSize))
+        let gainedLevel = SignalMeasurement.normaliseToLevel(rms: gainedRMS)
+
         // Blank analysis during metronome clicks / sound cues to prevent
         // acoustic speaker-to-mic feedback from being detected as notes.
         let lastPlayback = playbackTimestamp.get()
         if lastPlayback > 0 {
             let elapsed = CFAbsoluteTimeGetCurrent() - lastPlayback
             if elapsed >= 0 && elapsed < 0.15 {
-                continuation.yield(.silent(rmsLevel: rmsLevel))
+                continuation.yield(.silent(rmsLevel: gainedLevel))
                 return
             }
         }
@@ -785,7 +831,7 @@ private func makeTapClosure(
             return
         }
 
-        continuation.yield(.detected(frequency: frequency, rmsLevel: rmsLevel))
+        continuation.yield(.detected(frequency: frequency, rmsLevel: gainedLevel))
     }
 }
 

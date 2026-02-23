@@ -141,8 +141,8 @@ Buttons: Re-Calibrate (opens screens 5–7 as modal), Reset to defaults.
 ---
 
 ## Testing
-- Test suite: 189 tests (may grow as calibration tests are added)
-- Run: `xcodebuild test -scheme FretShed`
+- Test suite: 206 tests passing
+- Run: `xcodebuild test -scheme FretShed -destination 'platform=iOS Simulator,name=iPhone 16 Pro'`
 - All tests must pass before marking any task complete
 - New audio processing functions (gain, gate, transient, HPF, harmonic weighter) should each have unit tests using pre-recorded PCM buffer fixtures
 
@@ -165,13 +165,26 @@ Buttons: Re-Calibrate (opens screens 5–7 as modal), Reset to defaults.
 ---
 
 ## Current Status (as of Feb 2026)
-**Phase 1:** Tasks 1.1–1.8 complete ✅. Phase 1 done.
-**Phase 2:** Not started
-**Phase 3:** Not started (includes full Audio Calibration System — largest phase)
+**Phase 1:** Tasks 1.1–1.8 complete ✅
+**Phase 2:** Tasks 2.1–2.17 complete ✅ (Design System fully applied to all tabs)
+**Phase 3:** Tasks 3.1–3.6 complete ✅ · Task 3.7 🔲 (device timing test — blocked by Q6)
 **Phase 4:** Not started
 **Phase 5:** Not started
 
-**Next task:** 2.1 — Create `DesignSystem.swift` — centralized colors, typography, spacing constants.
+**🚨 Blocking Bug — Q6:** Results page buttons (Done, View Progress, Repeat) do not respond to taps on iPhone 16 Pro (iOS 26.2.1). Seven presentation approaches tried across two sessions. Current architecture: `fullScreenCover` on `TabView` driven by `activeQuizVM: QuizViewModel?` in `ContentView`; all button actions post `NotificationCenter` notifications handled by `ContentView`. This resolves correctly in simulator but buttons remain dead on device.
+
+**Next task after Q6 resolved:** Task 3.7 (onboarding device test), then Phase 4.
+
+**Quiz Presentation Architecture (current — ZStack overlay + direct closures):**
+- `ContentView.body` is `ZStack { TabView { ... }; if let vm = activeQuizVM { quizOverlay(vm: vm).zIndex(1) } }`
+- Quiz is a ZStack overlay ABOVE the TabView — no NavigationStack push, no navigation path
+- `launchQuiz(vm:)` simply sets `activeQuizVM = vm` + `selectedTab = .practice`; no path manipulation
+- `QuizSessionView` (private struct) accepts `onDone / onViewProgress / onRepeat` as direct closures; swaps `QuizView` → `SessionSummaryView` via `@State showResults`
+- `SessionSummaryView` has `onDone / onViewProgress / onRepeat: (() -> Void)?` properties; buttons call these closures directly — NO NotificationCenter.post in any button
+- ContentView `onReceive` handlers retained only for `.launchQuiz` (from PracticeHomeView) and `.showPracticeTab` (from ProgressTabView empty state)
+- Repeat logic lives in `launchRepeatSession(from:)` on ContentView, called from the `onRepeat` closure
+- **Why ZStack over NavigationStack push:** onReceive handlers did not fire reliably while a pushed destination was active on iOS 26; NavigationStack destination also had a timing window where activeQuizVM was nil, producing a blank page
+- **Why closures over notifications:** eliminates the RunLoop-scheduled Combine dispatch chain entirely; closure → state mutation is synchronous and direct
 
 ---
 

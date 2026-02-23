@@ -1,0 +1,467 @@
+//
+//  TunerView.swift
+//  FretShed
+//
+//  Created by John Mulligan on 2/15/26.
+//
+
+
+// TunerView.swift
+// FretShed — Presentation Layer (Phase 5)
+
+import SwiftUI
+
+// MARK: - TunerView
+
+public struct TunerView: View {
+
+    @Environment(\.appContainer) private var container
+
+    @State private var detector = PitchDetector()
+    @State private var settings: UserSettings? = nil
+    @Environment(\.verticalSizeClass) private var vSizeClass
+
+    // displayStyle and referenceAHz kept in @AppStorage so the tuner tab
+    // reflects the same values as the Settings screen immediately.
+    @AppStorage("tunerDisplayStyle") private var displayStyleRaw: String = TunerDisplayStyle.needle.rawValue
+    private var displayStyle: TunerDisplayStyle {
+        TunerDisplayStyle(rawValue: displayStyleRaw) ?? .needle
+    }
+
+    @AppStorage(LocalUserPreferences.Key.noteNameFormat)
+    private var noteFormatRaw: String = LocalUserPreferences.Default.noteNameFormat
+    private var noteFormat: NoteNameFormat {
+        NoteNameFormat(rawValue: noteFormatRaw) ?? .sharps
+    }
+
+    @AppStorage("referenceAHz") private var referenceAHz: Int = 440
+
+    public init() {}
+
+    public var body: some View {
+        NavigationStack {
+            ZStack {
+                Color(.systemGroupedBackground).ignoresSafeArea()
+
+                if vSizeClass == .compact {
+                    // ── Landscape: note header left, display + controls right ──
+                    HStack(spacing: 0) {
+                        VStack(spacing: 12) {
+                            Spacer()
+                            noteHeader
+                            centsReadout
+                            Spacer()
+                        }
+                        .frame(maxWidth: .infinity)
+
+                        Divider().padding(.vertical, 20)
+
+                        VStack(spacing: 0) {
+                            NeedleDisplay(cents: detector.centsDeviation,
+                                              isActive: detector.detectedNote != nil)
+                                .padding(.top, 12)
+                                .animation(.easeInOut(duration: 0.15), value: detector.centsDeviation)
+
+                            CentsScale()
+                                .padding(.top, 8)
+                                .padding(.horizontal, 40)
+
+                            InputLevelBar(level: detector.inputLevel)
+                                .padding(.top, 6)
+                                .padding(.horizontal, 40)
+
+                            Spacer()
+
+                            controls
+                                .padding(.bottom, 16)
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+                } else {
+                    // ── Portrait: original stacked layout ──────────────
+                    VStack(spacing: 0) {
+                        noteHeader
+                            .padding(.top, 32)
+
+                        NeedleDisplay(cents: detector.centsDeviation,
+                                      isActive: detector.detectedNote != nil)
+                            .padding(.top, 32)
+                            .animation(.easeInOut(duration: 0.15), value: detector.centsDeviation)
+
+                        centsReadout
+                            .padding(.top, 20)
+
+                        CentsScale()
+                            .padding(.top, 8)
+                            .padding(.horizontal, 40)
+
+                        InputLevelBar(level: detector.inputLevel)
+                            .padding(.top, 6)
+                            .padding(.horizontal, 40)
+
+                        Spacer()
+
+                        controls
+                            .padding(.bottom, 32)
+                    }
+                }
+            }
+            .toolbar(.hidden, for: .navigationBar)
+            .task {
+                await applySettings()
+                try? await detector.start()
+            }
+            .onDisappear {
+                Task { await detector.stop() }
+            }
+            .onChange(of: referenceAHz) { _, new in
+                detector.referenceA = Double(new)
+            }
+            .alert("Microphone Access Required",
+                   isPresented: Binding(
+                    get: { detector.error != nil },
+                    set: { _ in }
+                   )) {
+                Button("Open Settings") {
+                    if let url = URL(string: UIApplication.openSettingsURLString) {
+                        UIApplication.shared.open(url)
+                    }
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text(detector.error?.localizedDescription ?? "")
+            }
+        }
+    }
+
+    /// Loads UserSettings and applies them to the detector before starting.
+    private func applySettings() async {
+        let loaded = try? container.settingsRepository.loadSettings()
+        settings = loaded
+        if let s = loaded {
+            detector.referenceA = Double(s.referenceAHz)
+            detector.confidenceThreshold = s.tunerSensitivity
+            detector.forceBuiltInMic = s.forceBuiltInMic
+            // Mirror stored values into @AppStorage so controls stay in sync.
+            referenceAHz = s.referenceAHz
+            displayStyleRaw = s.tunerDisplayStyleRaw
+        } else {
+            detector.referenceA = Double(referenceAHz)
+        }
+    }
+
+    // MARK: - Note Header
+
+    private var noteHeader: some View {
+        VStack(spacing: 6) {
+            if let note = detector.detectedNote {
+                Text(note.displayName(format: noteFormat))
+                    .font(.system(size: 80, weight: .black, design: .rounded))
+                    .foregroundStyle(tuningColor)
+                    .contentTransition(.numericText())
+                    .animation(.spring(duration: 0.2), value: note)
+
+                if let freq = detector.detectedFrequency {
+                    Text(String(format: "%.1f Hz", freq))
+                        .font(.subheadline.monospacedDigit())
+                        .foregroundStyle(.secondary)
+                        .contentTransition(.numericText())
+                }
+            } else if let err = detector.error, case .microphonePermissionDenied = err {
+                Image(systemName: "mic.slash.fill")
+                    .font(.system(size: 36))
+                    .foregroundStyle(.red.opacity(0.7))
+                Text("Microphone access required")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.primary)
+                Button {
+                    if let url = URL(string: UIApplication.openSettingsURLString) {
+                        UIApplication.shared.open(url)
+                    }
+                } label: {
+                    Label("Open Settings", systemImage: "gear")
+                        .font(.caption.weight(.semibold))
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 6)
+                        .background(DesignSystem.Colors.primary.opacity(0.12), in: Capsule())
+                        .foregroundStyle(DesignSystem.Colors.primary)
+                }
+                .buttonStyle(.plain)
+            } else {
+                Text("–")
+                    .font(.system(size: 80, weight: .black, design: .rounded))
+                    .foregroundStyle(.quaternary)
+                Text(detector.isRunning ? "Play a note…" : "Starting…")
+                    .font(.subheadline)
+                    .foregroundStyle(.tertiary)
+            }
+        }
+        .frame(height: 110)
+    }
+
+    // MARK: - Cents Readout
+
+    private var centsReadout: some View {
+        let c = detector.centsDeviation
+        let sign = c >= 0 ? "+" : ""
+        return Text("\(sign)\(Int(c.rounded())) ¢")
+            .font(.system(size: 18, weight: .semibold, design: .monospaced))
+            .foregroundStyle(tuningColor)
+            .contentTransition(.numericText())
+            .opacity(detector.detectedNote != nil ? 1 : 0)
+    }
+
+    // MARK: - Controls
+
+    private var controls: some View {
+        HStack {
+            Image(systemName: "tuningfork")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Text("A4 = 440 Hz")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    // MARK: - Colour
+
+    private var tuningColor: Color {
+        guard detector.detectedNote != nil else { return .secondary }
+        let absCents = abs(detector.centsDeviation)
+        if absCents <= 5  { return .green }
+        if absCents <= 15 { return .yellow }
+        return .red
+    }
+}
+
+// MARK: - NeedleDisplay
+
+private struct NeedleDisplay: View {
+
+    let cents: Double
+    let isActive: Bool
+
+    private var angle: Double {
+        isActive ? (cents / 50.0) * 60.0 : 0
+    }
+
+    var body: some View {
+        ZStack {
+            DialArc()
+                .stroke(DesignSystem.Colors.surfaceSecondary, lineWidth: 4)
+                .frame(width: 260, height: 130)
+
+            DialArc()
+                .trim(from: 0.44, to: 0.56)
+                .stroke(Color.green.opacity(0.35), lineWidth: 6)
+                .frame(width: 260, height: 130)
+
+            DialTicks()
+                .frame(width: 260, height: 130)
+
+            Needle(angle: angle)
+                .frame(width: 260, height: 130)
+                .animation(.spring(response: 0.3, dampingFraction: 1.0), value: angle)
+
+            Circle()
+                .fill(Color(.label))
+                .frame(width: 10, height: 10)
+                .offset(y: 65)
+        }
+        .frame(height: 140)
+    }
+}
+
+private struct DialArc: Shape {
+    func path(in rect: CGRect) -> Path {
+        var p = Path()
+        let centre = CGPoint(x: rect.midX, y: rect.maxY)
+        p.addArc(center: centre,
+                 radius: rect.width / 2,
+                 startAngle: .degrees(180),
+                 endAngle: .degrees(0),
+                 clockwise: false)
+        return p
+    }
+}
+
+private struct DialTicks: View {
+    var body: some View {
+        Canvas { ctx, size in
+            let centre = CGPoint(x: size.width / 2, y: size.height)
+            let r = size.width / 2
+            for i in stride(from: -50, through: 50, by: 10) {
+                let angleDeg = 180.0 + Double(i + 50) / 100.0 * 180.0
+                let rad = angleDeg * .pi / 180
+                let isMajor = i % 50 == 0 || i == 0
+                let len: CGFloat = isMajor ? 14 : 8
+                let inner = CGPoint(x: centre.x + (r - len) * cos(rad),
+                                    y: centre.y + (r - len) * sin(rad))
+                let outer = CGPoint(x: centre.x + r * cos(rad),
+                                    y: centre.y + r * sin(rad))
+                var path = Path()
+                path.move(to: inner)
+                path.addLine(to: outer)
+                ctx.stroke(path,
+                           with: .color(Color(.secondaryLabel)),
+                           lineWidth: isMajor ? 2 : 1)
+            }
+        }
+    }
+}
+
+private struct Needle: View {
+    let angle: Double
+
+    var body: some View {
+        Canvas { ctx, size in
+            let centre = CGPoint(x: size.width / 2, y: size.height)
+            let length = size.width / 2 - 8
+            let totalDeg = 270.0 + angle
+            let rad = totalDeg * .pi / 180
+            let tip = CGPoint(x: centre.x + length * cos(rad),
+                              y: centre.y + length * sin(rad))
+            var path = Path()
+            path.move(to: centre)
+            path.addLine(to: tip)
+            ctx.stroke(path, with: .color(Color(.label)), lineWidth: 2)
+        }
+    }
+}
+
+// MARK: - StrobeDisplay
+
+private struct StrobeDisplay: View {
+
+    let cents: Double
+    let isActive: Bool
+
+    @State private var animator = StrobeAnimator()
+    private let bandCount = 20
+
+    var body: some View {
+        TimelineView(.animation(minimumInterval: 1.0 / 30.0)) { _ in
+            Canvas { ctx, size in
+                let phase = animator.advance(cents: cents, isActive: isActive)
+                let bandWidth = size.width / CGFloat(bandCount)
+                for i in 0..<bandCount {
+                    var raw = (Double(i) + phase)
+                        .truncatingRemainder(dividingBy: 2.0)
+                    if raw < 0 { raw += 2.0 }
+                    let t = abs(raw - 1.0)
+                    let rect = CGRect(
+                        x: CGFloat(i) * bandWidth, y: 0,
+                        width: bandWidth + 0.5, height: size.height
+                    )
+                    ctx.fill(Path(rect),
+                            with: .color(Color(.label).opacity(0.15 + 0.7 * t)))
+                }
+            }
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .strokeBorder(Color(.separator), lineWidth: 1)
+            )
+        }
+        .frame(height: 80)
+        .padding(.horizontal, 40)
+    }
+}
+
+/// Tracks strobe phase using wall-clock deltas so the animation stays
+/// frame-rate independent.  Held by @State as a reference type so phase
+/// accumulates across SwiftUI re-renders without triggering extra updates.
+private final class StrobeAnimator: @unchecked Sendable {
+    private var phase: Double = 0
+    private var lastTime: TimeInterval = 0
+
+    func advance(cents: Double, isActive: Bool) -> Double {
+        let now = ProcessInfo.processInfo.systemUptime
+        if isActive {
+            if lastTime > 0 {
+                let dt = min(now - lastTime, 0.1)
+                phase += cents * dt * 0.45
+            }
+        } else {
+            phase = 0
+        }
+        lastTime = now
+        return phase
+    }
+}
+
+// MARK: - CentsScale
+
+private struct CentsScale: View {
+    var body: some View {
+        HStack {
+            Text("-50¢").font(.system(size: 9)).foregroundStyle(.secondary)
+            Spacer()
+            Text("0").font(.system(size: 9, weight: .bold)).foregroundStyle(.green)
+            Spacer()
+            Text("+50¢").font(.system(size: 9)).foregroundStyle(.secondary)
+        }
+    }
+}
+
+// MARK: - InputLevelBar
+
+struct InputLevelBar: View {
+    let level: Double
+
+    var body: some View {
+        GeometryReader { geo in
+            let width = geo.size.width
+            let fillWidth = width * CGFloat(level)
+
+            ZStack(alignment: .leading) {
+                // Background
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(DesignSystem.Colors.surfaceSecondary)
+
+                // Filled bar with 3 color zones
+                HStack(spacing: 0) {
+                    let greenEnd = min(fillWidth, width * 0.6)
+                    let yellowEnd = min(max(fillWidth - width * 0.6, 0), width * 0.25)
+                    let redEnd = max(fillWidth - width * 0.85, 0)
+
+                    if greenEnd > 0 {
+                        Color.green
+                            .frame(width: greenEnd)
+                    }
+                    if yellowEnd > 0 {
+                        Color.yellow
+                            .frame(width: yellowEnd)
+                    }
+                    if redEnd > 0 {
+                        Color.red
+                            .frame(width: redEnd)
+                    }
+                }
+                .clipShape(RoundedRectangle(cornerRadius: 4))
+
+                // Labels
+                if level < 0.05 {
+                    Text("TOO QUIET")
+                        .font(.system(size: 9, weight: .semibold))
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity)
+                } else if level > 0.95 {
+                    Text("CLIP")
+                        .font(.system(size: 9, weight: .bold))
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                }
+            }
+        }
+        .frame(height: 16)
+        .animation(.spring(response: 0.15, dampingFraction: 1.0), value: level)
+    }
+}
+
+// MARK: - Preview
+
+#Preview {
+    TunerView()
+}

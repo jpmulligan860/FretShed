@@ -59,29 +59,29 @@ Estimated: 18–25 hours
 
 | # | Task | Est. | Status |
 |---|---|---|---|
-| 2.5 | Redesign Practice tab — hero card, quick-start grid, `SessionSetupView` | 2–3 hrs | 🔲 |
-| 2.6 | Redesign Quiz / `FretboardView` — clean fretboard, clear feedback states | 2–3 hrs | 🔲 |
-| 2.7 | Redesign Progress tab — heatmap color coding, mastery ring, scannable session list | 2 hrs | 🔲 |
-| 2.8 | Redesign Tuner tab — clean needle/strobe display | 1–2 hrs | 🔲 |
-| 2.9 | Redesign MetroDrone tab — prominent BPM, clearly grouped controls | 1–2 hrs | 🔲 |
-| 2.10 | Redesign Settings tab — clean and grouped, iOS native list style | 1 hr | 🔲 |
+| 2.5 | Redesign Practice tab — hero card, quick-start grid, `SessionSetupView` | 2–3 hrs | ✅ |
+| 2.6 | Redesign Quiz / `FretboardView` — clean fretboard, clear feedback states | 2–3 hrs | ✅ |
+| 2.7 | Redesign Progress tab — heatmap color coding, mastery ring, scannable session list | 2 hrs | ✅ |
+| 2.8 | Redesign Tuner tab — clean needle/strobe display | 1–2 hrs | ✅ |
+| 2.9 | Redesign MetroDrone tab — prominent BPM, clearly grouped controls | 1–2 hrs | ✅ |
+| 2.10 | Redesign Settings tab — clean and grouped, iOS native list style | 1 hr | ✅ |
 
 ### 2C — Empty States
 
 | # | Task | Est. | Status |
 |---|---|---|---|
-| 2.11 | Progress tab empty state — "Complete your first session…" with Start Practicing button | 1 hr | 🔲 |
-| 2.12 | Session history empty state | 30 min | 🔲 |
-| 2.13 | Quiz completion screen polish — feels like achievement, shows score/streak/mastery change | 1–2 hrs | 🔲 |
+| 2.11 | Progress tab empty state — "Complete your first session…" with Start Practicing button | 1 hr | ✅ |
+| 2.12 | Session history empty state | 30 min | ✅ |
+| 2.13 | Quiz completion screen polish — feels like achievement, shows score/streak/mastery change | 1–2 hrs | ✅ |
 
 ### 2D — Loading & Error States
 
 | # | Task | Est. | Status |
 |---|---|---|---|
-| 2.14 | Add loading states to Progress tab — skeleton or spinner | 1 hr | 🔲 |
-| 2.15 | Mic permission denied state — clear explanation + "Go to Settings" button | 1 hr | 🔲 |
-| 2.16 | Audio detection failure state — gentle message + offer tap mode fallback | 1 hr | 🔲 |
-| 2.17 | Generic error handling — user-friendly messages, no blank screens or crashes | 1 hr | 🔲 |
+| 2.14 | Add loading states to Progress tab — skeleton or spinner | 1 hr | ✅ |
+| 2.15 | Mic permission denied state — clear explanation + "Go to Settings" button | 1 hr | ✅ |
+| 2.16 | Audio detection failure state — gentle message + offer tap mode fallback | 1 hr | ✅ |
+| 2.17 | Generic error handling — user-friendly messages, no blank screens or crashes | 1 hr | ✅ |
 
 ---
 
@@ -92,12 +92,12 @@ Estimated: 6–8 hours
 
 | # | Task | Est. | Status |
 |---|---|---|---|
-| 3.1 | `OnboardingView` screen 1: Welcome — value prop, app icon, "Get Started" button | 1 hr | 🔲 |
-| 3.2 | `OnboardingView` screen 2: How it works — 3 bullet points max | 1 hr | 🔲 |
-| 3.3 | `OnboardingView` screen 3: Mic permission — explain WHY before triggering system prompt | 1–2 hrs | 🔲 |
-| 3.4 | `OnboardingView` screen 4: Audio test — play any open string, app shows detected note | 1–2 hrs | 🔲 |
-| 3.5 | Wire onboarding to app launch — show only on first launch via `UserDefaults` (`hasCompletedOnboarding`) | 30 min | 🔲 |
-| 3.6 | Add "Skip" option — allow skipping from screen 2 onward | 30 min | 🔲 |
+| 3.1 | `OnboardingView` screen 1: Welcome — value prop, app icon, "Get Started" button | 1 hr | ✅ |
+| 3.2 | `OnboardingView` screen 2: How it works — 3 bullet points max | 1 hr | ✅ |
+| 3.3 | `OnboardingView` screen 3: Mic permission — explain WHY before triggering system prompt | 1–2 hrs | ✅ |
+| 3.4 | `OnboardingView` screen 4: Audio test — play any open string, app shows detected note | 1–2 hrs | ✅ |
+| 3.5 | Wire onboarding to app launch — show only on first launch via `UserDefaults` (`hasCompletedOnboarding`) | 30 min | ✅ |
+| 3.6 | Add "Skip" option — allow skipping from screen 2 onward | 30 min | ✅ |
 | 3.7 | Test on device — target under 90 seconds from cold launch to first quiz question | 30 min | 🔲 |
 
 ---

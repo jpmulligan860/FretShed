@@ -81,6 +81,14 @@ fastlane/screenshots/**/*.png
 fastlane/test_output/
 
 # ============================
+# Claude Code
+# ============================
+
+# Local Claude Code settings (machine-specific, never commit)
+.claude/
+**/.claude/
+
+# ============================
 # Misc
 # ============================
 

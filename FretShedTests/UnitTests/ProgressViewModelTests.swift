@@ -1,3 +1,11 @@
+//
+//  ProgressViewModelTests.swift
+//  FretShed
+//
+//  Created by John Mulligan on 2/15/26.
+//
+
+
 // ProgressViewModelTests.swift
 // FretShed — Unit Tests (Phase 4)
 //
@@ -20,8 +28,7 @@ private func makeVM(container: ModelContainer) -> ProgressViewModel {
     )
 }
 
-/// Inserts `count` correct attempts for the given note/string into an attempt repo
-/// and returns a MasteryScore reflecting those attempts (also saved to the mastery repo).
+/// Seeds a MasteryScore and matching Attempt records into the in-memory store.
 @discardableResult
 @MainActor
 private func seedMasteryScore(
@@ -55,7 +62,7 @@ private func seedMasteryScore(
     return score
 }
 
-/// Saves a completed session to the session repository.
+/// Saves a completed Session into the in-memory store.
 @MainActor
 private func seedSession(
     focusMode: FocusMode = .fullFretboard,
@@ -69,7 +76,7 @@ private func seedSession(
     session.correctCount = correct
     session.isCompleted = true
     session.startTime = Date(timeIntervalSinceNow: -(secondsAgo + 60))
-    session.endTime = Date(timeIntervalSinceNow: -secondsAgo)
+    session.endTime   = Date(timeIntervalSinceNow: -secondsAgo)
     session.overallMasteryAtEnd = total > 0 ? Double(correct) / Double(total) : 0
     try sessionRepo.save(session)
 }
@@ -86,14 +93,14 @@ final class ProgressViewModelTests: XCTestCase {
 
     override func setUp() async throws {
         try await super.setUp()
-        container = try makeModelContainer(inMemory: true)
+        container   = try makeModelContainer(inMemory: true)
         masteryRepo = SwiftDataMasteryRepository(context: ModelContext(container))
         sessionRepo = SwiftDataSessionRepository(context: ModelContext(container))
         attemptRepo = SwiftDataAttemptRepository(context: ModelContext(container))
     }
 
     override func tearDown() async throws {
-        container = nil
+        container   = nil
         masteryRepo = nil
         sessionRepo = nil
         attemptRepo = nil
@@ -113,7 +120,7 @@ final class ProgressViewModelTests: XCTestCase {
     }
 
     func test_initialState_gridHasSevenSlots() {
-        // Index 0 unused; indices 1–6 for strings.
+        // Index 0 unused; indices 1–6 for the six strings.
         let vm = makeVM(container: container)
         XCTAssertEqual(vm.scoreGrid.count, 7)
     }
@@ -151,7 +158,7 @@ final class ProgressViewModelTests: XCTestCase {
 
     // MARK: - Load: Populated Store
 
-    func test_load_withOneScore_appearsinGrid() async throws {
+    func test_load_withOneScore_appearsInGrid() async throws {
         try seedMasteryScore(note: .a, string: 2,
                              correct: 8, total: 10,
                              masteryRepo: masteryRepo,
@@ -178,7 +185,7 @@ final class ProgressViewModelTests: XCTestCase {
 
         for (note, string) in pairs {
             XCTAssertNotNil(vm.scoreGrid[string][note.rawValue],
-                "Expected score for (\(note), string \(string)) in grid")
+                            "Expected score for (\(note), string \(string)) in grid")
         }
     }
 
@@ -196,7 +203,7 @@ final class ProgressViewModelTests: XCTestCase {
     }
 
     func test_load_masteredCellsCount_onlyCountsMastered() async throws {
-        // 15 correct → should meet mastered threshold
+        // 15 correct → meets mastered threshold (score ≈ 0.944, attempts = 15)
         try seedMasteryScore(note: .a, string: 1,
                              correct: 15, total: 15,
                              masteryRepo: masteryRepo,
@@ -206,7 +213,6 @@ final class ProgressViewModelTests: XCTestCase {
                              correct: 3, total: 10,
                              masteryRepo: masteryRepo,
                              attemptRepo: attemptRepo)
-
         let vm = makeVM(container: container)
         await vm.load()
         XCTAssertEqual(vm.masteredCells, 1)
@@ -223,7 +229,6 @@ final class ProgressViewModelTests: XCTestCase {
     }
 
     func test_load_overallMastery_perfectScoreApproachesOne() async throws {
-        // 20 correct on 3 cells → overall mastery should be high
         for (note, string) in [(MusicalNote.a, 1), (.b, 2), (.c, 3)] {
             try seedMasteryScore(note: note, string: string,
                                  correct: 20, total: 20,
@@ -237,8 +242,7 @@ final class ProgressViewModelTests: XCTestCase {
 
     // MARK: - Load: Sessions
 
-    func test_load_recentSessions_appearsInOrder() async throws {
-        // Older session first, newer second
+    func test_load_recentSessions_appearsNewestFirst() async throws {
         try seedSession(correct: 5, total: 10, secondsAgo: 3600, sessionRepo: sessionRepo)
         try seedSession(correct: 9, total: 10, secondsAgo: 60,   sessionRepo: sessionRepo)
 
@@ -246,26 +250,26 @@ final class ProgressViewModelTests: XCTestCase {
         await vm.load()
 
         XCTAssertEqual(vm.recentSessions.count, 2)
-        // Newest first — the one 60 seconds ago should come before 3600s ago
         let first  = try XCTUnwrap(vm.recentSessions.first)
         let second = try XCTUnwrap(vm.recentSessions.last)
-        XCTAssertGreaterThan(first.startTime, second.startTime)
+        XCTAssertGreaterThan(first.startTime, second.startTime,
+                             "Most recent session should come first")
     }
 
-    func test_load_recentSessions_limitedTo20() async throws {
-        for i in 0..<25 {
+    func test_load_recentSessions_limitedTo50() async throws {
+        for i in 0..<60 {
             try seedSession(secondsAgo: Double(i * 60), sessionRepo: sessionRepo)
         }
         let vm = makeVM(container: container)
         await vm.load()
-        XCTAssertLessThanOrEqual(vm.recentSessions.count, 20)
+        XCTAssertLessThanOrEqual(vm.recentSessions.count, 50)
     }
 
     func test_load_onlyCompletedSessionsAppear() async throws {
-        // One complete, one active (not completed)
         try seedSession(correct: 10, total: 10, sessionRepo: sessionRepo)
+        // An incomplete session — isCompleted defaults to false
         let incomplete = Session(focusMode: .fullFretboard, gameMode: .untimed)
-        try sessionRepo.save(incomplete)  // isCompleted = false by default
+        try sessionRepo.save(incomplete)
 
         let vm = makeVM(container: container)
         await vm.load()
@@ -276,10 +280,8 @@ final class ProgressViewModelTests: XCTestCase {
 
     func test_masteryScore_unknownCell_returnsPrior() {
         let vm = makeVM(container: container)
-        // No data loaded — grid is empty, so prior should be returned
         let prior = MasteryScore.alpha / (MasteryScore.alpha + MasteryScore.beta)
-        let result = vm.masteryScore(note: .a, string: 3)
-        XCTAssertEqual(result, prior, accuracy: 0.0001)
+        XCTAssertEqual(vm.masteryScore(note: .a, string: 3), prior, accuracy: 0.0001)
     }
 
     func test_masteryScore_knownCell_returnsPersistedScore() async throws {
@@ -290,19 +292,17 @@ final class ProgressViewModelTests: XCTestCase {
         let vm = makeVM(container: container)
         await vm.load()
 
-        let result = vm.masteryScore(note: .fSharp, string: 4)
+        let result   = vm.masteryScore(note: .fSharp, string: 4)
         let expected = MasteryCalculator.score(correct: 10, total: 10)
         XCTAssertEqual(result, expected, accuracy: 0.0001)
     }
 
     // MARK: - masteryLevel(note:string:)
 
-    func test_masteryLevel_unplayed_isBeginner() {
+    func test_masteryLevel_unplayed_isDeveloping() {
+        // Prior ≈ 0.667, which sits in the developing band (0.40 ..< 0.70)
         let vm = makeVM(container: container)
-        // Prior ≈ 0.667 → developing
-        // But with no attempts the level from the prior should be developing
-        let level = vm.masteryLevel(note: .c, string: 1)
-        XCTAssertEqual(level, .developing)  // 0.667 falls in developing (0.40..<0.70)
+        XCTAssertEqual(vm.masteryLevel(note: .c, string: 1), .developing)
     }
 
     func test_masteryLevel_masteredData_returnsMastered() async throws {
@@ -334,8 +334,8 @@ final class ProgressViewModelTests: XCTestCase {
                              attemptRepo: attemptRepo)
         let vm = makeVM(container: container)
         await vm.load()
-
         await vm.selectCell(note: .a, string: 2)
+
         let detail = try XCTUnwrap(vm.selectedCell)
         XCTAssertEqual(detail.note, .a)
         XCTAssertEqual(detail.string, 2)
@@ -350,8 +350,8 @@ final class ProgressViewModelTests: XCTestCase {
                              sessionID: sessionID)
         let vm = makeVM(container: container)
         await vm.load()
-
         await vm.selectCell(note: .b, string: 3)
+
         let detail = try XCTUnwrap(vm.selectedCell)
         // seedMasteryScore saved 6 attempts; selectCell fetches up to 10
         XCTAssertEqual(detail.recentAttempts.count, 6)
@@ -360,8 +360,8 @@ final class ProgressViewModelTests: XCTestCase {
     func test_selectCell_neverAttempted_hasNilScore() async throws {
         let vm = makeVM(container: container)
         await vm.load()
-
         await vm.selectCell(note: .dSharp, string: 5)
+
         let detail = try XCTUnwrap(vm.selectedCell)
         XCTAssertNil(detail.score, "Score should be nil for a never-attempted cell")
         XCTAssertTrue(detail.recentAttempts.isEmpty)
@@ -401,7 +401,7 @@ final class ProgressViewModelTests: XCTestCase {
 
         for string in 1...6 {
             XCTAssertNotNil(vm.scoreGrid[string][MusicalNote.c.rawValue],
-                "Expected score on string \(string)")
+                            "Expected score on string \(string)")
         }
     }
 
@@ -417,7 +417,7 @@ final class ProgressViewModelTests: XCTestCase {
 
         for note in MusicalNote.allCases {
             XCTAssertNotNil(vm.scoreGrid[1][note.rawValue],
-                "Expected score for note \(note) on string 1")
+                            "Expected score for note \(note) on string 1")
         }
     }
 
@@ -438,7 +438,6 @@ final class ProgressViewModelTests: XCTestCase {
         await vm.load()
         await vm.load()
 
-        // Grid should only have one score for (A, 1)
         XCTAssertEqual(vm.scoreGrid[1][MusicalNote.a.rawValue]?.totalAttempts, 10)
         XCTAssertEqual(vm.attemptedCells, 1)
     }
@@ -451,5 +450,100 @@ final class ProgressViewModelTests: XCTestCase {
         try seedSession(correct: 10, total: 20, sessionRepo: sessionRepo)
         await vm.load()
         XCTAssertEqual(vm.recentSessions.count, 1)
+    }
+    // MARK: - Accuracy Trend
+
+    func test_accuracyTrend_emptyStore_isEmpty() async throws {
+        let vm = makeVM(container: container)
+        await vm.load()
+        XCTAssertTrue(vm.accuracyTrend.isEmpty)
+    }
+
+    func test_accuracyTrend_singleSession_producesOnePoint() async throws {
+        try seedSession(correct: 8, total: 10, secondsAgo: 0, sessionRepo: sessionRepo)
+        let vm = makeVM(container: container)
+        await vm.load()
+        XCTAssertEqual(vm.accuracyTrend.count, 1)
+    }
+
+    func test_accuracyTrend_accuracy_isCorrectForSingleSession() async throws {
+        try seedSession(correct: 8, total: 10, secondsAgo: 0, sessionRepo: sessionRepo)
+        let vm = makeVM(container: container)
+        await vm.load()
+        let point = try XCTUnwrap(vm.accuracyTrend.first)
+        XCTAssertEqual(point.accuracy, 0.8, accuracy: 0.001)
+    }
+
+    func test_accuracyTrend_twoSessionsSameDay_averagedIntoOnePoint() async throws {
+        // Both sessions are "today" (secondsAgo < 86400)
+        try seedSession(correct: 10, total: 10, secondsAgo: 100,  sessionRepo: sessionRepo)
+        try seedSession(correct: 0,  total: 10, secondsAgo: 200,  sessionRepo: sessionRepo)
+        let vm = makeVM(container: container)
+        await vm.load()
+        // Two sessions on the same day → one data point with averaged accuracy (50%)
+        XCTAssertEqual(vm.accuracyTrend.count, 1)
+        let point = try XCTUnwrap(vm.accuracyTrend.first)
+        XCTAssertEqual(point.accuracy, 0.5, accuracy: 0.001)
+        XCTAssertEqual(point.sessionCount, 2)
+    }
+
+    func test_accuracyTrend_twoSessionsDifferentDays_produceTwoPoints() async throws {
+        try seedSession(correct: 8, total: 10, secondsAgo: 0,     sessionRepo: sessionRepo)
+        try seedSession(correct: 6, total: 10, secondsAgo: 86500, sessionRepo: sessionRepo) // ~1 day ago
+        let vm = makeVM(container: container)
+        await vm.load()
+        XCTAssertEqual(vm.accuracyTrend.count, 2)
+    }
+
+    func test_accuracyTrend_isSortedByDateAscending() async throws {
+        for i in stride(from: 4, through: 0, by: -1) {
+            try seedSession(correct: 5, total: 10,
+                            secondsAgo: Double(i) * 86500,
+                            sessionRepo: sessionRepo)
+        }
+        let vm = makeVM(container: container)
+        await vm.load()
+        let dates = vm.accuracyTrend.map(\.date)
+        XCTAssertEqual(dates, dates.sorted())
+    }
+
+    func test_accuracyTrend_cappedAt30Days() async throws {
+        // Seed 35 sessions on different days
+        for i in 0..<35 {
+            try seedSession(correct: 5, total: 10,
+                            secondsAgo: Double(i) * 86500,
+                            sessionRepo: sessionRepo)
+        }
+        let vm = makeVM(container: container)
+        await vm.load()
+        XCTAssertLessThanOrEqual(vm.accuracyTrend.count, 30)
+    }
+
+    func test_buildAccuracyTrend_zeroAttemptSessions_areExcluded() {
+        let zeroAttempt = Session(focusMode: .fullFretboard, gameMode: .untimed)
+        zeroAttempt.isCompleted = true
+        zeroAttempt.attemptCount = 0
+        let result = ProgressViewModel.buildAccuracyTrend(from: [zeroAttempt])
+        XCTAssertTrue(result.isEmpty)
+    }
+
+    // MARK: - UserSettings: defaultSessionLength
+
+    func test_userSettings_defaultSessionLength_isCorrect() {
+        let settings = UserSettings()
+        XCTAssertEqual(settings.defaultSessionLength, 20)
+    }
+
+    func test_userSettings_defaultSessionLength_canBeChanged() {
+        let settings = UserSettings()
+        settings.defaultSessionLength = 40
+        XCTAssertEqual(settings.defaultSessionLength, 40)
+    }
+
+    // MARK: - UserSettings: hapticFeedbackEnabled
+
+    func test_userSettings_hapticFeedback_defaultsToTrue() {
+        let settings = UserSettings()
+        XCTAssertTrue(settings.hapticFeedbackEnabled)
     }
 }

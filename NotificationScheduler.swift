@@ -1,5 +1,5 @@
 // NotificationScheduler.swift
-// FretMaster — App Layer
+// FretShed — App Layer
 //
 // Manages UNUserNotificationCenter authorization and scheduling for
 // practice reminders and streak reminders. Called whenever the user
@@ -12,7 +12,7 @@
 import UserNotifications
 import OSLog
 
-private let logger = Logger(subsystem: "com.jpm.fretmaster", category: "NotificationScheduler")
+private let logger = Logger(subsystem: "com.jpm.fretshed", category: "NotificationScheduler")
 
 // MARK: - NotificationSnapshot
 
@@ -34,8 +34,8 @@ private struct NotificationSnapshot: Sendable {
 }
 
 private enum NotificationID {
-    static let practiceReminder = "com.jpm.fretmaster.reminder.practice"
-    static let streakReminder   = "com.jpm.fretmaster.reminder.streak"
+    static let practiceReminder = "com.jpm.fretshed.reminder.practice"
+    static let streakReminder   = "com.jpm.fretshed.reminder.streak"
 }
 
 // MARK: - NotificationScheduler
@@ -69,14 +69,14 @@ public final class NotificationScheduler: Sendable {
         }
     }
 
-    /// Cancels every FretMaster notification. Call on sign-out or data reset.
+    /// Cancels every FretShed notification. Call on sign-out or data reset.
     public func cancelAll() async {
         UNUserNotificationCenter.current()
             .removePendingNotificationRequests(withIdentifiers: [
                 NotificationID.practiceReminder,
                 NotificationID.streakReminder
             ])
-        logger.info("Cancelled all FretMaster notifications")
+        logger.info("Cancelled all FretShed notifications")
     }
 
     // MARK: - Authorization
@@ -117,7 +117,7 @@ public final class NotificationScheduler: Sendable {
 
         let content = UNMutableNotificationContent()
         content.title = "Time to Practice 🎸"
-        content.body = "Keep your streak going — open FretMaster and play a few notes."
+        content.body = "Keep your streak going — open FretShed and play a few notes."
         content.sound = .default
 
         var components = DateComponents()

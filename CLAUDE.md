@@ -58,7 +58,7 @@ FretShed includes a full audio calibration system that measures the user's envir
 
 ### Signal Processing Chain (in order)
 ```
-HPF (60Hz Butterworth) → Adaptive Noise Gate → AGC (target −18 dBFS) → Spectral Flatness Gate → AccelerateYIN + HPS Verification → Note Decision (consecutive frame gate + string-aware frequency constraint)
+HPF (60Hz Butterworth) → Adaptive Noise Gate → AGC (target −18 dBFS) → Low-Frequency Emphasis (input-source-aware) → Crest Factor + Spectral Subtraction (adaptive noise removal) → Tonal Signal Gate (crest factor OR harmonic regularity OR spectral flatness) → AccelerateYIN + HPS Verification + Harmonic Regularity → Note Decision (consecutive frame gate + string-aware frequency constraint)
 ```
 
 ### Input Sources Detected
@@ -178,7 +178,11 @@ QuizView `.task` loads `calibrationRepository.activeProfile()` and pre-seeds:
 
 **Pitch Detection Enhancements (F23) — IMPLEMENTED.** Five improvements to reduce false detections: (1) Spectral flatness gate rejects broadband string slide noise; (2) Consecutive frame gate requires 3 frames of same note; (3) HPF lowered to 60 Hz for better low-string fundamental capture; (4) String-aware frequency constraints narrow detection to target string's Hz range during quiz; (5) HPS octave verification cross-checks YIN with Harmonic Product Spectrum for low-string octave correction.
 
-**All BUGLOG items resolved** except Q15 (open — single string octave acceptance). All feature ideas (F1–F23) complete.
+**DSP Enhancements (F24) — IMPLEMENTED.** Two signal processing improvements: (1) Low-frequency emphasis — input-source-aware 1st-order IIR low-shelf boost below ~250 Hz, compensates MEMS mic roll-off on wound strings (+6 dB built-in mic, +3.5 dB wired headset, off for USB); (2) Adaptive spectral subtraction — captures running noise spectrum estimate (EMA, alpha=0.05) during gate-closed silence periods, subtracts 1.5× over-subtracted noise from power spectrum with spectral flooring before YIN analysis, extends usable detection from "quiet room" to "room with background noise."
+
+**Distortion Tolerance (F25) — IMPLEMENTED.** Three improvements for distorted guitar signals: (1) Crest factor bypass — `vDSP_maxmgv/vDSP_rmsqv` computes peak/RMS ratio; crest < 2.0 indicates clipping (distortion pedal), bypasses flatness gate; (2) Input-source-aware flatness threshold — USB interface relaxed to 0.50 (vs 0.35 for mic/headset) since distortion pedals are only relevant through interfaces; (3) Harmonic spacing regularity — sums power at first 10 integer multiples of HPS fundamental (±1 bin), divides by total power; ratio > 0.3 indicates tonal signal (even if spectrally flat from distortion), bypasses flatness gate. Three-way tonal signal check: `crestFactor < 2.0 || harmonicReg > 0.3 || flatness < threshold`.
+
+**All BUGLOG items resolved** except Q15 (open — single string octave acceptance). All feature ideas (F1–F25) complete.
 
 **Next task:** Task 3.7 (onboarding device test), then Phase 4.
 
@@ -197,7 +201,7 @@ QuizView `.task` loads `calibrationRepository.activeProfile()` and pre-seeds:
 
 ## Known Issues (from BUGLOG.md)
 - **Q15 (Open):** Single String mode should accept either octave of the target note as correct, overriding the exact note setting.
-All other device-testing bugs are resolved. All feature ideas (F1–F23) are complete.
+All other device-testing bugs are resolved. All feature ideas (F1–F25) are complete.
 
 ---
 

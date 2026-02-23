@@ -1,11 +1,15 @@
 // OnboardingView.swift
 // FretShed — App Layer
 //
-// First-launch onboarding: 4 screens.
+// First-launch onboarding: 3 screens.
 //   0 — Welcome
 //   1 — How it works
 //   2 — Mic permission (explain WHY before triggering system prompt)
-//   3 — Audio test   (live pitch detection)
+//
+// The audio test screen was removed — the full Audio Calibration flow
+// (accessible from the Practice tab's "Do This First" card) provides a
+// better first-run audio experience with noise measurement and per-string
+// detection testing.
 //
 // Wired via FretShedApp: shown as fullScreenCover when !hasCompletedOnboarding.
 // Setting hasCompletedOnboarding = true (via @AppStorage) dismisses the cover.
@@ -19,8 +23,9 @@ struct OnboardingView: View {
     private var hasCompletedOnboarding: Bool = false
 
     @State private var currentPage = 0
-    @State private var detector = PitchDetector()
     @State private var hasRequestedMicPermission = false
+
+    private let pageCount = 3
 
     var body: some View {
         ZStack {
@@ -30,7 +35,6 @@ struct OnboardingView: View {
                 welcomePage.tag(0)
                 howItWorksPage.tag(1)
                 micPermissionPage.tag(2)
-                audioTestPage.tag(3)
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
             .animation(.easeInOut(duration: 0.3), value: currentPage)
@@ -56,23 +60,13 @@ struct OnboardingView: View {
                 Spacer()
             }
         }
-        .onChange(of: currentPage) { _, new in
-            if new == 3 {
-                Task { try? await detector.start() }
-            } else if new < 3 {
-                Task { await detector.stop() }
-            }
-        }
-        .onDisappear {
-            Task { await detector.stop() }
-        }
     }
 
     // MARK: - Page Indicator
 
     private var pageIndicator: some View {
         HStack(spacing: 6) {
-            ForEach(0..<4) { i in
+            ForEach(0..<pageCount, id: \.self) { i in
                 Capsule()
                     .fill(i == currentPage
                           ? DesignSystem.Colors.primary
@@ -192,8 +186,8 @@ struct OnboardingView: View {
             Spacer()
 
             if hasRequestedMicPermission {
-                primaryButton("Continue") {
-                    withAnimation { currentPage = 3 }
+                primaryButton("Let's Go!") {
+                    complete()
                 }
                 .padding(.bottom, 48)
             } else {
@@ -202,67 +196,6 @@ struct OnboardingView: View {
                 }
                 .padding(.bottom, 48)
             }
-        }
-    }
-
-    // MARK: - Screen 3: Audio test
-
-    private var audioTestPage: some View {
-        VStack(spacing: 0) {
-            Spacer()
-
-            Text("Let's test it")
-                .font(.system(size: 28, weight: .black, design: .rounded))
-                .padding(.bottom, DesignSystem.Spacing.sm)
-
-            Text("Play any open string on your guitar.")
-                .font(.body)
-                .foregroundStyle(.secondary)
-                .padding(.bottom, DesignSystem.Spacing.xl)
-
-            // Live note display
-            ZStack {
-                RoundedRectangle(cornerRadius: DesignSystem.Radius.xl)
-                    .fill(DesignSystem.Colors.surface)
-                    .frame(height: 160)
-
-                if let note = detector.detectedNote {
-                    VStack(spacing: DesignSystem.Spacing.xs) {
-                        Text(note.sharpName)
-                            .font(DesignSystem.Typography.noteDisplay)
-                            .foregroundStyle(DesignSystem.Colors.primary)
-                            .contentTransition(.numericText())
-                        Text("Got it!")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
-                    .transition(.scale.combined(with: .opacity))
-                } else {
-                    VStack(spacing: DesignSystem.Spacing.sm) {
-                        Image(systemName: "waveform")
-                            .font(.system(size: 36))
-                            .foregroundStyle(.quaternary)
-                            .symbolEffect(.variableColor.iterative,
-                                          value: detector.isRunning)
-                        Text(detector.isRunning ? "Listening…" : "Starting…")
-                            .font(.subheadline)
-                            .foregroundStyle(.tertiary)
-                    }
-                }
-            }
-            .animation(.spring(duration: 0.3), value: detector.detectedNote != nil)
-            .padding(.horizontal, DesignSystem.Spacing.xl)
-
-            InputLevelBar(level: detector.inputLevel)
-                .padding(.top, DesignSystem.Spacing.md)
-                .padding(.horizontal, 40)
-
-            Spacer()
-
-            primaryButton(detector.detectedNote != nil ? "That's it!" : "Skip for now") {
-                complete()
-            }
-            .padding(.bottom, 48)
         }
     }
 
@@ -321,12 +254,10 @@ struct OnboardingView: View {
                     continuation.resume(returning: granted)
                 }
             }
-            withAnimation { currentPage = 3 }
         }
     }
 
     private func complete() {
-        Task { await detector.stop() }
         hasCompletedOnboarding = true
     }
 }

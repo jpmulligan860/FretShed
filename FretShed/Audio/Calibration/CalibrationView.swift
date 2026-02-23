@@ -47,11 +47,16 @@ struct CalibrationView: View {
             }
             .interactiveDismissDisabled()
         }
-        .onAppear {
+        .task {
+            // Detect input source immediately so the welcome screen
+            // shows the correct device name (e.g. "USB Audio Interface").
+            engine.detectInputSource()
+
             if isRecalibration {
                 engine = CalibrationEngine(isRecalibration: true)
+                engine.detectInputSource()
                 currentPage = 1
-                Task { await engine.startSilenceMeasurement() }
+                await engine.startSilenceMeasurement()
             }
         }
         .onChange(of: engine.phase) { _, newPhase in

@@ -20,13 +20,36 @@ public enum AudioInputSource: String, Codable, Sendable {
     case unknown        = "unknown"
 
     /// Detects the current input source from AVAudioSession route info.
+    /// Checks all inputs and prioritises USB over other external sources,
+    /// with a name-based fallback for USB interfaces that register as
+    /// headset devices (e.g. Boss Katana:GO).
     @MainActor
     public static func detectCurrent() -> AudioInputSource {
         let route = AVAudioSession.sharedInstance().currentRoute
-        guard let input = route.inputs.first else { return .unknown }
+        let inputs = route.inputs
+        guard !inputs.isEmpty else { return .unknown }
+
+        // First pass: look for an explicit USB audio port.
+        for input in inputs {
+            if input.portType == .usbAudio { return .usbInterface }
+        }
+
+        // Second pass: some USB interfaces (e.g. Boss Katana:GO) register
+        // as .headsetMic. Check port name for USB-related keywords.
+        let usbKeywords = ["usb", "interface", "katana", "scarlett",
+                           "focusrite", "presonus", "steinberg",
+                           "audient", "motu", "apollo", "id4", "id14"]
+        for input in inputs where input.portType != .builtInMic {
+            let name = input.portName.lowercased()
+            if usbKeywords.contains(where: { name.contains($0) }) {
+                return .usbInterface
+            }
+        }
+
+        // Third pass: classify by port type.
+        let input = inputs[0]
         switch input.portType {
         case .builtInMic:                          return .builtInMic
-        case .usbAudio:                            return .usbInterface
         case .bluetoothHFP, .bluetoothA2DP, .bluetoothLE: return .bluetoothAudio
         case .headsetMic:                          return .wiredHeadset
         default:                                   return .unknown

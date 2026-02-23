@@ -221,10 +221,9 @@ struct MetroDroneView: View {
             }
 
             // Note Division
-            HStack {
+            VStack(alignment: .leading, spacing: 6) {
                 Text("Note Division")
                     .font(.subheadline.weight(.medium))
-                Spacer()
                 HStack(spacing: 4) {
                     ForEach(NoteSubdivision.allCases, id: \.self) { div in
                         Button {
@@ -232,7 +231,7 @@ struct MetroDroneView: View {
                         } label: {
                             Text(div.label)
                                 .font(.subheadline.weight(.semibold))
-                                .frame(minWidth: 44, minHeight: 32)
+                                .frame(maxWidth: .infinity, minHeight: 32)
                                 .foregroundStyle(vm.subdivision == div ? .white : .primary)
                                 .background(
                                     vm.subdivision == div

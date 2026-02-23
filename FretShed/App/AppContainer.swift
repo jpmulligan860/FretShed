@@ -43,37 +43,35 @@ public final class AppContainer: ObservableObject {
     /// The pre-computed fretboard map (standard tuning, 0–24 frets).
     public let fretboardMap: FretboardMap
 
-    // MARK: Initializer
+    // MARK: Async Factory
 
-    /// Creates the full production dependency graph.
-    public init() {
-        // 1. Build the model container (local in DEBUG, CloudKit in RELEASE)
-        let container: ModelContainer
+    /// Creates the production dependency graph asynchronously.
+    /// ModelContainer creation runs off the main thread so the launch screen
+    /// appears immediately instead of blocking for seconds on disk I/O.
+    public static func create() async -> AppContainer {
+        let mc: ModelContainer
         do {
-            container = try makeModelContainer(inMemory: false)
+            mc = try await Task.detached(priority: .userInitiated) {
+                try makeModelContainer(inMemory: false)
+            }.value
         } catch {
             logger.critical("Failed to create ModelContainer: \(error). Using in-memory fallback.")
-            // swiftlint:disable:next force_try
-            // Safe: in-memory store cannot fail — no disk I/O or CloudKit involved.
-            container = try! makeModelContainer(inMemory: true)
+            mc = try! makeModelContainer(inMemory: true)
         }
-        self.modelContainer = container
+        return AppContainer(modelContainer: mc)
+    }
 
-        // 2. Wire up repositories — use the container's mainContext so that
-        //    all repository I/O goes through the SAME context that SwiftUI's
-        //    .modelContainer() modifier uses.  Creating a separate
-        //    ModelContext(container) causes WAL-level contention with
-        //    SwiftUI's auto-save, which can freeze fetch() on iOS 26.
-        let sharedContext = container.mainContext
+    // MARK: Initializers
+
+    private init(modelContainer: ModelContainer) {
+        self.modelContainer = modelContainer
+        let sharedContext = modelContainer.mainContext
         self.attemptRepository  = SwiftDataAttemptRepository(context: sharedContext)
         self.sessionRepository  = SwiftDataSessionRepository(context: sharedContext)
         self.masteryRepository  = SwiftDataMasteryRepository(context: sharedContext)
         self.settingsRepository = SwiftDataSettingsRepository(context: sharedContext)
         self.calibrationRepository = SwiftDataCalibrationRepository(context: sharedContext)
-
-        // 3. Pre-compute domain objects
         self.fretboardMap = FretboardMap()
-
         logger.info("AppContainer initialised")
     }
 

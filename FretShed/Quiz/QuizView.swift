@@ -182,12 +182,18 @@ public struct QuizView: View {
             if !vm.settings.tapModeEnabled && !vm.settings.tapToAnswerEnabled {
                 detector.confidenceThreshold = vm.settings.confidenceThreshold
                 detector.forceBuiltInMic = vm.settings.forceBuiltInMic
-                // Apply calibration profile to pre-seed the detector
+                // Apply calibration profile to pre-seed the detector.
+                // Pre-seed noise floor (helps gate respond immediately) and
+                // input source (drives input-source-aware processing).
+                // AGC is NOT pre-seeded — it starts at the default (2.0) and
+                // adapts naturally, matching what calibration does. Pre-seeding
+                // AGC caused level display and detection problems because the
+                // calibrated value (captured after playing 6 strings) was often
+                // too low for the quiz context.
                 if let profile = try? container.calibrationRepository.activeProfile() {
                     let gateTrimMultiplier = pow(10.0, profile.userGateTrimDB / 20.0)
                     detector.calibratedNoiseFloor = profile.measuredNoiseFloorRMS * gateTrimMultiplier
-                    let gainTrimMultiplier = pow(10.0, profile.userGainTrimDB / 20.0)
-                    detector.calibratedAGCGain = profile.measuredAGCGain * gainTrimMultiplier
+                    detector.calibratedInputSource = profile.inputSource
                 }
                 try? await detector.start()
             }
@@ -366,11 +372,23 @@ public struct QuizView: View {
                 onFretTapped: vm.settings.tapToAnswerEnabled && vm.phase == .active ? { string, fret in
                     guard let note = container.fretboardMap.note(string: string, fret: fret) else { return }
                     if vm.settings.defaultNoteAcceptanceMode == .exactString,
-                       let q = vm.currentQuestion,
-                       string != q.string || fret != q.fret {
-                        wrongAnswerPosition = (string, fret)
-                        let wrong = MusicalNote(rawValue: (q.note.rawValue + 1) % 12)!
-                        vm.submit(detectedNote: wrong)
+                       let q = vm.currentQuestion {
+                        // In Single String mode, accept any fret on the correct
+                        // string that produces the same note name (e.g. A at fret 0
+                        // and fret 12 are both correct). Overrides exact fret check.
+                        let isCorrect: Bool
+                        if vm.session.focusMode == .singleString {
+                            isCorrect = string == q.string && note == q.note
+                        } else {
+                            isCorrect = string == q.string && fret == q.fret
+                        }
+                        if !isCorrect {
+                            wrongAnswerPosition = (string, fret)
+                            let wrong = MusicalNote(rawValue: (q.note.rawValue + 1) % 12)!
+                            vm.submit(detectedNote: wrong)
+                        } else {
+                            vm.submit(detectedNote: note)
+                        }
                     } else {
                         vm.submit(detectedNote: note)
                     }

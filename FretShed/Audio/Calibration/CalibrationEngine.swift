@@ -6,6 +6,7 @@
 //
 // Pattern matches QuizViewModel: @Observable, @MainActor, phases as enum.
 
+import AVFoundation
 import Foundation
 import OSLog
 
@@ -72,9 +73,27 @@ public final class CalibrationEngine {
 
     public init(isRecalibration: Bool = false) {
         self.isRecalibration = isRecalibration
-        self.detectedInputSource = AudioInputSource.detectCurrent()
         // Pre-initialise all strings as not-yet-tested
         for s in 1...6 { stringResults[s] = false }
+    }
+
+    // MARK: - Input Source Detection
+
+    /// Activates the audio session (if needed) and detects the input source.
+    /// Call from the view's `.task` so the welcome screen shows the correct
+    /// device name. Safe to call multiple times — only activates once.
+    public func detectInputSource() {
+        do {
+            let session = AVAudioSession.sharedInstance()
+            try session.setCategory(.playAndRecord,
+                                    mode: .measurement,
+                                    options: [.defaultToSpeaker, .mixWithOthers])
+            try session.setActive(true, options: .notifyOthersOnDeactivation)
+        } catch {
+            logger.error("Failed to activate audio session for input detection: \(error)")
+        }
+        detectedInputSource = AudioInputSource.detectCurrent()
+        logger.info("Detected input source: \(self.detectedInputSource.displayName)")
     }
 
     // MARK: - Start Silence Measurement
@@ -85,6 +104,13 @@ public final class CalibrationEngine {
     public func startSilenceMeasurement() async {
         // Start detector if not already running
         if !detector.isRunning {
+            // Ensure input source is detected before starting the detector,
+            // so the tap closure captures the correct input source.
+            if detectedInputSource == .unknown {
+                detectInputSource()
+            }
+            detector.calibratedInputSource = detectedInputSource
+
             do {
                 try await detector.start()
             } catch {

@@ -461,13 +461,13 @@ struct PracticeHomeView: View {
 
     @ViewBuilder
     private var quickStartCards: some View {
-        QuickModeCard(mode: .singleNote, label: "One Note Full Fretboard", onTap: {
+        QuickModeCard(mode: .singleNote, label: "Same Note Full Fretboard", onTap: {
             quickLaunch(focusMode: .singleNote)
         })
-        QuickModeCard(mode: .singleString, label: "Random Note Random String", onTap: {
+        QuickModeCard(mode: .singleString, label: "Single String Workout", onTap: {
             quickLaunchRandomString()
         })
-        QuickModeCard(mode: .fullFretboard, onTap: {
+        QuickModeCard(mode: .fullFretboard, label: "Random Notes Full Fretboard", onTap: {
             quickLaunch(focusMode: .fullFretboard)
         })
     }

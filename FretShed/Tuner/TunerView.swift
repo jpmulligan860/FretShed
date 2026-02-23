@@ -205,7 +205,7 @@ public struct TunerView: View {
         let c = detector.centsDeviation
         let sign = c >= 0 ? "+" : ""
         return Text("\(sign)\(Int(c.rounded())) ¢")
-            .font(.system(size: 18, weight: .semibold, design: .monospaced))
+            .font(.system(size: 22, weight: .semibold, design: .monospaced))
             .foregroundStyle(tuningColor)
             .contentTransition(.numericText())
             .opacity(detector.detectedNote != nil ? 1 : 0)
@@ -216,10 +216,10 @@ public struct TunerView: View {
     private var controls: some View {
         HStack {
             Image(systemName: "tuningfork")
-                .font(.caption)
+                .font(.subheadline)
                 .foregroundStyle(.secondary)
             Text("A4 = 440 Hz")
-                .font(.caption)
+                .font(.subheadline)
                 .foregroundStyle(.secondary)
         }
     }
@@ -396,11 +396,11 @@ private final class StrobeAnimator: @unchecked Sendable {
 private struct CentsScale: View {
     var body: some View {
         HStack {
-            Text("-50¢").font(.system(size: 9)).foregroundStyle(.secondary)
+            Text("-50¢").font(.caption).foregroundStyle(.secondary)
             Spacer()
-            Text("0").font(.system(size: 9, weight: .bold)).foregroundStyle(.green)
+            Text("0").font(.caption.weight(.bold)).foregroundStyle(.green)
             Spacer()
-            Text("+50¢").font(.system(size: 9)).foregroundStyle(.secondary)
+            Text("+50¢").font(.caption).foregroundStyle(.secondary)
         }
     }
 }
@@ -444,12 +444,12 @@ struct InputLevelBar: View {
                 // Labels
                 if level < 0.05 {
                     Text("TOO QUIET")
-                        .font(.system(size: 9, weight: .semibold))
+                        .font(.caption.weight(.semibold))
                         .foregroundStyle(.secondary)
                         .frame(maxWidth: .infinity)
                 } else if level > 0.95 {
                     Text("CLIP")
-                        .font(.system(size: 9, weight: .bold))
+                        .font(.caption.weight(.bold))
                         .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)
                 }

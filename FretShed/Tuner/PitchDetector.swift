@@ -93,6 +93,10 @@ public final class PitchDetector {
     /// to narrow detection to the target string's frequency band.
     public var expectedFrequencyRange: ClosedRange<Double>? = nil
 
+    /// Input source from calibration profile. Used for input-source-aware
+    /// processing: built-in mic gets low-frequency emphasis, USB stays flat.
+    public var calibratedInputSource: AudioInputSource? = nil
+
     /// Current noise floor as reported by the realtime tap (read-only for UI).
     public private(set) var currentNoiseFloor: Float = 0.01
 
@@ -215,6 +219,7 @@ public final class PitchDetector {
         let playbackTS = MetroDroneEngine.lastPlaybackTime
         let calNoiseFloor = calibratedNoiseFloor
         let calAGCGain = calibratedAGCGain
+        let calInputSource = calibratedInputSource
         let tapClosure = makeTapClosure(
             isStopping: isStopping,
             confidenceThreshold: threshold,
@@ -222,7 +227,8 @@ public final class PitchDetector {
             continuation: pitchContinuation,
             playbackTimestamp: playbackTS,
             calibratedNoiseFloor: calNoiseFloor,
-            calibratedAGCGain: calAGCGain
+            calibratedAGCGain: calAGCGain,
+            calibratedInputSource: calInputSource
         )
         inputNode.installTap(onBus: 0, bufferSize: bufferSize, format: tapFormat, block: tapClosure)
 
@@ -278,6 +284,13 @@ public final class PitchDetector {
                     // Publish realtime signal state for calibration / diagnostics.
                     self.currentNoiseFloor = noiseFloor
                     self.currentAGCGain = agcGain
+
+                    // Always update level indicator so the user sees their
+                    // signal even when the frequency is out of range or the
+                    // consecutive gate hasn't been met yet.
+                    smoothedLevel = 0.3 * Double(rmsLevel) + 0.7 * smoothedLevel
+                    self.inputLevel = smoothedLevel
+
                     // Median filter: detect note changes and maintain sliding window
                     if !freqHistory.isEmpty {
                         let currentMedian = freqHistory.sorted()[freqHistory.count / 2]
@@ -312,9 +325,6 @@ public final class PitchDetector {
                         consecutiveNoteCount = 1
                         lastConsecutiveNote = note
                     }
-
-                    smoothedLevel = 0.3 * Double(rmsLevel) + 0.7 * smoothedLevel
-                    self.inputLevel = smoothedLevel
 
                     guard consecutiveNoteCount >= consecutiveFrameThreshold else {
                         // Still building up — keep previous note on screen via hold.
@@ -363,7 +373,7 @@ public final class PitchDetector {
             }
         }
 
-        // 8. Handle audio route changes (headphones unplugged, BT disconnected)
+        // 8. Handle audio route changes (device plugged/unplugged)
         NotificationCenter.default.addObserver(
             forName: AVAudioSession.routeChangeNotification,
             object: nil,
@@ -372,10 +382,13 @@ public final class PitchDetector {
             guard let self,
                   let reasonValue = notification.userInfo?[AVAudioSessionRouteChangeReasonKey] as? UInt,
                   let reason = AVAudioSession.RouteChangeReason(rawValue: reasonValue),
-                  reason == .oldDeviceUnavailable else { return }
+                  reason == .oldDeviceUnavailable || reason == .newDeviceAvailable else { return }
             Task { @MainActor [weak self] in
                 guard let self, self.isRunning else { return }
-                logger.info("Audio route changed — restarting engine")
+                // Re-detect input source for the new route.
+                let newSource = AudioInputSource.detectCurrent()
+                self.calibratedInputSource = newSource
+                logger.info("Audio route changed (\(reason == .newDeviceAvailable ? "new device" : "device removed")) — input: \(newSource.displayName), restarting engine")
                 self.engine.inputNode.removeTap(onBus: 0)
                 self.engine.stop()
                 self.engine = AVAudioEngine()
@@ -393,7 +406,8 @@ public final class PitchDetector {
                     continuation: pitchContinuation,
                     playbackTimestamp: playbackTS,
                     calibratedNoiseFloor: calNoiseFloor,
-                    calibratedAGCGain: calAGCGain
+                    calibratedAGCGain: calAGCGain,
+                    calibratedInputSource: newSource
                 )
                 inputNode.installTap(onBus: 0, bufferSize: self.bufferSize, format: fmt, block: newTap)
                 try? self.engine.start()
@@ -506,6 +520,8 @@ private final class AccelerateYIN: @unchecked Sendable {
     private let hannWindow: UnsafeMutablePointer<Float>   // windowSize
     private let windowedBuf: UnsafeMutablePointer<Float>  // windowSize
     private let logBuf: UnsafeMutablePointer<Float>       // fftN/2 (scratch for spectral flatness)
+    private let noiseSpectrum: UnsafeMutablePointer<Float> // fftN/2 (running noise estimate for spectral subtraction)
+    private var noiseFrameCount: Int = 0
 
     init(windowSize: Int = 4096) {
         self.windowSize = windowSize
@@ -527,6 +543,7 @@ private final class AccelerateYIN: @unchecked Sendable {
         vDSP_hann_window(hannWindow, vDSP_Length(windowSize), Int32(vDSP_HANN_NORM))
         windowedBuf = .allocate(capacity: windowSize); windowedBuf.initialize(repeating: 0, count: windowSize)
         logBuf = .allocate(capacity: halfFFT); logBuf.initialize(repeating: 0, count: halfFFT)
+        noiseSpectrum = .allocate(capacity: halfFFT); noiseSpectrum.initialize(repeating: 0, count: halfFFT)
     }
 
     deinit {
@@ -541,6 +558,7 @@ private final class AccelerateYIN: @unchecked Sendable {
         hannWindow.deallocate()
         windowedBuf.deinitialize(count: windowSize); windowedBuf.deallocate()
         logBuf.deinitialize(count: fftN / 2); logBuf.deallocate()
+        noiseSpectrum.deinitialize(count: fftN / 2); noiseSpectrum.deallocate()
         vDSP_destroy_fftsetup(fftSetup)
     }
 
@@ -548,7 +566,7 @@ private final class AccelerateYIN: @unchecked Sendable {
         in samples: UnsafePointer<Float>,
         count: Int,
         sampleRate: Double
-    ) -> (frequency: Double, confidence: Double, spectralFlatness: Float)? {
+    ) -> (frequency: Double, confidence: Double, spectralFlatness: Float, harmonicRegularity: Float)? {
         let n = min(count, windowSize)
         guard n >= windowSize else { return nil }
         let halfFFT = fftN / 2
@@ -579,6 +597,21 @@ private final class AccelerateYIN: @unchecked Sendable {
         // Power spectrum: |FFT(x)|^2
         vDSP_zvmags(&splitComplex, 1, realp2, 1, vDSP_Length(halfFFT))
 
+        // --- Spectral subtraction: remove noise floor estimate ---
+        // Subtracts the running noise spectrum (captured during silence) from
+        // the power spectrum, improving SNR in noisy environments. Uses 1.5×
+        // over-subtraction to suppress musical noise artifacts, with spectral
+        // flooring to prevent negative power values.
+        if noiseFrameCount > 0 {
+            var overSub: Float = 1.5
+            vDSP_vsmul(noiseSpectrum, 1, &overSub, logBuf, 1, vDSP_Length(halfFFT))
+            // vDSP_vsub: C = B - A → realp2 = realp2 - scaled noise
+            vDSP_vsub(logBuf, 1, realp2, 1, realp2, 1, vDSP_Length(halfFFT))
+            // Floor at zero to prevent negative power values
+            vDSP_vclr(logBuf, 1, vDSP_Length(halfFFT))
+            vDSP_vmax(realp2, 1, logBuf, 1, realp2, 1, vDSP_Length(halfFFT))
+        }
+
         // --- Spectral Flatness (before inverse FFT overwrites realp2) ---
         // Tonal signals ~0.01–0.15; string slide noise ~0.3–0.8.
         var sfArithMean: Float = 0
@@ -598,8 +631,11 @@ private final class AccelerateYIN: @unchecked Sendable {
 
         // --- HPS (Harmonic Product Spectrum) peak detection ---
         // Multiply spectrum with 2× and 3× downsampled versions to find
-        // the true fundamental. Helps correct octave errors on low strings
-        // where harmonics are stronger than the fundamental.
+        // the true fundamental. 3-term HPS is robust — it only needs the
+        // first 3 harmonics to have non-zero power. Higher-order HPS (4+
+        // terms) fails when weak upper harmonics zero out the product.
+        // The HPS-guided correction in Step 3c handles ratios up to 5:1
+        // using the 3-term result as the cross-check.
         let hpsMinBin = max(1, Int(75.0 * Double(fftN) / sampleRate))
         let hpsMaxBin = min(halfFFT / 3 - 1, Int(700.0 * Double(fftN) / sampleRate))
         var hpsFundamentalHz: Double = 0
@@ -612,6 +648,31 @@ private final class AccelerateYIN: @unchecked Sendable {
             vDSP_maxvi(logBuf, 1, &hpsPeakVal, &hpsPeakIdx, vDSP_Length(hpsMaxBin - hpsMinBin + 1))
             if hpsPeakVal > 0 {
                 hpsFundamentalHz = Double(Int(hpsPeakIdx) + hpsMinBin) * sampleRate / Double(fftN)
+            }
+        }
+
+        // --- Harmonic spacing regularity ---
+        // Measures what fraction of spectral energy sits at integer multiples
+        // of the HPS fundamental. Tonal signals (clean or distorted): 0.3–0.8.
+        // Broadband noise: < 0.05. Used to bypass the spectral flatness gate
+        // for distorted signals that are tonal but spectrally flat.
+        var harmonicRegularity: Float = 0
+        if hpsFundamentalHz > 0 {
+            let f0Bin = hpsFundamentalHz * Double(fftN) / sampleRate
+            var totalPower: Float = 0
+            vDSP_sve(realp2, 1, &totalPower, vDSP_Length(halfFFT))
+            if totalPower > 0 {
+                var harmonicPower: Float = 0
+                for h in 1...10 {
+                    let expectedBin = Int(f0Bin * Double(h))
+                    guard expectedBin < halfFFT - 1 else { break }
+                    let lo = max(0, expectedBin - 1)
+                    let hi = min(halfFFT - 1, expectedBin + 1)
+                    for b in lo...hi {
+                        harmonicPower += realp2[b]
+                    }
+                }
+                harmonicRegularity = harmonicPower / totalPower
             }
         }
 
@@ -678,31 +739,34 @@ private final class AccelerateYIN: @unchecked Sendable {
 
         guard bestTau > 0 else { return nil }
 
-        // --- Step 3b: Octave error correction ---
-        // The absolute-threshold search picks the FIRST CMND minimum, which can
-        // land on a harmonic period (τ₀/2 → 2× fundamental) — especially on the
-        // low E and A strings through a built-in microphone.
-        // Fix: check if double-tau also has a strong local minimum. If so, prefer
-        // the lower frequency (larger τ = true fundamental).
-        let doubleTau = bestTau * 2
-        if doubleTau < maxTau {
-            var dt = doubleTau
-            while dt + 1 < maxTau && cmndBuf[dt + 1] < cmndBuf[dt] { dt += 1 }
-            if cmndBuf[dt] < 0.35 { bestTau = dt }
-        }
+        // Save pre-correction CMND. When HPS-guided correction shifts
+        // bestTau to the fundamental, the fundamental's CMND can be higher
+        // (weaker) than the harmonic's. Use the better (lower) CMND for
+        // confidence so corrections aren't rejected by the threshold.
+        let preCorrectionCMND = cmndBuf[bestTau]
 
-        // --- Step 3c: HPS octave verification ---
-        // If YIN frequency is still ~2× the HPS fundamental after double-tau
-        // correction, HPS provides independent evidence the true fundamental
-        // is an octave lower. Apply correction with a relaxed CMND threshold.
+        // --- Step 3b: HPS-guided harmonic correction ---
+        // If YIN frequency is an integer multiple (2–5×) of the HPS
+        // fundamental, correct to the fundamental. HPS provides independent
+        // spectral evidence of the true fundamental, avoiding the blind
+        // sub-harmonic check (old Step 3b) which overcorrected correct
+        // detections: CMND naturally dips at integer multiples of the
+        // true period, so checking 2×tau without spectral confirmation
+        // pushed most notes down an octave — often below the string's
+        // frequency range, causing the frequency constraint to reject them.
         if hpsFundamentalHz > 0 {
             let yinFreq = sampleRate / Double(bestTau)
             let ratio = yinFreq / hpsFundamentalHz
-            if ratio > 1.8 && ratio < 2.2 {
-                let correctedTau = bestTau * 2
+            let roundedRatio = ratio.rounded()
+            if roundedRatio >= 2.0 && roundedRatio <= 5.0
+                && abs(ratio - roundedRatio) / roundedRatio < 0.15 {
+                let correctionMultiplier = Int(roundedRatio)
+                let correctedTau = bestTau * correctionMultiplier
                 if correctedTau < maxTau {
                     var ct = correctedTau
                     while ct + 1 < maxTau && cmndBuf[ct + 1] < cmndBuf[ct] { ct += 1 }
+                    // HPS cross-check allows a relaxed CMND threshold (0.50)
+                    // since the frequency is independently confirmed.
                     if cmndBuf[ct] < 0.50 {
                         bestTau = ct
                     }
@@ -723,8 +787,51 @@ private final class AccelerateYIN: @unchecked Sendable {
         }
 
         let frequency = sampleRate / interpolatedTau
-        let confidence = 1.0 - Double(min(cmndBuf[bestTau], 1.0))
-        return (frequency, confidence, spectralFlatness)
+        // Use the better (lower) CMND: the original detection or the
+        // corrected tau. This preserves high confidence when HPS-guided
+        // correction shifts from a strong harmonic to a weaker fundamental.
+        let bestCMND = min(cmndBuf[bestTau], preCorrectionCMND)
+        let confidence = 1.0 - Double(min(bestCMND, 1.0))
+        return (frequency, confidence, spectralFlatness, harmonicRegularity)
+    }
+
+    /// Captures the power spectrum of a silent frame and incorporates it
+    /// into the running noise estimate (EMA, alpha=0.05). Called during
+    /// gate-closed periods for adaptive spectral subtraction.
+    func captureNoiseSpectrum(in samples: UnsafePointer<Float>, count: Int, sampleRate: Double) {
+        let n = min(count, windowSize)
+        guard n >= windowSize else { return }
+        let halfFFT = fftN / 2
+
+        // Apply Hann window
+        vDSP_vmul(samples, 1, hannWindow, 1, windowedBuf, 1, vDSP_Length(windowSize))
+
+        // Pack into split-complex
+        vDSP_vclr(realp, 1, vDSP_Length(halfFFT))
+        vDSP_vclr(imagp, 1, vDSP_Length(halfFFT))
+        for i in 0..<(windowSize / 2) {
+            realp[i] = windowedBuf[2 * i]
+            imagp[i] = windowedBuf[2 * i + 1]
+        }
+
+        // Forward FFT
+        var splitComplex = DSPSplitComplex(realp: realp, imagp: imagp)
+        vDSP_fft_zrip(fftSetup, &splitComplex, 1, log2n, FFTDirection(kFFTDirection_Forward))
+
+        // Power spectrum into logBuf (temporary)
+        vDSP_zvmags(&splitComplex, 1, logBuf, 1, vDSP_Length(halfFFT))
+
+        // Update noise spectrum with exponential moving average
+        let alpha: Float = 0.05
+        if noiseFrameCount == 0 {
+            noiseSpectrum.update(from: logBuf, count: halfFFT)
+        } else {
+            var a = alpha
+            var oneMinusA: Float = 1.0 - alpha
+            vDSP_vsmul(noiseSpectrum, 1, &oneMinusA, noiseSpectrum, 1, vDSP_Length(halfFFT))
+            vDSP_vsma(logBuf, 1, &a, noiseSpectrum, 1, noiseSpectrum, 1, vDSP_Length(halfFFT))
+        }
+        noiseFrameCount += 1
     }
 }
 
@@ -820,7 +927,18 @@ private final class TapProcessingState: @unchecked Sendable {
     let agcMinGain: Float = 0.5
     let agcMaxGain: Float = 16.0
 
-    init(windowSize: Int, hopSize: Int, ringCapacity: Int, sampleRate: Double) {
+    // Low-frequency emphasis for strengthening the fundamental on wound strings.
+    // Input-source-aware: built-in mic needs most boost (MEMS attenuates lows).
+    let lowShelfGain: Float    // 0.0 = off, 1.0 = +6 dB boost at DC
+    let lowShelfCoeff: Float   // 1st-order IIR lowpass coefficient (~250 Hz cutoff)
+
+    // Input-source-aware spectral flatness threshold.
+    // USB interfaces carry distorted signals (pedals) that raise flatness;
+    // relaxing the threshold avoids rejecting valid distorted-guitar frames.
+    let spectralFlatnessThreshold: Float
+
+    init(windowSize: Int, hopSize: Int, ringCapacity: Int, sampleRate: Double,
+         inputSource: AudioInputSource?) {
         self.windowSize = windowSize
         self.yin = AccelerateYIN(windowSize: windowSize)
         self.ring = AudioRingBuffer(capacity: ringCapacity, hopSize: hopSize, windowSize: windowSize)
@@ -846,6 +964,28 @@ private final class TapProcessingState: @unchecked Sendable {
         self.hpfB2 = Float((1.0 + cosW0) / 2.0 / a0)
         self.hpfA1 = Float(-2.0 * cosW0 / a0)
         self.hpfA2 = Float((1.0 - alpha) / a0)
+
+        // Input-source-aware low-shelf boost for fundamental strengthening.
+        // Built-in MEMS mic attenuates below 200 Hz by ~6–10 dB; compensate.
+        switch inputSource {
+        case .builtInMic:
+            self.lowShelfGain = 1.0   // +6 dB boost below cutoff
+        case .wiredHeadset:
+            self.lowShelfGain = 0.5   // +3.5 dB boost
+        default:
+            self.lowShelfGain = 0.0   // off (USB interface, BT, or unknown)
+        }
+        self.lowShelfCoeff = lowShelfGain > 0
+            ? 1.0 - exp(-2.0 * Float.pi * 250.0 / Float(sampleRate))
+            : 0.0
+
+        // USB interfaces may carry distorted signals (pedals); relax threshold.
+        switch inputSource {
+        case .usbInterface:
+            self.spectralFlatnessThreshold = 0.50
+        default:
+            self.spectralFlatnessThreshold = 0.35
+        }
     }
 
     func deallocate() {
@@ -868,7 +1008,8 @@ private func makeTapClosure(
     continuation: AsyncStream<DetectedPitch>.Continuation,
     playbackTimestamp: PlaybackTimestamp,
     calibratedNoiseFloor: Float? = nil,
-    calibratedAGCGain: Float? = nil
+    calibratedAGCGain: Float? = nil,
+    calibratedInputSource: AudioInputSource? = nil
 ) -> AVAudioNodeTapBlock {
     let windowSize = 4096
     let hopSize = 1024
@@ -880,7 +1021,8 @@ private func makeTapClosure(
         windowSize: windowSize,
         hopSize: hopSize,
         ringCapacity: ringCapacity,
-        sampleRate: sampleRate
+        sampleRate: sampleRate,
+        inputSource: calibratedInputSource
     )
 
     // Apply calibration values if available (pre-seeds the adaptive algorithms).
@@ -928,6 +1070,14 @@ private func makeTapClosure(
         state.noiseFloor = SignalMeasurement.noiseFloorStep(current: state.noiseFloor, rms: rms)
         let gateThreshold = SignalMeasurement.gateThreshold(noiseFloor: state.noiseFloor)
         guard rms > gateThreshold else {
+            // Capture noise spectrum during silence for adaptive spectral subtraction.
+            // Captured at RAW level (no AGC scaling). The signal path's FFT is at
+            // AGC-scaled level, so the subtraction slightly under-subtracts — this is
+            // intentional. Over-subtraction (from AGC mismatch when gain changes
+            // between silence and playing) destroys the power spectrum and causes
+            // false rejections. Under-subtraction just leaves residual noise that
+            // the existing gates handle.
+            state.yin.captureNoiseSpectrum(in: state.analysisBuffer, count: windowSize, sampleRate: sampleRate)
             continuation.yield(.silent(rmsLevel: rmsLevel, noiseFloor: state.noiseFloor, agcGain: state.agcGain))
             return
         }
@@ -942,6 +1092,20 @@ private func makeTapClosure(
         }
         var agcMultiplier = state.agcGain
         vDSP_vsmul(state.analysisBuffer, 1, &agcMultiplier, state.analysisBuffer, 1, vDSP_Length(windowSize))
+
+        // Low-frequency emphasis: boost fundamental region below ~250 Hz.
+        // Compensates for built-in MEMS mic roll-off on wound strings.
+        if state.lowShelfGain > 0 {
+            let coeff = state.lowShelfCoeff
+            let gain = state.lowShelfGain
+            var lp: Float = state.analysisBuffer[0]
+            for i in 0..<windowSize {
+                let x = state.analysisBuffer[i]
+                lp += coeff * (x - lp)
+                state.analysisBuffer[i] = x + gain * lp
+            }
+        }
+
         let gainedLevel = SignalMeasurement.normaliseToLevel(rms: gainedRMS)
 
         // Blank analysis during metronome clicks / sound cues to prevent
@@ -955,17 +1119,29 @@ private func makeTapClosure(
             }
         }
 
-        // Spectral flatness above this value indicates broadband noise (string slides,
-        // handling noise) rather than a tonal signal. Guitar notes: ~0.01–0.15.
-        let spectralFlatnessThreshold: Float = 0.35
+        // Crest factor: peak / RMS. Distorted signals ~1.0–1.5 (clipped);
+        // clean guitar / noise ~3–5. Low crest factor indicates a distortion
+        // pedal, not broadband noise — safe to bypass the flatness gate.
+        var peakValue: Float = 0
+        vDSP_maxmgv(state.analysisBuffer, 1, &peakValue, vDSP_Length(windowSize))
+        var postRMS: Float = 0
+        vDSP_rmsqv(state.analysisBuffer, 1, &postRMS, vDSP_Length(windowSize))
+        let crestFactor: Float = postRMS > 1e-10 ? peakValue / postRMS : 10.0
 
-        guard let (frequency, confidence, flatness) = state.yin.detectPitch(
+        guard let (frequency, confidence, flatness, harmonicReg) = state.yin.detectPitch(
             in: state.analysisBuffer,
             count: windowSize,
             sampleRate: sampleRate
         ), confidence >= Double(confidenceThreshold),
-           flatness < spectralFlatnessThreshold else {
-            continuation.yield(.none)
+           // Three-way tonal signal check: pass if ANY of these is true.
+           // 1. Low crest factor → clipped/distorted signal (not noise)
+           // 2. High harmonic regularity → energy at integer multiples (tonal)
+           // 3. Low spectral flatness → clean tonal signal (original check)
+           crestFactor < 2.0 || harmonicReg > 0.3 || flatness < state.spectralFlatnessThreshold else {
+            // Yield .silent with the gained level so the UI still shows
+            // signal activity even when detection fails. Previously yielded
+            // .none which hard-zeroed the level indicator, hiding the signal.
+            continuation.yield(.silent(rmsLevel: gainedLevel, noiseFloor: state.noiseFloor, agcGain: state.agcGain))
             return
         }
 

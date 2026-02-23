@@ -24,11 +24,14 @@ struct SessionHeatmapView: View {
         NoteNameFormat(rawValue: noteFormatRaw) ?? .sharps
     }
 
+    /// Available content width, passed from the parent to avoid self-sizing
+    /// feedback loops (onGeometryChange caused infinite layout cycles on iOS 26).
+    var availableWidth: CGFloat = 350
+
     private let stringLabels: [Int: String] = [
         1: "e", 2: "B", 3: "G", 4: "D", 5: "A", 6: "E"
     ]
     private let strings: [Int] = [1, 2, 3, 4, 5, 6]
-    @State private var contentWidth: CGFloat = 350
 
     private var fretRange: ClosedRange<Int> {
         0...max(defaultFretCount, 5)
@@ -38,7 +41,8 @@ struct SessionHeatmapView: View {
         let labelCol: CGFloat = 22
         let spacing: CGFloat = 2
         let count = CGFloat(fretRange.count)
-        return max(10, (contentWidth - labelCol - (count - 1) * spacing) / count)
+        let inner = availableWidth - 24  // subtract 12pt padding × 2
+        return max(10, (inner - labelCol - (count - 1) * spacing) / count)
     }
 
     /// Per-position results keyed by (string, fret).
@@ -101,11 +105,6 @@ struct SessionHeatmapView: View {
         .padding(12)
         .background(DesignSystem.Colors.surface,
                     in: RoundedRectangle(cornerRadius: DesignSystem.Radius.lg))
-        .onGeometryChange(for: CGFloat.self) { proxy in
-            proxy.size.width - 24   // subtract 12pt padding × 2
-        } action: { w in
-            contentWidth = w
-        }
     }
 
     private var maxAttemptCount: Int {

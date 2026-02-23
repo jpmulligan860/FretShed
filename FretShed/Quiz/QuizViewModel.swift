@@ -43,6 +43,8 @@ public final class QuizViewModel: Identifiable {
     public private(set) var bestStreak: Int = 0
     public private(set) var timeRemaining: Double = 0
     public private(set) var lastAnswerWasCorrect: Bool = false
+    /// When true, countdown ticks are silenced (user-toggled mute button).
+    public var isTimerMuted: Bool = false
     public private(set) var detectedNote: MusicalNote?
     /// Current per-question time budget for Tempo mode (shrinks with each correct answer).
     public private(set) var tempoTimeAllowance: Double = 10
@@ -71,6 +73,7 @@ public final class QuizViewModel: Identifiable {
     /// The fret chosen for the root of the current chord triad, used to keep
     /// the 3rd and 5th physically close on the fretboard (close voicing).
     private var chordRootFret: Int? = nil
+    private var chordRootString: Int? = nil
 
     // MARK: - Chord Progression Public Context
     /// The current chord being drilled, for display in the UI.
@@ -150,6 +153,7 @@ public final class QuizViewModel: Identifiable {
                 if chordToneIndex >= 3 {
                     chordToneIndex = 0
                     chordRootFret = nil
+                    chordRootString = nil
                     chordIndex = (chordIndex + 1) % chordCount
                 }
             }
@@ -324,24 +328,29 @@ public final class QuizViewModel: Identifiable {
             return QuizQuestion(note: targetNote, string: 1, fret: 0)
         }
 
-        // Close voicing: keep the 3rd and 5th within a few frets of the root.
+        // Close voicing: keep the 3rd and 5th within 2 frets and on
+        // adjacent strings so the triad is playable as a close-position chord.
         let candidates: [QuizQuestion]
         if toneIdx == 0 {
-            // Root: pick freely, then remember the fret for the rest of the triad.
+            // Root: pick freely, then remember the fret and string.
             let noRepeat = allCandidates.filter { c in
                 guard let last = lastQuestion else { return true }
                 return !(last.note == c.note && last.string == c.string)
             }
             let pick = (noRepeat.isEmpty ? allCandidates : noRepeat).randomElement()!
             chordRootFret = pick.fret
+            chordRootString = pick.string
             return pick
-        } else if let rootFret = chordRootFret {
-            // 3rd / 5th: prefer positions within 4 frets of the root.
-            let closeWindow = 4
+        } else if let rootFret = chordRootFret, let rootString = chordRootString {
+            // 3rd / 5th: prefer positions within 2 frets AND 2 strings of the root.
             let close = allCandidates.filter {
-                abs($0.fret - rootFret) <= closeWindow
+                abs($0.fret - rootFret) <= 2 && abs($0.string - rootString) <= 2
             }
-            candidates = close.isEmpty ? allCandidates : close
+            // Fallback: allow 3 frets if no tight voicing exists.
+            let wider = close.isEmpty ? allCandidates.filter {
+                abs($0.fret - rootFret) <= 3 && abs($0.string - rootString) <= 3
+            } : close
+            candidates = wider.isEmpty ? allCandidates : wider
         } else {
             candidates = allCandidates
         }
@@ -418,7 +427,9 @@ public final class QuizViewModel: Identifiable {
     private func startTimer() {
         timerTask?.cancel()
         // Play an initial countdown tick when the timer starts.
-        MetroDroneEngine.shared.playCountdownTick(volume: settings.metronomeVolume)
+        if !isTimerMuted {
+            MetroDroneEngine.shared.playCountdownTick(volume: settings.metronomeVolume)
+        }
         timerTask = Task {
             var elapsed = 0.0
             while timeRemaining > 0 {
@@ -428,7 +439,9 @@ public final class QuizViewModel: Identifiable {
                 elapsed += Self.timerInterval
                 if elapsed >= 1.0 && timeRemaining > 0 {
                     elapsed -= 1.0
-                    MetroDroneEngine.shared.playCountdownTick(volume: settings.metronomeVolume)
+                    if !isTimerMuted {
+                        MetroDroneEngine.shared.playCountdownTick(volume: settings.metronomeVolume)
+                    }
                 }
                 if timeRemaining == 0 { handleTimeout() }
             }

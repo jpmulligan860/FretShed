@@ -13,9 +13,6 @@ targets:
     deploymentTarget: "17.0"
     sources:
       - path: FretShed
-        excludes:
-          - "Progress/Repositories.swift"
-          - "Data/SwiftData/Repositories.swift"
       - NotificationScheduler.swift
     settings:
       base:

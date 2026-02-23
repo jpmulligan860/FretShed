@@ -33,29 +33,35 @@ struct SessionDetailView: View {
     }
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 20) {
-                // Header
-                header
-                    .padding(.top, 8)
+        GeometryReader { geo in
+            ScrollView {
+                VStack(spacing: 20) {
+                    // Header
+                    header
+                        .padding(.top, 8)
 
-                // Stats
-                statsRow
-                    .padding(.horizontal, 20)
+                    // Stats
+                    statsRow
+                        .padding(.horizontal, 20)
 
-                // Heatmap
-                if !attempts.isEmpty {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("FRETBOARD HEATMAP")
-                            .font(DesignSystem.Typography.caption)
-                            .foregroundStyle(.secondary)
-                            .padding(.horizontal, 20)
-                        SessionHeatmapView(attempts: attempts, fretboardMap: container.fretboardMap)
+                    // Heatmap
+                    if !attempts.isEmpty {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("FRETBOARD HEATMAP")
+                                .font(DesignSystem.Typography.caption)
+                                .foregroundStyle(.secondary)
+                                .padding(.horizontal, 20)
+                            SessionHeatmapView(
+                                attempts: attempts,
+                                fretboardMap: container.fretboardMap,
+                                availableWidth: geo.size.width - 32
+                            )
                             .padding(.horizontal, 16)
+                        }
                     }
-                }
 
-                Spacer(minLength: 20)
+                    Spacer(minLength: 20)
+                }
             }
         }
         .background(Color(.systemGroupedBackground))

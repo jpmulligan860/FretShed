@@ -157,13 +157,25 @@ struct MetroDroneView: View {
                 Text("Note Division")
                     .font(.subheadline.weight(.medium))
                 Spacer()
-                Picker("Note Division", selection: $vm.subdivision) {
+                HStack(spacing: 4) {
                     ForEach(NoteSubdivision.allCases, id: \.self) { div in
-                        Text(div.label).tag(div)
+                        Button {
+                            vm.setSubdivision(div)
+                        } label: {
+                            Text(div.label)
+                                .font(.subheadline.weight(.semibold))
+                                .frame(minWidth: 44, minHeight: 32)
+                                .foregroundStyle(vm.subdivision == div ? .white : .primary)
+                                .background(
+                                    vm.subdivision == div
+                                        ? DesignSystem.Colors.primary
+                                        : Color.gray.opacity(0.15),
+                                    in: RoundedRectangle(cornerRadius: DesignSystem.Radius.sm)
+                                )
+                        }
+                        .buttonStyle(.plain)
                     }
                 }
-                .pickerStyle(.segmented)
-                .frame(maxWidth: 220)
             }
 
             // Beat accents
@@ -181,20 +193,6 @@ struct MetroDroneView: View {
                     }
                     .buttonStyle(.plain)
                 }
-            }
-
-            // Count-in bars
-            HStack {
-                Text("Count In")
-                    .font(.subheadline.weight(.medium))
-                Spacer()
-                Stepper(
-                    vm.countInBars == 0 ? "Off" : "\(vm.countInBars) bar\(vm.countInBars == 1 ? "" : "s")",
-                    value: $vm.countInBars,
-                    in: 0...4,
-                    step: 1
-                )
-                .frame(maxWidth: 180)
             }
 
             // Metronome volume
@@ -327,6 +325,20 @@ struct MetroDroneView: View {
                     }
                 }
                 .pickerStyle(.segmented)
+
+                // Count-in bars (before speed trainer starts)
+                HStack {
+                    Text("Count In")
+                        .font(.subheadline.weight(.medium))
+                    Spacer()
+                    Stepper(
+                        vm.countInBars == 0 ? "Off" : "\(vm.countInBars) bar\(vm.countInBars == 1 ? "" : "s")",
+                        value: $vm.countInBars,
+                        in: 0...4,
+                        step: 1
+                    )
+                    .frame(maxWidth: 180)
+                }
 
                 // Speed trainer status
                 if vm.isSpeedTrainerActive {

@@ -170,9 +170,6 @@ final class MetroDroneViewModel {
     var subdivision: NoteSubdivision = .quarter {
         didSet {
             saveSetting(subdivision.rawValue, forKey: Keys.subdivision)
-            if engine.isMetronomePlaying {
-                restartMetronome()
-            }
         }
     }
 
@@ -202,6 +199,10 @@ final class MetroDroneViewModel {
     private var trainerBarCount = 0
     private var trainerRepCount = 0
 
+    /// Pending BPM to apply on the next downbeat (beat 0).
+    /// Set by `advanceTrainerTempo()`, consumed by `handleBeat`.
+    private var pendingTrainerBPM: Double? = nil
+
     // MARK: Count-In Internal
 
     private var countInBeatCount = 0
@@ -229,12 +230,6 @@ final class MetroDroneViewModel {
     }
 
     func startMetronome() {
-        if countInBars > 0 {
-            isCountingIn = true
-            countInBeatCount = 0
-            countInBarCount = 0
-            countInBarsRemaining = countInBars
-        }
         engine.onBeat = { [weak self] beat in
             self?.handleBeat(beat)
         }
@@ -246,12 +241,16 @@ final class MetroDroneViewModel {
             subdivision: subdivision
         )
         isMetronomePlaying = true
+        // Sync drone LFO with beat if drone is playing
+        if isDronePlaying { engine.updateDroneLFORate(bpm: bpm) }
     }
 
     func stopMetronome() {
         engine.stopMetronome()
         engine.onBeat = nil
         isMetronomePlaying = false
+        // Revert drone LFO to free-running rate
+        if isDronePlaying { engine.updateDroneLFORate(bpm: nil) }
         currentBeat = 0
         isCountingIn = false
         countInBeatCount = 0
@@ -281,6 +280,8 @@ final class MetroDroneViewModel {
             volume: droneVolume
         )
         isDronePlaying = true
+        // Sync LFO with metronome beat if metronome is already playing
+        if isMetronomePlaying { engine.updateDroneLFORate(bpm: bpm) }
     }
 
     func stopDrone() {
@@ -336,9 +337,35 @@ final class MetroDroneViewModel {
         trainerBarBeatCount = 0
         trainerBarCount = 0
         trainerRepCount = 0
+        pendingTrainerBPM = nil
+
+        // Count-in only applies to the speed trainer, not regular metronome.
+        let hasCountIn = countInBars > 0
+        if hasCountIn {
+            isCountingIn = true
+            countInBeatCount = 0
+            countInBarCount = 0
+            countInBarsRemaining = countInBars
+        }
 
         bpm = currentTrainerBPM
-        if !isMetronomePlaying {
+
+        // Count-in always uses quarter notes for a clean lead-in.
+        // The selected subdivision is applied when count-in ends.
+        if hasCountIn {
+            engine.onBeat = { [weak self] beat in
+                self?.handleBeat(beat)
+            }
+            engine.startMetronome(
+                bpm: bpm,
+                timeSignature: timeSignature,
+                accents: accents,
+                volume: metronomeVolume,
+                subdivision: .quarter
+            )
+            isMetronomePlaying = true
+            if isDronePlaying { engine.updateDroneLFORate(bpm: bpm) }
+        } else if !isMetronomePlaying {
             startMetronome()
         } else {
             restartMetronome()
@@ -364,6 +391,18 @@ final class MetroDroneViewModel {
         adjustAccentsForTimeSignature()   // sets accents (didSet persists only)
         if engine.isMetronomePlaying {
             restartMetronome()
+        }
+    }
+
+    // MARK: - Subdivision (explicit method to avoid @Observable binding issues)
+
+    /// Call this instead of setting `subdivision` via a Picker binding.
+    /// Setting the property only persists; this method also restarts the
+    /// metronome scheduling with the new subdivision from the current beat.
+    func setSubdivision(_ sub: NoteSubdivision) {
+        subdivision = sub                // didSet persists only
+        if engine.isMetronomePlaying {
+            updateSubdivisionInPlace()
         }
     }
 
@@ -399,12 +438,24 @@ final class MetroDroneViewModel {
                 if countInBarCount >= countInBars {
                     isCountingIn = false
                     countInBarsRemaining = 0
+                    // Count-in used quarter notes — restart with selected subdivision
+                    if subdivision != .quarter {
+                        restartMetronome()
+                    }
                 }
             }
             return
         }
 
         guard isSpeedTrainerActive else { return }
+
+        // Apply pending tempo change on beat 0 (downbeat) so the
+        // transition lands cleanly on the first beat of the measure.
+        if beat == 0, let newBPM = pendingTrainerBPM {
+            pendingTrainerBPM = nil
+            engine.updateMetronomeBPM(newBPM)
+            if isDronePlaying { engine.updateDroneLFORate(bpm: newBPM) }
+        }
 
         trainerBarBeatCount += 1
 
@@ -431,7 +482,9 @@ final class MetroDroneViewModel {
             if speedTrainerEndMode == .loopAtEnd {
                 currentTrainerBPM = speedTrainerStartBPM
                 bpm = currentTrainerBPM
-                restartMetronome()
+                // Defer the BPM change to the next downbeat (beat 0)
+                // so the current bar finishes at the old tempo.
+                pendingTrainerBPM = bpm
             } else {
                 stopSpeedTrainer()
                 stopMetronome()
@@ -439,7 +492,7 @@ final class MetroDroneViewModel {
         } else {
             currentTrainerBPM = nextBPM
             bpm = currentTrainerBPM
-            restartMetronome()
+            pendingTrainerBPM = bpm
         }
     }
 
@@ -452,6 +505,23 @@ final class MetroDroneViewModel {
             subdivision: subdivision,
             delayFirstBeat: true
         )
+        // Keep drone LFO in sync when BPM changes (e.g., speed trainer)
+        if isDronePlaying { engine.updateDroneLFORate(bpm: bpm) }
+    }
+
+    /// Restart the metronome scheduling with the new subdivision but keep
+    /// the current beat position so the beat indicator doesn't jump to 1.
+    private func updateSubdivisionInPlace() {
+        engine.startMetronome(
+            bpm: bpm,
+            timeSignature: timeSignature,
+            accents: accents,
+            volume: metronomeVolume,
+            subdivision: subdivision,
+            delayFirstBeat: true,
+            startingBeat: currentBeat
+        )
+        if isDronePlaying { engine.updateDroneLFORate(bpm: bpm) }
     }
 
     private func updateDrone() {

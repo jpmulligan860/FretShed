@@ -65,6 +65,12 @@ private func droneRenderBlock(
             state.needsPhaseReset = false
         }
 
+        // Sync LFO phase to metronome beat
+        if state.needsLFOPhaseReset {
+            state.lfoPhase = 0
+            state.needsLFOPhaseReset = false
+        }
+
         let voices = state.voiceCount
         let rich = state.soundIsRich
         let vol = state.volume
@@ -82,7 +88,7 @@ private func droneRenderBlock(
         let inc2 = twoPi * f2 / sampleRate
 
         let detuneFactor = 1.0011552453009332 // pow(2.0, 2.0/1200.0) — +2 cents, precomputed
-        let lfoInc = twoPi * 1.5 / sampleRate
+        let lfoInc = twoPi * state.lfoRateHz / sampleRate
         // 1-pole LPF coefficient for ~4000 Hz cutoff
         let lpfAlpha = Float(min(max(twoPi * 4000.0 / sampleRate, 0), 1))
 
@@ -149,8 +155,8 @@ private func droneRenderBlock(
                 outSample = lpfState
             }
 
-            // Amplitude LFO: subtle ±1.5 dB motion
-            let lfoMod = Float(1.0 + 0.17 * sin(lfoPhase))
+            // Amplitude LFO: ±2 dB pulsing, synced with metronome beat
+            let lfoMod = Float(1.0 + 0.26 * sin(lfoPhase))
             lfoPhase += lfoInc
             if lfoPhase > twoPi { lfoPhase -= twoPi }
 
@@ -258,6 +264,13 @@ final class MetroDroneEngine {
         var isPlaying: Bool = false
         var targetFadeGain: Float = 0.0
         var needsPhaseReset: Bool = false
+        /// LFO rate in Hz. Default 1.5 Hz (free-running).
+        /// Set to BPM/60 when metronome is playing to sync the LFO
+        /// amplitude wobble with the beat.
+        var lfoRateHz: Double = 1.5
+        /// When true, the render block resets lfoPhase to 0 so the
+        /// LFO peak aligns with the metronome beat.
+        var needsLFOPhaseReset: Bool = false
 
         // Render — written by audio thread only
         var phase0: Double = 0
@@ -333,9 +346,9 @@ final class MetroDroneEngine {
             mixAmp: 0.8, format: monoFormat
         )
         subClickBuffer = makeClickBuffer(
-            toneFreq: 900, noiseFreq: 2000,
-            toneAmp: 0.28, noiseAmp: 0.18,
-            mixAmp: 0.32, format: monoFormat
+            toneFreq: 1200, noiseFreq: 2400,
+            toneAmp: 0.55, noiseAmp: 0.40,
+            mixAmp: 0.65, format: monoFormat
         )
 
         // Build sound cue buffers
@@ -454,7 +467,8 @@ final class MetroDroneEngine {
         accents: [BeatAccent],
         volume: Float,
         subdivision: NoteSubdivision = .quarter,
-        delayFirstBeat: Bool = false
+        delayFirstBeat: Bool = false,
+        startingBeat: Int? = nil
     ) {
         // Cancel previous scheduling task without tearing down the engine.
         metronomeTask?.cancel()
@@ -468,7 +482,9 @@ final class MetroDroneEngine {
         }
 
         isMetronomePlaying = true
-        currentBeat = 0
+        if startingBeat == nil {
+            currentBeat = 0
+        }
         clickPlayer?.volume = volume
 
         // Store for route-change recovery
@@ -483,15 +499,17 @@ final class MetroDroneEngine {
         let subCount = subdivision.count
         let subInterval = interval / Double(subCount)
 
+        let initialBeat = startingBeat ?? 0
         metronomeTask = Task { [weak self] in
-            // When restarting (e.g. speed trainer tempo advance), wait one
-            // sub-interval before the first click to avoid doubling up with
-            // the old task's final beat click.
+            // When restarting, wait one full beat interval before the first
+            // click to avoid doubling up with the old task's final beat.
+            // Using the full interval (not subInterval) ensures the new
+            // tempo starts on a proper downbeat regardless of subdivision.
             if delayFirstBeat {
-                try? await Task.sleep(for: .seconds(subInterval))
+                try? await Task.sleep(for: .seconds(interval))
                 guard !Task.isCancelled else { return }
             }
-            var beat = 0
+            var beat = initialBeat
             var subBeat = 0
             while !Task.isCancelled {
                 guard let self else { return }
@@ -510,7 +528,10 @@ final class MetroDroneEngine {
                     subBeat = 0
                     beat = (beat + 1) % beatCount
                 }
-                try? await Task.sleep(for: .seconds(subInterval))
+                // Read BPM dynamically so speed trainer tempo changes
+                // take effect without restarting (and losing sub-beats).
+                let currentSubInterval = (60.0 / self.metronomeBPM) / Double(subCount)
+                try? await Task.sleep(for: .seconds(currentSubInterval))
             }
         }
     }
@@ -550,6 +571,13 @@ final class MetroDroneEngine {
     func updateMetronomeTempo(bpm: Double, timeSignature: TimeSignature, accents: [BeatAccent], volume: Float, subdivision: NoteSubdivision = .quarter) {
         guard isMetronomePlaying else { return }
         startMetronome(bpm: bpm, timeSignature: timeSignature, accents: accents, volume: volume, subdivision: subdivision, delayFirstBeat: true)
+    }
+
+    /// Update BPM without restarting the scheduling loop. The loop reads
+    /// `metronomeBPM` dynamically, so the new tempo takes effect on the
+    /// next sleep cycle — no sub-beats are lost.
+    func updateMetronomeBPM(_ bpm: Double) {
+        metronomeBPM = bpm
     }
 
     func updateMetronomeVolume(_ volume: Float) {
@@ -639,6 +667,17 @@ final class MetroDroneEngine {
 
     func updateDroneVolume(_ volume: Float) {
         droneState.volume = volume
+    }
+
+    /// Update the drone LFO rate. When the metronome is playing, pass
+    /// `bpm / 60.0` so the LFO wobble syncs with the beat. When the
+    /// metronome stops, pass `nil` to revert to the default 1.5 Hz.
+    func updateDroneLFORate(bpm: Double?) {
+        droneState.lfoRateHz = bpm.map { $0 / 60.0 } ?? 1.5
+        // Reset phase so LFO peak aligns with the beat
+        if bpm != nil {
+            droneState.needsLFOPhaseReset = true
+        }
     }
 
     // MARK: - Private Helpers

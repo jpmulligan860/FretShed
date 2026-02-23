@@ -95,15 +95,6 @@ public struct ProgressTabView: View {
                                     sectionHeader("RECENT SESSIONS")
                                     Spacer()
                                     filterMenu
-                                    if !vm.recentSessions.isEmpty {
-                                        Button(role: .destructive) {
-                                            showDeleteAllConfirm = true
-                                        } label: {
-                                            Text("Delete All")
-                                                .font(.caption.weight(.semibold))
-                                                .foregroundStyle(.red)
-                                        }
-                                    }
                                 }
                                 .padding(.horizontal, 16)
 
@@ -130,6 +121,18 @@ public struct ProgressTabView: View {
                                         in: RoundedRectangle(cornerRadius: 16)
                                     )
                                     .padding(.horizontal, 16)
+                                }
+
+                                if !vm.recentSessions.isEmpty {
+                                    Button(role: .destructive) {
+                                        showDeleteAllConfirm = true
+                                    } label: {
+                                        Text("Delete All Sessions")
+                                            .font(.caption.weight(.semibold))
+                                            .foregroundStyle(.red)
+                                    }
+                                    .frame(maxWidth: .infinity, alignment: .center)
+                                    .padding(.top, 8)
                                 }
                             }
 
@@ -259,11 +262,14 @@ public struct ProgressTabView: View {
                 }
             }
         } label: {
-            Image(systemName: vm.focusModeFilter == nil
-                  ? "line.3.horizontal.decrease.circle"
-                  : "line.3.horizontal.decrease.circle.fill")
-                .font(.subheadline)
-                .foregroundStyle(DesignSystem.Colors.primary)
+            HStack(spacing: 4) {
+                Image(systemName: vm.focusModeFilter == nil
+                      ? "line.3.horizontal.decrease.circle"
+                      : "line.3.horizontal.decrease.circle.fill")
+                Text("Filter Results")
+            }
+            .font(.subheadline)
+            .foregroundStyle(DesignSystem.Colors.primary)
         }
     }
 

@@ -260,17 +260,29 @@ public struct QuizView: View {
             : Double(vm.settings.defaultTimerDuration)
         let progress = total > 0 ? vm.timeRemaining / total : 0
         let barColor: Color = progress > 0.5 ? .green : progress > 0.25 ? .orange : .red
-        return GeometryReader { geo in
-            ZStack(alignment: .leading) {
-                Rectangle()
-                    .fill(Color(.tertiarySystemGroupedBackground))
-                Rectangle()
-                    .fill(barColor)
-                    .frame(width: geo.size.width * progress)
-                    .animation(.linear(duration: 0.05), value: progress)
+        return HStack(spacing: 6) {
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    Rectangle()
+                        .fill(Color(.tertiarySystemGroupedBackground))
+                    Rectangle()
+                        .fill(barColor)
+                        .frame(width: geo.size.width * progress)
+                        .animation(.linear(duration: 0.05), value: progress)
+                }
             }
+            .frame(height: 4)
+
+            Button {
+                vm.isTimerMuted.toggle()
+            } label: {
+                Image(systemName: vm.isTimerMuted ? "speaker.slash.fill" : "speaker.wave.2.fill")
+                    .font(.caption2)
+                    .foregroundStyle(vm.isTimerMuted ? .secondary : DesignSystem.Colors.primary)
+            }
+            .buttonStyle(.plain)
+            .frame(width: 24)
         }
-        .frame(height: 4)
     }
 
     // MARK: - Stats Bar & Prompt (shared between layouts)

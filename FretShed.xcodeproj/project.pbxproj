@@ -312,7 +312,7 @@
 			path = Repositories;
 			sourceTree = "<group>";
 		};
-		"TEMP_8231FC4D-DEFE-4BDB-A750-FC478C20F7AD" /* SnapshotTests */ = {
+		"TEMP_23CFC99A-1167-4CC6-87FC-BC7DC632843C" /* SnapshotTests */ = {
 			isa = PBXGroup;
 			children = (
 			);

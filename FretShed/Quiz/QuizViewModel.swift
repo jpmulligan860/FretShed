@@ -95,7 +95,7 @@ public final class QuizViewModel: Identifiable {
     /// Response times (ms) for correct answers only — used to compute average for timed sessions.
     private var correctResponseTimes: [Int] = []
 
-    private static let feedbackDuration: TimeInterval = 0.9
+    private static let feedbackDuration: TimeInterval = 1.5
     private static let timerInterval: TimeInterval = 0.05
     /// Tempo mode: each correct answer shaves this many seconds off the allowance.
     private static let tempoDecrement: Double = 0.5

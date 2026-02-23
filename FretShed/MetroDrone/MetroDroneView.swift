@@ -11,6 +11,11 @@ struct MetroDroneView: View {
     @State private var vm = MetroDroneViewModel()
     @State private var showSpeedTrainer = false
 
+    @State private var showTempoInfo = false
+    @State private var showTimeSignatureInfo = false
+    @State private var showSpeedTrainerInfo = false
+    @State private var showDroneInfo = false
+
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -30,6 +35,53 @@ struct MetroDroneView: View {
             }
             .toolbar(.hidden, for: .navigationBar)
             .onDisappear { vm.onDisappear() }
+            .sheet(isPresented: $showTempoInfo) {
+                MetroDroneInfoSheet(
+                    title: "Tempo",
+                    items: [
+                        ("BPM", "Beats per minute. Tap the Tap button rhythmically to set the tempo."),
+                        ("BPM Slider", "Drag to set tempo from 20 to 300 BPM."),
+                        ("-1 / +1", "Fine-tune the tempo by one BPM.")
+                    ]
+                )
+            }
+            .sheet(isPresented: $showTimeSignatureInfo) {
+                MetroDroneInfoSheet(
+                    title: "Time Signature & Accents",
+                    items: [
+                        ("Time Signature", "Number of beats per measure (2/4, 3/4, 4/4, 5/4, 6/8, 7/8)."),
+                        ("Note Division", "Subdivision of each beat: quarter, eighth, triplet, or sixteenth notes."),
+                        ("Beat Accents", "Tap each beat circle to cycle through normal, accent, and mute."),
+                        ("Metronome Volume", "Volume level for the metronome click.")
+                    ]
+                )
+            }
+            .sheet(isPresented: $showSpeedTrainerInfo) {
+                MetroDroneInfoSheet(
+                    title: "Speed Trainer",
+                    items: [
+                        ("Start BPM", "Beginning tempo for the speed trainer."),
+                        ("End BPM", "Target tempo the trainer builds up to."),
+                        ("Increment", "BPM increase at each step."),
+                        ("Bars per Step", "How many measures to play at each tempo before increasing."),
+                        ("Reps per Step", "Number of times to repeat each tempo step."),
+                        ("At End", "What happens when the target BPM is reached: stop or loop back."),
+                        ("Count In", "Number of count-in bars before the trainer starts (quarter notes only).")
+                    ]
+                )
+            }
+            .sheet(isPresented: $showDroneInfo) {
+                MetroDroneInfoSheet(
+                    title: "Drone Settings",
+                    items: [
+                        ("Key", "Root note of the drone tone."),
+                        ("Octave", "Pitch register of the drone (2nd through 4th octave)."),
+                        ("Voicing", "Harmonic content: Root only, Root + 5th (power chord), or Root + 3rd + 5th (triad)."),
+                        ("Sound", "Tone character: Sine (pure), Sawtooth (bright), or Pad (warm)."),
+                        ("Drone Volume", "Volume level for the drone tone.")
+                    ]
+                )
+            }
         }
     }
 
@@ -37,6 +89,14 @@ struct MetroDroneView: View {
 
     private var bpmSection: some View {
         VStack(spacing: 12) {
+            // Section header
+            HStack {
+                Text("Tempo")
+                    .font(.headline)
+                infoButton { showTempoInfo = true }
+                Spacer()
+            }
+
             // Large BPM display
             Text("\(Int(vm.bpm))")
                 .font(.system(size: 72, weight: .bold, design: .rounded))
@@ -132,6 +192,14 @@ struct MetroDroneView: View {
 
     private var timeSignatureAndAccents: some View {
         VStack(spacing: 12) {
+            // Section header
+            HStack {
+                Text("Time Signature & Accents")
+                    .font(.headline)
+                infoButton { showTimeSignatureInfo = true }
+                Spacer()
+            }
+
             // Time signature picker
             HStack {
                 Text("Time Signature")
@@ -256,7 +324,7 @@ struct MetroDroneView: View {
     // MARK: - Speed Trainer
 
     private var speedTrainerSection: some View {
-        DisclosureGroup("Speed Trainer", isExpanded: $showSpeedTrainer) {
+        DisclosureGroup(isExpanded: $showSpeedTrainer) {
             VStack(spacing: 16) {
                 // Start / End BPM
                 HStack {
@@ -361,6 +429,11 @@ struct MetroDroneView: View {
                 .buttonStyle(.plain)
             }
             .padding(.top, 8)
+        } label: {
+            HStack {
+                Text("Speed Trainer")
+                infoButton { showSpeedTrainerInfo = true }
+            }
         }
         .padding()
         .background(.background, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.lg))
@@ -370,9 +443,12 @@ struct MetroDroneView: View {
 
     private var droneSection: some View {
         VStack(spacing: 16) {
-            Text("Drone Settings")
-                .font(.headline)
-                .frame(maxWidth: .infinity, alignment: .leading)
+            HStack {
+                Text("Drone Settings")
+                    .font(.headline)
+                infoButton { showDroneInfo = true }
+                Spacer()
+            }
 
             // Key picker
             VStack(alignment: .leading, spacing: 8) {
@@ -467,6 +543,54 @@ struct MetroDroneView: View {
         }
         .padding()
         .background(.background, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.lg))
+    }
+
+    // MARK: - Info Button
+
+    private func infoButton(action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: "info.circle")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+    }
+}
+
+// MARK: - MetroDroneInfoSheet
+
+private struct MetroDroneInfoSheet: View {
+
+    let title: String
+    let items: [(String, String)]
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    ForEach(items, id: \.0) { label, description in
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(label)
+                                .font(.subheadline.weight(.semibold))
+                            Text(description)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+                .padding(20)
+            }
+            .background(Color(.systemGroupedBackground))
+            .navigationTitle(title)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
+                }
+            }
+        }
+        .presentationDetents([.medium])
+        .presentationDragIndicator(.visible)
     }
 }
 

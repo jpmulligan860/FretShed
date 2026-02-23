@@ -228,6 +228,7 @@ struct PracticeHomeView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 28) {
+                doThisFirstCard
                 heroCard
                 quickStartGrid
             }
@@ -241,8 +242,55 @@ struct PracticeHomeView: View {
         }
     }
 
-    private var heroCard: some View {
+    private var doThisFirstCard: some View {
         ZStack(alignment: .bottomLeading) {
+            RoundedRectangle(cornerRadius: DesignSystem.Radius.xl)
+                .fill(
+                    LinearGradient(
+                        colors: [Color.orange, Color.yellow.opacity(0.7)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+
+            VStack(alignment: .leading, spacing: DesignSystem.Spacing.sm) {
+                Text("Do This First")
+                    .font(DesignSystem.Typography.title)
+                    .foregroundStyle(.white)
+                Text("For the most accurate note detection:")
+                    .font(.subheadline)
+                    .foregroundStyle(.white.opacity(0.85))
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Label {
+                        Text("Visit the Tuner tab and tune your guitar.")
+                            .font(.subheadline.weight(.medium))
+                    } icon: {
+                        Text("1.")
+                            .font(.subheadline.weight(.bold))
+                    }
+                    Label {
+                        Text("Perform an Audio Calibration session located in Audio Settings on the Settings tab.")
+                            .font(.subheadline.weight(.medium))
+                    } icon: {
+                        Text("2.")
+                            .font(.subheadline.weight(.bold))
+                    }
+                }
+                .foregroundStyle(.white.opacity(0.95))
+            }
+            .padding(20)
+        }
+        .overlay(alignment: .topTrailing) {
+            Image(systemName: "checklist")
+                .font(.system(size: 60))
+                .foregroundStyle(.white.opacity(0.15))
+                .padding(20)
+        }
+    }
+
+    private var heroCard: some View {
+        ZStack(alignment: .topLeading) {
             RoundedRectangle(cornerRadius: DesignSystem.Radius.xl)
                 .fill(
                     LinearGradient(
@@ -251,7 +299,6 @@ struct PracticeHomeView: View {
                         endPoint: .bottomTrailing
                     )
                 )
-                .frame(height: 180)
 
             VStack(alignment: .leading, spacing: DesignSystem.Spacing.xs) {
                 Text("Ready to practice?")
@@ -273,25 +320,39 @@ struct PracticeHomeView: View {
     }
 
     private var quickStartGrid: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("QUICK START")
-                .font(DesignSystem.Typography.caption)
-                .foregroundStyle(.secondary)
+        ZStack(alignment: .bottomLeading) {
+            RoundedRectangle(cornerRadius: DesignSystem.Radius.xl)
+                .fill(
+                    LinearGradient(
+                        colors: [Color.teal, Color.cyan.opacity(0.7)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
 
-            ViewThatFits(in: .horizontal) {
-                LazyVGrid(columns: [.init(), .init(), .init(), .init()], spacing: 12) {
-                    if lastSession != nil { repeatLastCard }
-                    ForEach([FocusMode.singleNote, .singleString, .fullFretboard], id: \.self) { mode in
-                        QuickModeCard(mode: mode, onTap: { quickLaunch(focusMode: mode) })
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Quick Start")
+                    .font(DesignSystem.Typography.title)
+                    .foregroundStyle(.white)
+
+                ViewThatFits(in: .horizontal) {
+                    LazyVGrid(columns: [.init(), .init(), .init(), .init()], spacing: 12) {
+                        if lastSession != nil { repeatLastCard }
+                        quickStartCards
                     }
-                }
-                LazyVGrid(columns: [.init(), .init()], spacing: 12) {
-                    if lastSession != nil { repeatLastCard }
-                    ForEach([FocusMode.singleNote, .singleString, .fullFretboard], id: \.self) { mode in
-                        QuickModeCard(mode: mode, onTap: { quickLaunch(focusMode: mode) })
+                    LazyVGrid(columns: [.init(), .init()], spacing: 12) {
+                        if lastSession != nil { repeatLastCard }
+                        quickStartCards
                     }
                 }
             }
+            .padding(20)
+        }
+        .overlay(alignment: .topTrailing) {
+            Image(systemName: "bolt.fill")
+                .font(.system(size: 60))
+                .foregroundStyle(.white.opacity(0.15))
+                .padding(20)
         }
     }
 
@@ -306,19 +367,30 @@ struct PracticeHomeView: View {
                     .foregroundStyle(.primary)
                     .lineLimit(2)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(maxWidth: .infinity, minHeight: 70, alignment: .leading)
             .padding(14)
             .background(.background, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
         }
         .buttonStyle(.plain)
     }
 
-    private func quickLaunch(focusMode: FocusMode) {
-        // Run entirely on MainActor so the notification is posted on the main
-        // thread and ContentView's onReceive handler can safely mutate @State.
+    @ViewBuilder
+    private var quickStartCards: some View {
+        QuickModeCard(mode: .singleNote, label: "One Note Full Fretboard", onTap: {
+            quickLaunch(focusMode: .singleNote)
+        })
+        QuickModeCard(mode: .singleString, label: "Random Note Random String", onTap: {
+            quickLaunchRandomString()
+        })
+        QuickModeCard(mode: .fullFretboard, onTap: {
+            quickLaunch(focusMode: .fullFretboard)
+        })
+    }
+
+    private func quickLaunch(focusMode: FocusMode, targetStrings: [Int] = []) {
         Task { @MainActor in
             let settings = (try? container.settingsRepository.loadSettings()) ?? UserSettings()
-            let session = Session(focusMode: focusMode, gameMode: settings.defaultGameMode)
+            let session = Session(focusMode: focusMode, gameMode: .untimed, targetStrings: targetStrings)
             try? container.sessionRepository.save(session)
             let vm = QuizViewModel(
                 session: session,
@@ -330,6 +402,11 @@ struct PracticeHomeView: View {
             )
             NotificationCenter.default.post(name: .launchQuiz, object: vm)
         }
+    }
+
+    private func quickLaunchRandomString() {
+        let randomString = Int.random(in: 1...6)
+        quickLaunch(focusMode: .singleString, targetStrings: [randomString])
     }
 
     private func repeatLastSession() {
@@ -366,6 +443,7 @@ struct PracticeHomeView: View {
 
 private struct QuickModeCard: View {
     let mode: FocusMode
+    var label: String? = nil
     let onTap: () -> Void
 
     var body: some View {
@@ -374,12 +452,12 @@ private struct QuickModeCard: View {
                 Image(systemName: modeIcon)
                     .font(.title2)
                     .foregroundStyle(modeColor)
-                Text(mode.localizedLabel)
+                Text(label ?? mode.localizedLabel)
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.primary)
                     .lineLimit(2)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(maxWidth: .infinity, minHeight: 70, alignment: .leading)
             .padding(14)
             .background(.background, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
         }

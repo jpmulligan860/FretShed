@@ -312,7 +312,7 @@
 			path = Repositories;
 			sourceTree = "<group>";
 		};
-		"TEMP_23CFC99A-1167-4CC6-87FC-BC7DC632843C" /* SnapshotTests */ = {
+		"TEMP_A40D3BCD-311A-4CD0-92DF-7ABC849B4471" /* SnapshotTests */ = {
 			isa = PBXGroup;
 			children = (
 			);
@@ -485,7 +485,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				INFOPLIST_FILE = FretShed/Resources/Info.plist;
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "FretShed uses the microphone to detect the notes you play on your guitar.";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -529,7 +529,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				INFOPLIST_FILE = FretShed/Resources/Info.plist;
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "FretShed uses the microphone to detect the notes you play on your guitar.";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",

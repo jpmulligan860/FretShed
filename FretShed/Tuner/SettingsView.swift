@@ -14,6 +14,11 @@ public struct SettingsView: View {
     @State private var showDeleteWarning1 = false
     @State private var showDeleteWarning2 = false
 
+    @State private var showDisplayInfo = false
+    @State private var showAudioInfo = false
+    @State private var showQuizDefaultsInfo = false
+    @State private var showDataInfo = false
+
     @AppStorage(LocalUserPreferences.Key.noteNameFormat)
     private var noteNameFormatRaw: String = LocalUserPreferences.Default.noteNameFormat
 
@@ -71,6 +76,56 @@ public struct SettingsView: View {
         } message: {
             Text("This cannot be undone. All progress, sessions, and mastery data will be permanently erased.")
         }
+        .sheet(isPresented: $showDisplayInfo) {
+            SettingsInfoSheet(
+                title: "Display",
+                items: [
+                    ("Note Names", "Choose between sharp (A#) or flat (Bb) notation."),
+                    ("Fretboard Hand", "Flip the fretboard display for left-handed players."),
+                    ("Default Fret Count", "Number of frets shown on the fretboard (12, 21, 22, or 24)."),
+                    ("Appearance", "App color scheme: follow system setting, or force light/dark.")
+                ]
+            )
+        }
+        .sheet(isPresented: $showAudioInfo) {
+            SettingsInfoSheet(
+                title: "Audio",
+                items: [
+                    ("Detection Confidence", "How certain the pitch detector must be before accepting a note. Higher = fewer false detections but requires cleaner playing."),
+                    ("Note Hold Duration", "How long a note must be held before it's accepted. Prevents fleeting detections from triggering wrong answers."),
+                    ("Force Built-In Microphone", "Always use the iPhone mic even when an external audio device is connected."),
+                    ("Tap Testing Mode", "Disable microphone detection and use Correct/Wrong buttons instead. Use this to test yourself when you don't have your guitar handy."),
+                    ("Tap To Answer", "Tap directly on the fretboard to choose your answer instead of playing a note. For best results, use landscape orientation with Default Fret Count set to 12 so the fretboard positions are large enough to tap accurately."),
+                    ("Response Sounds", "Play a sound effect on correct and incorrect answers."),
+                    ("Response Sound Volume", "Volume level for correct/incorrect sound effects."),
+                    ("Metronome in Quiz", "Play a countdown tick during timed quiz sessions."),
+                    ("Metronome Volume", "Volume level for the countdown tick.")
+                ]
+            )
+        }
+        .sheet(isPresented: $showQuizDefaultsInfo) {
+            SettingsInfoSheet(
+                title: "Quiz Defaults",
+                items: [
+                    ("Default Focus Mode", "The starting focus mode when launching a new session."),
+                    ("String Selection", "Which string is pre-selected for Single String mode."),
+                    ("Note Highlighting", "How target notes are shown: always visible, revealed after playing, or show all positions."),
+                    ("Note Acceptance", "Accept the correct note on any string, or require the exact string shown."),
+                    ("Timer Duration", "Seconds per question in Timed mode."),
+                    ("Session Length", "Number of questions per session (except Streak mode)."),
+                    ("Hint Timeout", "Seconds before the fret hint is automatically shown."),
+                    ("Set Mastery Threshold", "Accuracy percentage needed to mark a cell as mastered.")
+                ]
+            )
+        }
+        .sheet(isPresented: $showDataInfo) {
+            SettingsInfoSheet(
+                title: "Data",
+                items: [
+                    ("Delete All Data", "Permanently removes all session history, mastery scores, and attempts. This cannot be undone.")
+                ]
+            )
+        }
     }
 
     // MARK: - Display Section
@@ -100,7 +155,10 @@ public struct SettingsView: View {
                 Text("Dark").tag("dark")
             }
         } header: {
-            Label("Display", systemImage: "eye")
+            HStack {
+                Label("Display", systemImage: "eye")
+                infoButton { showDisplayInfo = true }
+            }
         }
     }
 
@@ -150,9 +208,22 @@ public struct SettingsView: View {
                 set: { settings.forceBuiltInMic = $0; save(settings) }
             ))
 
-            Toggle("Tap Mode", isOn: Binding(
+            Toggle("Tap Testing Mode", isOn: Binding(
                 get: { settings.tapModeEnabled },
-                set: { settings.tapModeEnabled = $0; save(settings) }
+                set: {
+                    settings.tapModeEnabled = $0
+                    if $0 { settings.tapToAnswerEnabled = false }
+                    save(settings)
+                }
+            ))
+
+            Toggle("Tap To Answer", isOn: Binding(
+                get: { settings.tapToAnswerEnabled },
+                set: {
+                    settings.tapToAnswerEnabled = $0
+                    if $0 { settings.tapModeEnabled = false }
+                    save(settings)
+                }
             ))
 
             Toggle("Response Sounds", isOn: Binding(
@@ -208,9 +279,12 @@ public struct SettingsView: View {
             }
 
         } header: {
-            Label("Audio", systemImage: "mic")
+            HStack {
+                Label("Audio", systemImage: "mic")
+                infoButton { showAudioInfo = true }
+            }
         } footer: {
-            Text("Higher confidence reduces false notes. Longer hold duration prevents fleeting detections from registering. Tap Mode disables the microphone and lets you self-assess by tapping Correct or Wrong.")
+            Text("Higher confidence reduces false notes. Longer hold duration prevents fleeting detections from registering. Tap Testing Mode disables the microphone and lets you self-assess by tapping Correct or Wrong. Tap To Answer lets you tap the fretboard directly to identify note positions.")
         }
         .animation(.easeInOut(duration: 0.2), value: settings.correctSoundEnabled)
         .animation(.easeInOut(duration: 0.2), value: settings.isMetronomeEnabled)
@@ -327,7 +401,10 @@ public struct SettingsView: View {
                 )
             }
         } header: {
-            Label("Quiz Defaults", systemImage: "gamecontroller")
+            HStack {
+                Label("Quiz Defaults", systemImage: "gamecontroller")
+                infoButton { showQuizDefaultsInfo = true }
+            }
         }
     }
 
@@ -345,7 +422,10 @@ public struct SettingsView: View {
                 .foregroundStyle(.red)
             }
         } header: {
-            Label("Data", systemImage: "externaldrive")
+            HStack {
+                Label("Data", systemImage: "externaldrive")
+                infoButton { showDataInfo = true }
+            }
         } footer: {
             Text("Removes all sessions, attempts, and mastery scores. Your settings will be kept.")
         }
@@ -381,6 +461,54 @@ public struct SettingsView: View {
 
     private func save(_ settings: UserSettings) {
         try? container.settingsRepository.saveSettings(settings)
+    }
+
+    // MARK: - Info Button
+
+    private func infoButton(action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: "info.circle")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+    }
+}
+
+// MARK: - SettingsInfoSheet
+
+private struct SettingsInfoSheet: View {
+
+    let title: String
+    let items: [(String, String)]
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    ForEach(items, id: \.0) { label, description in
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(label)
+                                .font(.subheadline.weight(.semibold))
+                            Text(description)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+                .padding(20)
+            }
+            .background(Color(.systemGroupedBackground))
+            .navigationTitle(title)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
+                }
+            }
+        }
+        .presentationDetents([.medium])
+        .presentationDragIndicator(.visible)
     }
 }
 

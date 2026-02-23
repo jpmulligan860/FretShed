@@ -320,7 +320,7 @@ final class QuizViewModelTests: XCTestCase {
         // In streak mode advanceManually should not revert to .active
         // We validate phase becomes complete after the scheduled task fires.
         // Give the task a moment to run.
-        try await Task.sleep(for: .seconds(1.1))
+        try await Task.sleep(for: .seconds(1.7))
         XCTAssertEqual(vm.phase, .complete,
             "Streak mode should complete the session after one wrong answer")
     }

@@ -139,6 +139,7 @@ public final class UserSettings {
 
     // Input
     public var tapModeEnabled: Bool
+    public var tapToAnswerEnabled: Bool
 
     // Tuner
     public var tunerDisplayStyleRaw: String
@@ -218,6 +219,7 @@ public final class UserSettings {
         self.metronomeVolume = 0.7
         self.hapticFeedbackEnabled = true
         self.tapModeEnabled = false
+        self.tapToAnswerEnabled = false
         self.tunerDisplayStyleRaw = TunerDisplayStyle.needle.rawValue
         self.referenceAHz = 440
         self.tunerSensitivity = 0.85

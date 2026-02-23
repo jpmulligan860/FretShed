@@ -22,11 +22,24 @@ public struct CompactFretboardView: View {
     public var availableWidth: CGFloat? = nil
     /// Correctly-answered chord tones shown as persistent teal dots.
     public var answeredQuestions: [QuizQuestion] = []
+    /// Optional closure invoked when the user taps a fretboard position. Parameters: (string, fret).
+    public var onFretTapped: ((Int, Int) -> Void)? = nil
+    /// Override color for the target dot (e.g. green during wrong feedback to show "correct answer here").
+    public var targetDotColor: Color = .orange
+    /// Position of the wrong answer to display as a red dot during feedback.
+    public var wrongAnswerPosition: (string: Int, fret: Int)? = nil
 
     private let stringSpacing: CGFloat = 22
+    private let edgePad: CGFloat = 12
     private let maxDotRadius: CGFloat = 11
     private let nutWidth: CGFloat = 5
     private let stringCount = 6
+
+    /// Inner spacing between strings — computed so strings 1 and 6 sit close to
+    /// the board edges (edgePad) while remaining strings are evenly distributed.
+    private var innerSpacing: CGFloat {
+        (boardHeight - 2 * edgePad) / CGFloat(stringCount - 1)
+    }
 
     private var visibleFrets: Int { fretRange.upperBound - fretRange.lowerBound + 1 }
     // openStringMargin uses the maximum dot radius so the open-string column
@@ -61,11 +74,50 @@ public struct CompactFretboardView: View {
         }
         .frame(width: boardWidth, height: boardHeight)
         .clipShape(RoundedRectangle(cornerRadius: DesignSystem.Radius.sm))
+        .overlay {
+            if let onFretTapped {
+                Color.clear
+                    .contentShape(Rectangle())
+                    .onTapGesture { location in
+                        guard let (string, fret) = hitTest(location) else { return }
+                        onFretTapped(string, fret)
+                    }
+            }
+        }
+    }
+
+    /// Converts a tap point to the nearest (string, fret) position on the fretboard.
+    public func hitTest(_ point: CGPoint) -> (string: Int, fret: Int)? {
+        let nutX = openStringMargin
+        let sp = innerSpacing
+
+        // Determine string index (visual row 0 = top string)
+        let rowFloat = (point.y - edgePad) / sp
+        let row = Int(rowFloat.rounded())
+        guard row >= 0, row < stringCount else { return nil }
+        // Convert visual row to string number, accounting for left-handed flip
+        let string = isLeftHanded ? (stringCount - row) : (row + 1)
+
+        // Determine fret number
+        let fret: Int
+        if point.x < nutX + nutWidth {
+            // Open string area
+            fret = 0
+        } else {
+            let xPastNut = point.x - nutX - nutWidth
+            let fretFloat = xPastNut / fretSpacing + 0.5
+            let visIdx = Int(fretFloat.rounded(.down))
+            fret = visIdx + fretRange.lowerBound
+        }
+
+        guard fret >= fretRange.lowerBound, fret <= fretRange.upperBound else { return nil }
+        guard fretboardMap.note(string: string, fret: fret) != nil else { return nil }
+        return (string, fret)
     }
 
     private func drawBoard(ctx: GraphicsContext, size: CGSize) {
         let nutX = openStringMargin
-        let topPad = stringSpacing
+        let sp = innerSpacing
 
         // Background
         ctx.fill(
@@ -92,7 +144,7 @@ public struct CompactFretboardView: View {
         // thicknesses[0] = string 1, thicknesses[5] = string 6.
         let thicknesses: [CGFloat] = [0.8, 1.1, 1.5, 1.9, 2.3, 2.8]
         for s in 0..<stringCount {
-            let y = topPad + CGFloat(s) * stringSpacing
+            let y = edgePad + CGFloat(s) * sp
             var p = Path()
             p.move(to: CGPoint(x: nutX, y: y))
             p.addLine(to: CGPoint(x: size.width, y: y))
@@ -107,8 +159,8 @@ public struct CompactFretboardView: View {
             let visIdx = fret - fretRange.lowerBound
             let x = nutX + nutWidth + (CGFloat(visIdx) - 0.5) * fretSpacing
             if Self.doubleDots.contains(fret) {
-                markerDot(ctx: ctx, at: CGPoint(x: x, y: midY - stringSpacing * 0.7))
-                markerDot(ctx: ctx, at: CGPoint(x: x, y: midY + stringSpacing * 0.7))
+                markerDot(ctx: ctx, at: CGPoint(x: x, y: midY - sp * 0.7))
+                markerDot(ctx: ctx, at: CGPoint(x: x, y: midY + sp * 0.7))
             } else if Self.singleDots.contains(fret) {
                 markerDot(ctx: ctx, at: CGPoint(x: x, y: midY))
             }
@@ -119,7 +171,7 @@ public struct CompactFretboardView: View {
         // but string 1 remains at the top of the display.
         for s in 0..<stringCount {
             let displayString = isLeftHanded ? (stringCount - s) : (s + 1)
-            let y = topPad + CGFloat(s) * stringSpacing
+            let y = edgePad + CGFloat(s) * sp
 
             for fret in fretRange {
                 guard let note = fretboardMap.note(string: displayString, fret: fret) else { continue }
@@ -132,14 +184,19 @@ public struct CompactFretboardView: View {
                     && targetQuestion?.note == note
                     && targetQuestion?.string == displayString
                     && targetQuestion?.fret == fret
+                let isWrongAnswer = wrongAnswerPosition?.string == displayString
+                    && wrongAnswerPosition?.fret == fret
                 let isAnswered = answeredQuestions.contains {
                     $0.note == note && $0.string == displayString && $0.fret == fret
                 }
                 let isReveal = revealAllPositions && targetQuestion?.note == note
 
-                if isTarget {
+                if isWrongAnswer {
                     noteDot(ctx: ctx, at: CGPoint(x: x, y: y),
-                            note: note, fill: .orange, format: noteFormat)
+                            note: note, fill: .red, format: noteFormat)
+                } else if isTarget {
+                    noteDot(ctx: ctx, at: CGPoint(x: x, y: y),
+                            note: note, fill: targetDotColor, format: noteFormat)
                 } else if isAnswered {
                     noteDot(ctx: ctx, at: CGPoint(x: x, y: y),
                             note: note, fill: .teal, format: noteFormat)

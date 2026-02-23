@@ -15,6 +15,7 @@ public struct QuizView: View {
     @State private var showEndConfirm = false
     @State private var showFretHint = false
     @State private var storedCorrectMessage: String = "Nice!"
+    @State private var wrongAnswerPosition: (string: Int, fret: Int)? = nil
     @Environment(\.dismiss) private var dismiss
     @Environment(\.verticalSizeClass) private var vSizeClass
 
@@ -46,6 +47,7 @@ public struct QuizView: View {
 
     /// Whether to reveal all positions of the target note (after a correct or incorrect answer).
     private var revealAllPositions: Bool {
+        if vm.settings.tapToAnswerEnabled && vm.phase == .active { return false }
         switch highlighting {
         case .allPositions:      return true
         case .singleThenReveal:  return vm.phase == .feedbackCorrect || vm.phase == .feedbackWrong
@@ -55,9 +57,11 @@ public struct QuizView: View {
 
     /// Whether to show the orange target dot on the fretboard.
     /// Hidden during active questioning when "Reveal After" is set;
+    /// hidden during active phase in Tap To Answer mode (user must find from memory);
     /// revealed on both correct and incorrect feedback so the user
     /// always sees where the note is after each attempt.
     private var showTargetDot: Bool {
+        if vm.settings.tapToAnswerEnabled && vm.phase == .active { return false }
         switch highlighting {
         case .singleThenReveal:  return vm.phase == .feedbackCorrect || vm.phase == .feedbackWrong
         case .singlePosition, .allPositions: return true
@@ -66,6 +70,7 @@ public struct QuizView: View {
 
     /// Whether to show note name labels inside the fret dots.
     private var showNoteNames: Bool {
+        if vm.settings.tapToAnswerEnabled && vm.phase == .active { return false }
         switch noteDisplayMode {
         case .showNames:     return true
         case .dotsOnly:      return false
@@ -117,45 +122,43 @@ public struct QuizView: View {
 
                     // ── Main content — stacked or side-by-side ────────────
                     if vSizeClass == .compact {
-                        // Landscape iPhone: fretboard left, prompt+actions right
-                        HStack(alignment: .center, spacing: 0) {
+                        // Landscape iPhone: prompt+actions top, fretboard bottom (full width)
+                        VStack(spacing: 0) {
+                            HStack(alignment: .center, spacing: 0) {
+                                compactPromptView
+                                    .frame(maxWidth: .infinity)
+
+                                actionSection
+                                    .padding(.horizontal, 12)
+                                    .frame(maxWidth: 320)
+
+                                if !vm.settings.tapModeEnabled && !vm.settings.tapToAnswerEnabled {
+                                    InputLevelBar(level: detector.inputLevel)
+                                        .frame(width: 60)
+                                        .padding(.trailing, 8)
+                                }
+                            }
+                            .padding(.vertical, 4)
+
                             scaledFretboard
                                 .padding(.horizontal, 8)
-                                .padding(.vertical, 8)
+                                .padding(.bottom, 4)
                                 .frame(maxWidth: .infinity)
-                                .overlay(alignment: .bottom) {
-                                    if !vm.settings.tapModeEnabled {
-                                        InputLevelBar(level: detector.inputLevel)
-                                            .padding(.horizontal, 16)
-                                            .padding(.bottom, 2)
-                                    }
-                                }
-
-                            Divider()
-
-                            VStack(spacing: 12) {
-                                promptView
-                                actionSection
-                                    .padding(.horizontal, 16)
-                                Spacer(minLength: 0)
-                            }
-                            .padding(.top, 12)
-                            .frame(maxWidth: 300)
                         }
                     } else {
-                        // Portrait: fretboard scaled to fit screen width
+                        // Portrait: prompt first, then fretboard below
+                        promptView
+                            .padding(.top, 10)
+
                         scaledFretboard
                             .padding(.horizontal, 8)
                             .padding(.top, 10)
 
-                        if !vm.settings.tapModeEnabled {
+                        if !vm.settings.tapModeEnabled && !vm.settings.tapToAnswerEnabled {
                             InputLevelBar(level: detector.inputLevel)
                                 .padding(.top, 4)
                                 .padding(.horizontal, 8)
                         }
-
-                        promptView
-                            .padding(.top, 10)
 
                         actionSection
                             .padding(.top, 10)
@@ -176,7 +179,7 @@ public struct QuizView: View {
         }
         .task {
             vm.start()
-            if !vm.settings.tapModeEnabled {
+            if !vm.settings.tapModeEnabled && !vm.settings.tapToAnswerEnabled {
                 detector.confidenceThreshold = vm.settings.confidenceThreshold
                 detector.forceBuiltInMic = vm.settings.forceBuiltInMic
                 try? await detector.start()
@@ -235,6 +238,7 @@ public struct QuizView: View {
                 }
             }
             if newPhase == .active {
+                wrongAnswerPosition = nil
                 hintTask?.cancel()
                 let timeout = vm.settings.hintTimeoutSeconds
                 if timeout > 0 {
@@ -345,7 +349,21 @@ public struct QuizView: View {
                 showTargetDot: showTargetDot,
                 fretRange: fretRange,
                 availableWidth: geo.size.width,
-                answeredQuestions: vm.answeredChordTones
+                answeredQuestions: vm.answeredChordTones,
+                onFretTapped: vm.settings.tapToAnswerEnabled && vm.phase == .active ? { string, fret in
+                    guard let note = container.fretboardMap.note(string: string, fret: fret) else { return }
+                    if vm.settings.defaultNoteAcceptanceMode == .exactString,
+                       let q = vm.currentQuestion,
+                       string != q.string || fret != q.fret {
+                        wrongAnswerPosition = (string, fret)
+                        let wrong = MusicalNote(rawValue: (q.note.rawValue + 1) % 12)!
+                        vm.submit(detectedNote: wrong)
+                    } else {
+                        vm.submit(detectedNote: note)
+                    }
+                } : nil,
+                targetDotColor: vm.phase == .feedbackWrong ? .green : .orange,
+                wrongAnswerPosition: vm.phase == .feedbackWrong ? computedWrongPosition : nil
             )
         }
         // Fixed height from the string spacing (7 * 22 = 154pt), independent of width
@@ -369,26 +387,26 @@ public struct QuizView: View {
                 }
                 .padding(.bottom, 2)
             } else {
-                Text("Play this note:")
+                Text(vm.settings.tapToAnswerEnabled ? "Find this note:" : "Play this note:")
                     .font(.system(size: 22, weight: .medium))
                     .foregroundStyle(.secondary)
             }
 
             if let q = vm.currentQuestion {
+                Text("String \(q.string)")
+                    .font(.system(size: 40, weight: .bold, design: .rounded))
+                    .foregroundStyle(promptColor)
+                    .monospacedDigit()
+
                 Text(q.note.displayName(format: noteFormat))
                     .font(.system(size: 79, weight: .black, design: .rounded))
                     .foregroundStyle(promptColor)
                     .contentTransition(.numericText())
                     .animation(.spring(duration: 0.3), value: q.note)
 
-                Text("String \(q.string)")
-                    .font(.system(size: 27, weight: .semibold))
-                    .foregroundStyle(.secondary)
-                    .monospacedDigit()
-
                 if showFretHint {
                     Text("Fret \(q.fret)")
-                        .font(.subheadline)
+                        .font(.system(size: 27, weight: .semibold))
                         .foregroundStyle(.secondary)
                         .monospacedDigit()
                         .transition(.opacity)
@@ -397,7 +415,7 @@ public struct QuizView: View {
                         withAnimation { showFretHint = true }
                     } label: {
                         Label("Show Fret", systemImage: "eye")
-                            .font(.subheadline)
+                            .font(.system(size: 27, weight: .semibold))
                             .foregroundStyle(DesignSystem.Colors.primary)
                     }
                     .buttonStyle(.plain)
@@ -407,6 +425,57 @@ public struct QuizView: View {
                 ProgressView().padding()
             }
         }
+    }
+
+    /// Compact prompt for landscape — note name, string, and fret hint in a single horizontal row.
+    private var compactPromptView: some View {
+        HStack(spacing: 12) {
+            if vm.session.focusMode == .chordProgression,
+               let chord = vm.currentChord {
+                VStack(spacing: 2) {
+                    Text(chord.label)
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(DesignSystem.Colors.primary)
+                    Text(vm.currentToneLabel)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+            } else {
+                Text(vm.settings.tapToAnswerEnabled ? "Find:" : "Play:")
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(.secondary)
+            }
+
+            if let q = vm.currentQuestion {
+                Text(q.note.displayName(format: noteFormat))
+                    .font(.system(size: 36, weight: .black, design: .rounded))
+                    .foregroundStyle(promptColor)
+                    .contentTransition(.numericText())
+                    .animation(.spring(duration: 0.3), value: q.note)
+
+                Text("Str \(q.string)")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .monospacedDigit()
+
+                if showFretHint {
+                    Text("Fret \(q.fret)")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .monospacedDigit()
+                } else {
+                    Button {
+                        withAnimation { showFretHint = true }
+                    } label: {
+                        Image(systemName: "eye")
+                            .font(.subheadline)
+                            .foregroundStyle(DesignSystem.Colors.primary)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+        .padding(.horizontal, 12)
     }
 
     // MARK: - Stats
@@ -457,7 +526,9 @@ public struct QuizView: View {
                 feedbackBanner(text: wrongMessage, color: .red, icon: "xmark.circle.fill")
                     .transition(.scale.combined(with: .opacity))
             case .active:
-                if vm.settings.tapModeEnabled {
+                if vm.settings.tapToAnswerEnabled {
+                    tapToAnswerView.transition(.opacity)
+                } else if vm.settings.tapModeEnabled {
                     tapModeView.transition(.opacity)
                 } else {
                     micListeningView.transition(.opacity)
@@ -720,6 +791,23 @@ public struct QuizView: View {
         }
     }
 
+    /// Tap To Answer helper text — shown when the user taps the fretboard to answer.
+    private var tapToAnswerView: some View {
+        VStack(spacing: 10) {
+            HStack(spacing: 8) {
+                Image(systemName: "hand.tap.fill")
+                    .foregroundStyle(DesignSystem.Colors.primary)
+                Text("Tap the fretboard where you think this note is.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 12)
+            .background(DesignSystem.Colors.surface,
+                        in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
+        }
+    }
+
     /// Live mic indicator shown while the quiz is listening.
     private var micListeningView: some View {
         VStack(spacing: 10) {
@@ -833,14 +921,14 @@ public struct QuizView: View {
     }
 
     private func feedbackBanner(text: String, color: Color, icon: String) -> some View {
-        HStack(spacing: 8) {
-            Image(systemName: icon).font(.subheadline)
-            Text(text).font(.subheadline.weight(.semibold))
+        HStack(spacing: 12) {
+            Image(systemName: icon).font(.title)
+            Text(text).font(.title2.weight(.bold))
         }
         .foregroundStyle(color)
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 12)
-        .background(color.opacity(0.12), in: RoundedRectangle(cornerRadius: 12))
+        .padding(.vertical, 20)
+        .background(color.opacity(0.18), in: RoundedRectangle(cornerRadius: 16))
         .onTapGesture { vm.advanceManually() }
     }
 
@@ -875,6 +963,23 @@ public struct QuizView: View {
     }
 
     // MARK: - Helpers
+
+    /// Computes the wrong answer position for fretboard display during wrong feedback.
+    /// For tap-to-answer: uses the stored tapped position.
+    /// For mic/tap-testing: finds the detected note on the target question's string.
+    private var computedWrongPosition: (string: Int, fret: Int)? {
+        // Tap-to-answer: we stored the exact tapped position
+        if let pos = wrongAnswerPosition { return pos }
+        // Mic / tap-testing: find where the detected wrong note lives on the target string
+        guard let wrongNote = vm.detectedNote,
+              let q = vm.currentQuestion else { return nil }
+        for fret in fretRange {
+            if container.fretboardMap.note(string: q.string, fret: fret) == wrongNote {
+                return (q.string, fret)
+            }
+        }
+        return nil
+    }
 
     private var promptColor: Color {
         switch vm.phase {

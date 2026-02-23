@@ -48,6 +48,7 @@
 		DB87639E0EB0C6EC51A29659 /* NotificationScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE2D409E59D0757557617013 /* NotificationScheduler.swift */; };
 		DCAE617288969A478DD93580 /* MetroDroneViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A95FA82F4B28C9E7BB45E46A /* MetroDroneViewModel.swift */; };
 		E1F858BAF82851FEC88FF535 /* MasteryAlgorithmTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2A41CF0B30565F2D2FE92A7 /* MasteryAlgorithmTests.swift */; };
+		E407C544B041E87FCB8059C5 /* ChordProgressionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3409FE657D2975DA48C4D978 /* ChordProgressionTests.swift */; };
 		EC9621D6C7CD303C1C595ACF /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83CC05DC4F6BC279CF06E4BE /* ContentView.swift */; };
 		EDBAEC5C732AD9BAF7933ECA /* SessionDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EF081CC52C037C265273111 /* SessionDetailView.swift */; };
 		F3201BA22FA3FAFF4F0AF8DB /* SettingsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FE5B2CFA6EF2400E6CCF60B /* SettingsTests.swift */; };
@@ -76,6 +77,7 @@
 		2C90013F9A9FA6F14F8611B3 /* DesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem.swift; sourceTree = "<group>"; };
 		2E6D4D25DFA640399A966356 /* SwiftDataStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftDataStore.swift; sourceTree = "<group>"; };
 		334441AE15BE47671C39BF23 /* CellDetailSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CellDetailSheet.swift; sourceTree = "<group>"; };
+		3409FE657D2975DA48C4D978 /* ChordProgressionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChordProgressionTests.swift; sourceTree = "<group>"; };
 		368D92459DC9EF2DC0B7DC23 /* SessionHeatmapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionHeatmapView.swift; sourceTree = "<group>"; };
 		40EADCDC7EF4F4CB8E8D8B6A /* MasteryHeatmapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MasteryHeatmapView.swift; sourceTree = "<group>"; };
 		5103ABD65D82C3BE8DF79C93 /* ProgressViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressViewModel.swift; sourceTree = "<group>"; };
@@ -131,6 +133,7 @@
 		086DFA85E5F606BA42742668 /* UnitTests */ = {
 			isa = PBXGroup;
 			children = (
+				3409FE657D2975DA48C4D978 /* ChordProgressionTests.swift */,
 				1DE95D278240B6AAD1413451 /* FretboardMapTests.swift */,
 				C2A41CF0B30565F2D2FE92A7 /* MasteryAlgorithmTests.swift */,
 				D08375D0D742EB497DA8C1B5 /* MusicalNoteTests.swift */,
@@ -440,6 +443,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E407C544B041E87FCB8059C5 /* ChordProgressionTests.swift in Sources */,
 				60927EE7E18F6D291911D9A0 /* FretboardMapTests.swift in Sources */,
 				E1F858BAF82851FEC88FF535 /* MasteryAlgorithmTests.swift in Sources */,
 				39AD25909A0A7C8465961526 /* MusicalNoteTests.swift in Sources */,

@@ -16,7 +16,7 @@ The core product is feature-complete and well-architected:
 - Live pitch detection (AccelerateYIN)
 - Metronome + drone generator (AVAudioEngine)
 - SwiftData persistence + repository pattern
-- 206 passing unit tests
+- 214 passing unit tests
 - Swift 6 strict concurrency
 
 > **Note on naming**: The Xcode project is `FretShed`; the MVP plan targets the `FretShed` brand. Decide on a final product name before Phase 4 (bundle IDs are permanent once submitted).
@@ -184,7 +184,7 @@ Estimated: 18–25 hours
 
 | # | Task | Est. | Status |
 |---|---|---|---|
-| 5.19 | Run full test suite one final time — all 206 tests must pass | 30 min | 🔲 |
+| 5.19 | Run full test suite one final time — all 214 tests must pass | 30 min | 🔲 |
 | 5.20 | Test every tab on a physical device — fresh install, go through onboarding, no crashes | 1–2 hrs | 🔲 |
 | 5.21 | Test StoreKit in sandbox — full purchase flow: monthly, annual, cancel, restore | 1 hr | 🔲 |
 | 5.22 | Confirm mic permission flow — deny then grant, both paths handled gracefully | 30 min | 🔲 |

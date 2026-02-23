@@ -54,6 +54,52 @@ public struct ChordSlot: Codable, Sendable, Hashable, Identifiable {
     }
 
     public var label: String { "\(root.sharpName)\(quality.label)" }
+
+    /// Returns only the tones selected by the given `ChordToneSelection`.
+    public func selectedTones(for selection: ChordToneSelection) -> [MusicalNote] {
+        let allTones = tones  // [root, third, fifth]
+        return selection.toneIndices.map { allTones[$0] }
+    }
+}
+
+// MARK: - ChordToneSelection
+
+public enum ChordToneSelection: String, Codable, CaseIterable, Sendable, Hashable {
+    case rootOnly     = "rootOnly"
+    case rootAndThird = "rootAndThird"
+    case rootAndFifth = "rootAndFifth"
+    case closeTriad   = "closeTriad"
+
+    public var label: String {
+        switch self {
+        case .rootOnly:     return "Root Only"
+        case .rootAndThird: return "Root + 3rd"
+        case .rootAndFifth: return "Root + 5th"
+        case .closeTriad:   return "Close Triad"
+        }
+    }
+
+    /// Indices into the full [root, third, fifth] array.
+    public var toneIndices: [Int] {
+        switch self {
+        case .rootOnly:     return [0]
+        case .rootAndThird: return [0, 1]
+        case .rootAndFifth: return [0, 2]
+        case .closeTriad:   return [0, 1, 2]
+        }
+    }
+
+    /// Labels for each tone step.
+    public var toneLabels: [String] {
+        switch self {
+        case .rootOnly:     return ["Root"]
+        case .rootAndThird: return ["Root", "3rd"]
+        case .rootAndFifth: return ["Root", "5th"]
+        case .closeTriad:   return ["Root", "3rd", "5th"]
+        }
+    }
+
+    public var toneCount: Int { toneIndices.count }
 }
 
 // MARK: - ChordProgression
@@ -63,11 +109,22 @@ public struct ChordProgression: Codable, Sendable, Hashable, Identifiable {
     public var id: UUID
     public var name: String
     public var chords: [ChordSlot]    // 1–4 chords
+    public var toneSelection: ChordToneSelection  // defaults to .closeTriad
 
-    public init(id: UUID = UUID(), name: String, chords: [ChordSlot]) {
+    public init(id: UUID = UUID(), name: String, chords: [ChordSlot],
+                toneSelection: ChordToneSelection = .closeTriad) {
         self.id = id
         self.name = name
         self.chords = Array(chords.prefix(4))
+        self.toneSelection = toneSelection
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        name = try container.decode(String.self, forKey: .name)
+        chords = try container.decode([ChordSlot].self, forKey: .chords)
+        toneSelection = try container.decodeIfPresent(ChordToneSelection.self, forKey: .toneSelection) ?? .closeTriad
     }
 
     /// Human-readable chord names, e.g. "Cmaj – Amaj – Fmaj – Gmaj".
@@ -162,6 +219,6 @@ public extension ChordProgression {
         let newChords = chords.map { slot in
             ChordSlot(root: slot.root.transposed(by: semitones), quality: slot.quality)
         }
-        return ChordProgression(id: id, name: name, chords: newChords)
+        return ChordProgression(id: id, name: name, chords: newChords, toneSelection: toneSelection)
     }
 }

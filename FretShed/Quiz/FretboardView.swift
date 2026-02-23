@@ -20,6 +20,8 @@ public struct CompactFretboardView: View {
     public var fretRange: ClosedRange<Int> = 0...12
     /// When set, fret spacing is computed to fill this width exactly.
     public var availableWidth: CGFloat? = nil
+    /// Correctly-answered chord tones shown as persistent teal dots.
+    public var answeredQuestions: [QuizQuestion] = []
 
     private let stringSpacing: CGFloat = 22
     private let maxDotRadius: CGFloat = 11
@@ -130,11 +132,17 @@ public struct CompactFretboardView: View {
                     && targetQuestion?.note == note
                     && targetQuestion?.string == displayString
                     && targetQuestion?.fret == fret
+                let isAnswered = answeredQuestions.contains {
+                    $0.note == note && $0.string == displayString && $0.fret == fret
+                }
                 let isReveal = revealAllPositions && targetQuestion?.note == note
 
                 if isTarget {
                     noteDot(ctx: ctx, at: CGPoint(x: x, y: y),
                             note: note, fill: .orange, format: noteFormat)
+                } else if isAnswered {
+                    noteDot(ctx: ctx, at: CGPoint(x: x, y: y),
+                            note: note, fill: .teal, format: noteFormat)
                 } else if isReveal {
                     noteDot(ctx: ctx, at: CGPoint(x: x, y: y),
                             note: note, fill: .green.opacity(0.85), format: noteFormat)

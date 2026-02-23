@@ -344,7 +344,8 @@ public struct QuizView: View {
                 showNoteNames: showNoteNames,
                 showTargetDot: showTargetDot,
                 fretRange: fretRange,
-                availableWidth: geo.size.width
+                availableWidth: geo.size.width,
+                answeredQuestions: vm.answeredChordTones
             )
         }
         // Fixed height from the string spacing (7 * 22 = 154pt), independent of width
@@ -445,8 +446,13 @@ public struct QuizView: View {
         Group {
             switch vm.phase {
             case .feedbackCorrect:
-                feedbackBanner(text: correctMessage, color: .green, icon: "checkmark.circle.fill")
-                    .transition(.scale.combined(with: .opacity))
+                if vm.showingChordCompleteSummary, let chord = vm.currentChord {
+                    chordCompleteBanner(chord: chord)
+                        .transition(.scale.combined(with: .opacity))
+                } else {
+                    feedbackBanner(text: correctMessage, color: .green, icon: "checkmark.circle.fill")
+                        .transition(.scale.combined(with: .opacity))
+                }
             case .feedbackWrong:
                 feedbackBanner(text: wrongMessage, color: .red, icon: "xmark.circle.fill")
                     .transition(.scale.combined(with: .opacity))
@@ -806,6 +812,24 @@ public struct QuizView: View {
         .padding(14)
         .background(Color.orange.opacity(0.08),
                     in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
+    }
+
+    private func chordCompleteBanner(chord: ChordSlot) -> some View {
+        let noteNames = chord.tones.map { $0.displayName(format: noteFormat) }
+        return VStack(spacing: 4) {
+            HStack(spacing: 6) {
+                Image(systemName: "checkmark.circle.fill").font(.subheadline)
+                Text(chord.label).font(.subheadline.weight(.bold))
+            }
+            .foregroundStyle(.green)
+            Text(noteNames.joined(separator: " \u{2013} "))
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.primary)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 12)
+        .background(Color.green.opacity(0.12), in: RoundedRectangle(cornerRadius: 12))
+        .onTapGesture { vm.advanceManually() }
     }
 
     private func feedbackBanner(text: String, color: Color, icon: String) -> some View {

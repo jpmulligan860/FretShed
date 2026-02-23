@@ -170,11 +170,13 @@ Buttons: Re-Calibrate (opens screens 5–7 as modal), Reset to defaults.
 **Phase 3:** Tasks 3.1–3.6 complete ✅ · Task 3.7 🔲 (device timing test)
 **Phase 4:** Not started
 **Phase 5:** Not started
-**Test suite:** 206 tests passing
+**Test suite:** 214 tests passing
 
 **All BUGLOG items resolved.** Q6 (results buttons) fixed via ZStack overlay + direct closures. All device-testing bugs (Practice, Progress, Tuner, MetroDrone, Settings, Quiz) fixed.
 
-**Progress tab enhancements (Feb 2026):** F2 (response time tracking), F9–F16 (section reorder, info buttons, filter-reactive charts/heatmap, dynamic cell count, toolbar filter with label). Only F5 (Chord Progression note selection) remains open in Feature Ideas.
+**Progress tab enhancements (Feb 2026):** F2 (response time tracking), F9–F16 (section reorder, info buttons, filter-reactive charts/heatmap, dynamic cell count, toolbar filter with label).
+
+**Chord Progression enhancements (Feb 2026):** F5 (tone selection: Root Only / Root+3rd / Root+5th / Close Triad). F17 (position proximity chaining, persistent teal dots for answered tones, no duplicate strings, chord completion summary in untimed mode). F18 (Position constraint toggle + fret picker, String Group picker: All / 1–2–3 / 2–3–4 / 3–4–5 / 4–5–6).
 
 **Next task:** Task 3.7 (onboarding device test), then Phase 4.
 
@@ -192,7 +194,7 @@ Buttons: Re-Calibrate (opens screens 5–7 as modal), Reset to defaults.
 ---
 
 ## Known Issues (from BUGLOG.md)
-All device-testing bugs are resolved. Only open item: F5 (Chord Progression note selection — feature idea, not a bug).
+All device-testing bugs are resolved. All feature ideas (F1–F18) are complete.
 
 ---
 

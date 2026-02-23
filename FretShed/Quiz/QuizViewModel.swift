@@ -86,6 +86,11 @@ public final class QuizViewModel: Identifiable {
     public private(set) var currentChord: ChordSlot? = nil
     /// The current tone step label ("Root", "3rd", "5th"), for display in the UI.
     public private(set) var currentToneLabel: String = ""
+    /// Correctly-answered tones for the current chord, displayed as persistent dots.
+    public private(set) var answeredChordTones: [QuizQuestion] = []
+    /// True while displaying the completed chord summary (untimed only).
+    /// The UI uses this alongside `currentChord` to show chord name and notes.
+    public private(set) var showingChordCompleteSummary: Bool = false
 
     /// Response times (ms) for correct answers only — used to compute average for timed sessions.
     private var correctResponseTimes: [Int] = []
@@ -96,6 +101,8 @@ public final class QuizViewModel: Identifiable {
     private static let tempoDecrement: Double = 0.5
     /// Tempo mode: the allowance will never drop below this floor (seconds).
     private static let tempoFloor: Double = 2.0
+    /// Feedback duration for the chord completion summary (untimed only).
+    private static let chordCompleteFeedbackDuration: TimeInterval = 2.5
 
     // MARK: - Initializer
 
@@ -158,13 +165,21 @@ public final class QuizViewModel: Identifiable {
             }
             // Chord progression: advance tone within chord, then move to next chord.
             if session.focusMode == .chordProgression {
-                let chordCount = session.chordProgression?.chords.count ?? 1
+                answeredChordTones.append(currentQuestion!)
+                let progression = session.chordProgression ?? ChordProgression.presets[0]
+                let chordCount = progression.chords.count
+                let toneCount = progression.toneSelection.toneCount
                 chordToneIndex += 1
-                if chordToneIndex >= 3 {
-                    chordToneIndex = 0
-                    chordRootFret = nil
-                    chordRootString = nil
-                    chordIndex = (chordIndex + 1) % chordCount
+                if chordToneIndex >= toneCount {
+                    if session.gameMode == .untimed || session.gameMode == .streak {
+                        // Show chord summary — defer advancement to next question.
+                        showingChordCompleteSummary = true
+                    } else {
+                        // Timed / tempo: advance immediately.
+                        chordToneIndex = 0
+                        answeredChordTones = []
+                        chordIndex = (chordIndex + 1) % chordCount
+                    }
                 }
             }
             // Tempo mode: tighten the per-question budget after each correct answer.
@@ -189,7 +204,8 @@ public final class QuizViewModel: Identifiable {
             scheduleFeedbackAdvance(thenComplete: true)
             return
         }
-        scheduleFeedbackAdvance()
+        let duration = showingChordCompleteSummary ? Self.chordCompleteFeedbackDuration : nil
+        scheduleFeedbackAdvance(duration: duration)
     }
 
     public func advanceManually() {
@@ -227,6 +243,14 @@ public final class QuizViewModel: Identifiable {
     // MARK: - Private: Question Flow
 
     private func advanceToNextQuestion() {
+        // Complete deferred chord advancement from the summary phase.
+        if showingChordCompleteSummary {
+            let progression = session.chordProgression ?? ChordProgression.presets[0]
+            chordToneIndex = 0
+            answeredChordTones = []
+            showingChordCompleteSummary = false
+            chordIndex = (chordIndex + 1) % progression.chords.count
+        }
         let question = selectQuestion()
         currentQuestion = question
         lastQuestion = question
@@ -324,16 +348,22 @@ public final class QuizViewModel: Identifiable {
             return QuizQuestion(note: .c, string: 1, fret: 0)
         }
 
+        let selection = progression.toneSelection
         let chord = progression.chords[chordIndex % progression.chords.count]
-        let tones = chord.tones                          // [root, third, fifth]
-        let toneIdx = chordToneIndex % tones.count
-        let targetNote = tones[toneIdx]
+        let selectedTones = chord.selectedTones(for: selection)
+        let toneIdx = chordToneIndex % selectedTones.count
+        let targetNote = selectedTones[toneIdx]
 
         // Publish context so the UI can label the prompt correctly.
         currentChord = chord
-        currentToneLabel = ["Root", "3rd", "5th"][chordToneIndex % 3]
+        currentToneLabel = selection.toneLabels[toneIdx]
 
-        let allCandidates = buildCandidates().filter { $0.note == targetNote }
+        let allCandidates: [QuizQuestion] = {
+            let raw = buildCandidates().filter { $0.note == targetNote }
+            guard !session.targetStrings.isEmpty else { return raw }
+            let stringFiltered = raw.filter { session.targetStrings.contains($0.string) }
+            return stringFiltered.isEmpty ? raw : stringFiltered
+        }()
         guard !allCandidates.isEmpty else {
             return QuizQuestion(note: targetNote, string: 1, fret: 0)
         }
@@ -342,25 +372,47 @@ public final class QuizViewModel: Identifiable {
         // adjacent strings so the triad is playable as a close-position chord.
         let candidates: [QuizQuestion]
         if toneIdx == 0 {
-            // Root: pick freely, then remember the fret and string.
+            // Root: avoid repeating the exact same position.
             let noRepeat = allCandidates.filter { c in
                 guard let last = lastQuestion else { return true }
                 return !(last.note == c.note && last.string == c.string)
             }
-            let pick = (noRepeat.isEmpty ? allCandidates : noRepeat).randomElement()!
+            let pool = noRepeat.isEmpty ? allCandidates : noRepeat
+
+            // Position proximity: constrain root near the previous chord's position.
+            if let prevFret = chordRootFret, let prevString = chordRootString {
+                let nearby = pool.filter {
+                    abs($0.fret - prevFret) <= 4 && abs($0.string - prevString) <= 3
+                }
+                let wider = nearby.isEmpty ? pool.filter {
+                    abs($0.fret - prevFret) <= 6
+                } : nearby
+                let pick = (wider.isEmpty ? pool : wider).randomElement()!
+                chordRootFret = pick.fret
+                chordRootString = pick.string
+                return pick
+            }
+
+            // First chord: pick freely.
+            let pick = pool.randomElement()!
             chordRootFret = pick.fret
             chordRootString = pick.string
             return pick
         } else if let rootFret = chordRootFret, let rootString = chordRootString {
+            // No two chord tones on the same string — exclude strings already used.
+            let usedStrings = Set(answeredChordTones.map(\.string))
+            let available = allCandidates.filter { !usedStrings.contains($0.string) }
+            let base = available.isEmpty ? allCandidates : available
+
             // 3rd / 5th: prefer positions within 2 frets AND 2 strings of the root.
-            let close = allCandidates.filter {
+            let close = base.filter {
                 abs($0.fret - rootFret) <= 2 && abs($0.string - rootString) <= 2
             }
             // Fallback: allow 3 frets if no tight voicing exists.
-            let wider = close.isEmpty ? allCandidates.filter {
+            let wider = close.isEmpty ? base.filter {
                 abs($0.fret - rootFret) <= 3 && abs($0.string - rootString) <= 3
             } : close
-            candidates = wider.isEmpty ? allCandidates : wider
+            candidates = wider.isEmpty ? base : wider
         } else {
             candidates = allCandidates
         }
@@ -477,9 +529,9 @@ public final class QuizViewModel: Identifiable {
         }
     }
 
-    private func scheduleFeedbackAdvance(thenComplete: Bool = false) {
+    private func scheduleFeedbackAdvance(thenComplete: Bool = false, duration: TimeInterval? = nil) {
         feedbackTask = Task {
-            try? await Task.sleep(for: .seconds(Self.feedbackDuration))
+            try? await Task.sleep(for: .seconds(duration ?? Self.feedbackDuration))
             guard !Task.isCancelled else { return }
             if thenComplete {
                 phase = .complete

@@ -23,6 +23,9 @@ public struct SessionSetupView: View {
     @State private var selectedPresetIndex: Int? = 0          // nil = custom
     @State private var customProgression: ChordProgression = .customTemplate()
     @State private var progressionKey: MusicalNote = .c
+    @State private var chordToneSelection: ChordToneSelection = .closeTriad
+    @State private var chordPositionEnabled = false
+    @State private var chordStringGroup: [Int] = []    // empty = all strings
     @State private var isAdaptive = false
     @State private var circleConstraint: CircleConstraint = .fullFretboard
     @State private var showPracticeModeInfo = false
@@ -597,6 +600,17 @@ public struct SessionSetupView: View {
         [3, 5, 7, 9, 12].contains(fret)
     }
 
+    /// String group options for chord progression constraint.
+    private var chordStringGroupOptions: [(label: String, strings: [Int])] {
+        [
+            ("All", []),
+            ("1–2–3", [1, 2, 3]),
+            ("2–3–4", [2, 3, 4]),
+            ("3–4–5", [3, 4, 5]),
+            ("4–5–6", [4, 5, 6])
+        ]
+    }
+
     // MARK: - Chord Progression Section
 
     private var chordProgressionSection: some View {
@@ -639,6 +653,84 @@ public struct SessionSetupView: View {
                             }
                             .buttonStyle(.plain)
                             .animation(.easeInOut(duration: 0.15), value: progressionKey)
+                        }
+                    }
+                    .padding(.horizontal, 20)
+                }
+            }
+
+            // Chord Tones picker
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Chord Tones")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 20)
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        ForEach(ChordToneSelection.allCases, id: \.self) { selection in
+                            Button {
+                                chordToneSelection = selection
+                            } label: {
+                                Text(selection.label)
+                                    .font(.subheadline.weight(chordToneSelection == selection ? .semibold : .regular))
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 7)
+                                    .background(
+                                        chordToneSelection == selection ? DesignSystem.Colors.primary : DesignSystem.Colors.surface,
+                                        in: Capsule()
+                                    )
+                                    .foregroundStyle(chordToneSelection == selection ? .white : .primary)
+                            }
+                            .buttonStyle(.plain)
+                            .animation(.easeInOut(duration: 0.15), value: chordToneSelection)
+                        }
+                    }
+                    .padding(.horizontal, 20)
+                }
+            }
+
+            // Position constraint
+            VStack(alignment: .leading, spacing: 6) {
+                HStack {
+                    Text("Position")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    Toggle("", isOn: $chordPositionEnabled)
+                        .labelsHidden()
+                }
+                .padding(.horizontal, 20)
+
+                if chordPositionEnabled {
+                    fretPickerSection
+                }
+            }
+
+            // String group constraint
+            VStack(alignment: .leading, spacing: 6) {
+                Text("String Group")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 20)
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        ForEach(chordStringGroupOptions, id: \.label) { option in
+                            let isSelected = chordStringGroup == option.strings
+                            Button {
+                                chordStringGroup = option.strings
+                            } label: {
+                                Text(option.label)
+                                    .font(.subheadline.weight(isSelected ? .semibold : .regular))
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 7)
+                                    .background(
+                                        isSelected ? DesignSystem.Colors.primary : DesignSystem.Colors.surface,
+                                        in: Capsule()
+                                    )
+                                    .foregroundStyle(isSelected ? .white : .primary)
+                            }
+                            .buttonStyle(.plain)
+                            .animation(.easeInOut(duration: 0.15), value: isSelected)
                         }
                     }
                     .padding(.horizontal, 20)
@@ -776,13 +868,17 @@ public struct SessionSetupView: View {
         let targetStrings: [Int]
         if selectedFocusMode == .singleString || (isCircleMode && circleConstraint == .strings) {
             targetStrings = Array(selectedStrings)
+        } else if selectedFocusMode == .chordProgression && !chordStringGroup.isEmpty {
+            targetStrings = chordStringGroup
         } else {
             targetStrings = []
         }
 
         let fretStart: Int
         let fretEnd: Int
-        if selectedFocusMode == .fretboardPosition || (isCircleMode && circleConstraint == .position) {
+        if selectedFocusMode == .fretboardPosition
+            || (isCircleMode && circleConstraint == .position)
+            || (selectedFocusMode == .chordProgression && chordPositionEnabled) {
             fretStart = selectedFrets.min() ?? 0
             fretEnd = selectedFrets.max() ?? 12
         } else {
@@ -799,7 +895,9 @@ public struct SessionSetupView: View {
             } else {
                 base = customProgression
             }
-            return base.transposed(toKey: progressionKey)
+            var transposed = base.transposed(toKey: progressionKey)
+            transposed.toneSelection = chordToneSelection
+            return transposed
         }()
 
         let session = Session(
@@ -960,7 +1058,14 @@ private struct ChordProgressionInfoSheet: View {
                         title: "How It Works",
                         icon: "music.note.list",
                         color: .indigo,
-                        text: "For each chord in the progression, you'll be asked to play the Root, then the 3rd, then the 5th. Once all three tones are played correctly, the quiz moves to the next chord and repeats."
+                        text: "For each chord in the progression, you'll play the selected chord tones in sequence. Once all tones are played correctly, the quiz moves to the next chord."
+                    )
+
+                    infoBlock(
+                        title: "Chord Tones",
+                        icon: "music.note.list",
+                        color: .blue,
+                        text: "Choose which tones to drill. \"Root Only\" finds just the root — great for beginners. \"Root + 3rd\" trains major vs minor quality. \"Root + 5th\" drills power chord shapes. \"Close Triad\" covers all three tones in a playable voicing."
                     )
 
                     infoBlock(

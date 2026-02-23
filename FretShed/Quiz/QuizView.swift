@@ -221,7 +221,13 @@ public struct QuizView: View {
                 }
             }
         }
-        .onChange(of: vm.currentQuestion) { _, _ in
+        .onChange(of: vm.currentQuestion) { _, question in
+            // Narrow pitch detection to the target string's frequency range.
+            if let question {
+                detector.expectedFrequencyRange = FretboardMap.frequencyRange(forString: question.string)
+            } else {
+                detector.expectedFrequencyRange = nil
+            }
             showFretHint = false
             hintTask?.cancel()
             let timeout = vm.settings.hintTimeoutSeconds

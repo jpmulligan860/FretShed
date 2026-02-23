@@ -64,6 +64,18 @@ public struct FretboardMap: Sendable {
         6: 2   // E2
     ]
 
+    /// Returns the expected frequency range for a string (±1 semitone tolerance).
+    /// Uses standard tuning A4=440Hz. Returns nil for invalid string numbers.
+    public static func frequencyRange(forString string: Int, maxFret: Int = 24) -> ClosedRange<Double>? {
+        guard let note = standardTuningOpenNotes[string],
+              let octave = standardTuningOpenOctaves[string] else { return nil }
+        let midi = Double((octave + 1) * 12 + note.rawValue)
+        let openFreq = 440.0 * pow(2.0, (midi - 69.0) / 12.0)
+        let maxFreq = openFreq * pow(2.0, Double(maxFret) / 12.0)
+        let tolerance = pow(2.0, 1.0 / 12.0)  // ±1 semitone
+        return (openFreq / tolerance)...(maxFreq * tolerance)
+    }
+
     // MARK: - Storage
 
     /// The underlying lookup: `[stringNumber: [fretNumber: MusicalNote]]`.

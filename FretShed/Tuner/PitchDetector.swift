@@ -88,6 +88,11 @@ public final class PitchDetector {
     /// AGC starts from this value instead of the default 2.0.
     public var calibratedAGCGain: Float? = nil
 
+    /// Optional frequency range constraint. When set, the consumer task
+    /// ignores detected frequencies outside this range. Used by QuizView
+    /// to narrow detection to the target string's frequency band.
+    public var expectedFrequencyRange: ClosedRange<Double>? = nil
+
     /// Current noise floor as reported by the realtime tap (read-only for UI).
     public private(set) var currentNoiseFloor: Float = 0.01
 
@@ -231,6 +236,11 @@ public final class PitchDetector {
             // tuner needle doesn't snap back to centre as the note decays (fixes T2, T3).
             var holdUntilDate: Date? = nil
             let holdDuration: TimeInterval = 0.25   // 250 ms
+            // Consecutive frame gate: require the same note for N frames before
+            // publishing to detectedNote, preventing transient slide noise artifacts.
+            var consecutiveNoteCount: Int = 0
+            var lastConsecutiveNote: MusicalNote? = nil
+            let consecutiveFrameThreshold = 3  // ~69ms at 23ms hop
             for await result in pitchStream {
                 guard let self else { break }
                 switch result {
@@ -245,6 +255,8 @@ public final class PitchDetector {
                     self.centsDeviation = 0
                     self.inputLevel = 0
                     holdUntilDate = nil
+                    consecutiveNoteCount = 0
+                    lastConsecutiveNote = nil
                 case .silent(let rmsLevel, let noiseFloor, let agcGain):
                     // Publish realtime signal state for calibration / diagnostics.
                     self.currentNoiseFloor = noiseFloor
@@ -260,6 +272,8 @@ public final class PitchDetector {
                     self.detectedFrequency = nil
                     self.centsDeviation = 0
                     holdUntilDate = nil
+                    consecutiveNoteCount = 0
+                    lastConsecutiveNote = nil
                 case .detected(let freq, let rmsLevel, let noiseFloor, let agcGain):
                     // Publish realtime signal state for calibration / diagnostics.
                     self.currentNoiseFloor = noiseFloor
@@ -283,9 +297,34 @@ public final class PitchDetector {
                         useFreq = freq
                     }
 
+                    // String-aware frequency constraint: reject frequencies outside expected range.
+                    if let range = self.expectedFrequencyRange, !range.contains(useFreq) {
+                        break
+                    }
+
                     let (note, cents) = pitchDetectorNoteAndCents(frequency: useFreq, referenceA: self.referenceA)
-                    smoothedCents = 0.3 * cents + 0.7 * smoothedCents
+
+                    // Consecutive frame gate: same note must persist for N frames
+                    // before publishing, rejecting transient string slide artifacts.
+                    if note == lastConsecutiveNote {
+                        consecutiveNoteCount += 1
+                    } else {
+                        consecutiveNoteCount = 1
+                        lastConsecutiveNote = note
+                    }
+
                     smoothedLevel = 0.3 * Double(rmsLevel) + 0.7 * smoothedLevel
+                    self.inputLevel = smoothedLevel
+
+                    guard consecutiveNoteCount >= consecutiveFrameThreshold else {
+                        // Still building up — keep previous note on screen via hold.
+                        if self.detectedNote != nil {
+                            holdUntilDate = Date().addingTimeInterval(holdDuration)
+                        }
+                        break
+                    }
+
+                    smoothedCents = 0.3 * cents + 0.7 * smoothedCents
                     // Extend hold window on every fresh detection.
                     holdUntilDate = Date().addingTimeInterval(holdDuration)
                     self.detectedNote = note
@@ -294,7 +333,6 @@ public final class PitchDetector {
                     if abs(smoothedCents - self.centsDeviation) >= 0.5 {
                         self.centsDeviation = smoothedCents
                     }
-                    self.inputLevel = smoothedLevel
                 }
             }
         }
@@ -467,6 +505,7 @@ private final class AccelerateYIN: @unchecked Sendable {
     private let sqBuf: UnsafeMutablePointer<Float>     // windowSize
     private let hannWindow: UnsafeMutablePointer<Float>   // windowSize
     private let windowedBuf: UnsafeMutablePointer<Float>  // windowSize
+    private let logBuf: UnsafeMutablePointer<Float>       // fftN/2 (scratch for spectral flatness)
 
     init(windowSize: Int = 4096) {
         self.windowSize = windowSize
@@ -487,6 +526,7 @@ private final class AccelerateYIN: @unchecked Sendable {
         hannWindow = .allocate(capacity: windowSize)
         vDSP_hann_window(hannWindow, vDSP_Length(windowSize), Int32(vDSP_HANN_NORM))
         windowedBuf = .allocate(capacity: windowSize); windowedBuf.initialize(repeating: 0, count: windowSize)
+        logBuf = .allocate(capacity: halfFFT); logBuf.initialize(repeating: 0, count: halfFFT)
     }
 
     deinit {
@@ -500,6 +540,7 @@ private final class AccelerateYIN: @unchecked Sendable {
         sqBuf.deinitialize(count: windowSize); sqBuf.deallocate()
         hannWindow.deallocate()
         windowedBuf.deinitialize(count: windowSize); windowedBuf.deallocate()
+        logBuf.deinitialize(count: fftN / 2); logBuf.deallocate()
         vDSP_destroy_fftsetup(fftSetup)
     }
 
@@ -507,7 +548,7 @@ private final class AccelerateYIN: @unchecked Sendable {
         in samples: UnsafePointer<Float>,
         count: Int,
         sampleRate: Double
-    ) -> (frequency: Double, confidence: Double)? {
+    ) -> (frequency: Double, confidence: Double, spectralFlatness: Float)? {
         let n = min(count, windowSize)
         guard n >= windowSize else { return nil }
         let halfFFT = fftN / 2
@@ -537,6 +578,43 @@ private final class AccelerateYIN: @unchecked Sendable {
 
         // Power spectrum: |FFT(x)|^2
         vDSP_zvmags(&splitComplex, 1, realp2, 1, vDSP_Length(halfFFT))
+
+        // --- Spectral Flatness (before inverse FFT overwrites realp2) ---
+        // Tonal signals ~0.01–0.15; string slide noise ~0.3–0.8.
+        var sfArithMean: Float = 0
+        vDSP_meanv(realp2, 1, &sfArithMean, vDSP_Length(halfFFT))
+        let spectralFlatness: Float
+        if sfArithMean > 1e-20 {
+            var sfEpsilon: Float = 1e-20
+            vDSP_vsadd(realp2, 1, &sfEpsilon, logBuf, 1, vDSP_Length(halfFFT))
+            var sfCount = Int32(halfFFT)
+            vvlogf(logBuf, logBuf, &sfCount)
+            var sfLogMean: Float = 0
+            vDSP_meanv(logBuf, 1, &sfLogMean, vDSP_Length(halfFFT))
+            spectralFlatness = expf(sfLogMean) / sfArithMean
+        } else {
+            spectralFlatness = 1.0
+        }
+
+        // --- HPS (Harmonic Product Spectrum) peak detection ---
+        // Multiply spectrum with 2× and 3× downsampled versions to find
+        // the true fundamental. Helps correct octave errors on low strings
+        // where harmonics are stronger than the fundamental.
+        let hpsMinBin = max(1, Int(75.0 * Double(fftN) / sampleRate))
+        let hpsMaxBin = min(halfFFT / 3 - 1, Int(700.0 * Double(fftN) / sampleRate))
+        var hpsFundamentalHz: Double = 0
+        if hpsMinBin < hpsMaxBin {
+            for k in hpsMinBin...hpsMaxBin {
+                logBuf[k - hpsMinBin] = realp2[k] * realp2[2 * k] * realp2[3 * k]
+            }
+            var hpsPeakVal: Float = 0
+            var hpsPeakIdx: vDSP_Length = 0
+            vDSP_maxvi(logBuf, 1, &hpsPeakVal, &hpsPeakIdx, vDSP_Length(hpsMaxBin - hpsMinBin + 1))
+            if hpsPeakVal > 0 {
+                hpsFundamentalHz = Double(Int(hpsPeakIdx) + hpsMinBin) * sampleRate / Double(fftN)
+            }
+        }
+
         vDSP_vclr(imagp2, 1, vDSP_Length(halfFFT))
 
         // Inverse FFT of power spectrum → autocorrelation
@@ -613,6 +691,25 @@ private final class AccelerateYIN: @unchecked Sendable {
             if cmndBuf[dt] < 0.35 { bestTau = dt }
         }
 
+        // --- Step 3c: HPS octave verification ---
+        // If YIN frequency is still ~2× the HPS fundamental after double-tau
+        // correction, HPS provides independent evidence the true fundamental
+        // is an octave lower. Apply correction with a relaxed CMND threshold.
+        if hpsFundamentalHz > 0 {
+            let yinFreq = sampleRate / Double(bestTau)
+            let ratio = yinFreq / hpsFundamentalHz
+            if ratio > 1.8 && ratio < 2.2 {
+                let correctedTau = bestTau * 2
+                if correctedTau < maxTau {
+                    var ct = correctedTau
+                    while ct + 1 < maxTau && cmndBuf[ct + 1] < cmndBuf[ct] { ct += 1 }
+                    if cmndBuf[ct] < 0.50 {
+                        bestTau = ct
+                    }
+                }
+            }
+        }
+
         // --- Step 4: Parabolic interpolation ---
         let interpolatedTau: Double
         if bestTau > 0 && bestTau < halfN - 1 {
@@ -627,7 +724,7 @@ private final class AccelerateYIN: @unchecked Sendable {
 
         let frequency = sampleRate / interpolatedTau
         let confidence = 1.0 - Double(min(cmndBuf[bestTau], 1.0))
-        return (frequency, confidence)
+        return (frequency, confidence, spectralFlatness)
     }
 }
 
@@ -735,8 +832,10 @@ private final class TapProcessingState: @unchecked Sendable {
         self.filteredBuffer = .allocate(capacity: filteredBufferCapacity)
         self.filteredBuffer.initialize(repeating: 0, count: filteredBufferCapacity)
 
-        // Compute 2nd-order Butterworth HPF coefficients (f0 = 70 Hz)
-        let f0 = 70.0
+        // Compute 2nd-order Butterworth HPF coefficients (f0 = 60 Hz)
+        // Lowered from 70 Hz to give full headroom for low E (82.4 Hz)
+        // and support drop D tuning (73.4 Hz).
+        let f0 = 60.0
         let q = 1.0 / sqrt(2.0)  // Butterworth Q
         let w0 = 2.0 * Double.pi * f0 / sampleRate
         let alpha = sin(w0) / (2.0 * q)
@@ -856,11 +955,16 @@ private func makeTapClosure(
             }
         }
 
-        guard let (frequency, confidence) = state.yin.detectPitch(
+        // Spectral flatness above this value indicates broadband noise (string slides,
+        // handling noise) rather than a tonal signal. Guitar notes: ~0.01–0.15.
+        let spectralFlatnessThreshold: Float = 0.35
+
+        guard let (frequency, confidence, flatness) = state.yin.detectPitch(
             in: state.analysisBuffer,
             count: windowSize,
             sampleRate: sampleRate
-        ), confidence >= Double(confidenceThreshold) else {
+        ), confidence >= Double(confidenceThreshold),
+           flatness < spectralFlatnessThreshold else {
             continuation.yield(.none)
             return
         }

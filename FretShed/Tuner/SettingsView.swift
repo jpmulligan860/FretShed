@@ -114,8 +114,8 @@ public struct SettingsView: View {
             SettingsInfoSheet(
                 title: "Quiz Defaults",
                 items: [
-                    ("Default Focus Mode", "The starting focus mode when launching a new session."),
-                    ("String Selection", "Which string is pre-selected for Single String mode."),
+                    ("Default Focus Mode", "The starting focus mode when launching a new session. Choose a default from the dropdown list"),
+                    ("String Selection", "Which string should be pre-selected for Single String mode."),
                     ("Note Highlighting", "How target notes are shown: always visible, revealed after playing, or show all positions."),
                     ("Note Acceptance", "Accept the correct note on any string, or require the exact string shown."),
                     ("Timer Duration", "Seconds per question in Timed mode."),

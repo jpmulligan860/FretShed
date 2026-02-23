@@ -125,4 +125,56 @@ final class SignalMeasurementTests: XCTestCase {
     func test_gateThreshold_normalFloor_returnsFourTimesFloor() {
         XCTAssertEqual(SignalMeasurement.gateThreshold(noiseFloor: 0.01), 0.04, accuracy: 1e-6)
     }
+
+    // MARK: - spectralFlatness()
+
+    func test_spectralFlatness_flatSpectrum_returnsNearOne() {
+        let count = 1024
+        let buf = UnsafeMutablePointer<Float>.allocate(capacity: count)
+        defer { buf.deallocate() }
+        buf.initialize(repeating: 0.5, count: count)
+        let result = SignalMeasurement.spectralFlatness(powerSpectrum: buf, count: count)
+        XCTAssertEqual(result, 1.0, accuracy: 0.001)
+    }
+
+    func test_spectralFlatness_singleSpike_returnsNearZero() {
+        let count = 1024
+        let buf = UnsafeMutablePointer<Float>.allocate(capacity: count)
+        defer { buf.deallocate() }
+        buf.initialize(repeating: 1e-10, count: count)
+        buf[100] = 1.0
+        let result = SignalMeasurement.spectralFlatness(powerSpectrum: buf, count: count)
+        XCTAssertLessThan(result, 0.01)
+    }
+
+    func test_spectralFlatness_guitarLikeSpectrum_returnsLow() {
+        let count = 2048
+        let buf = UnsafeMutablePointer<Float>.allocate(capacity: count)
+        defer { buf.deallocate() }
+        buf.initialize(repeating: 1e-6, count: count)
+        buf[50]  = 1.0
+        buf[100] = 0.3
+        buf[150] = 0.1
+        buf[200] = 0.05
+        buf[250] = 0.02
+        let result = SignalMeasurement.spectralFlatness(powerSpectrum: buf, count: count)
+        XCTAssertLessThan(result, 0.15, "Guitar-like spectrum should be clearly tonal")
+    }
+
+    func test_spectralFlatness_zeroSpectrum_returnsOne() {
+        let count = 512
+        let buf = UnsafeMutablePointer<Float>.allocate(capacity: count)
+        defer { buf.deallocate() }
+        buf.initialize(repeating: 0, count: count)
+        let result = SignalMeasurement.spectralFlatness(powerSpectrum: buf, count: count)
+        XCTAssertEqual(result, 1.0, accuracy: 0.001)
+    }
+
+    func test_spectralFlatness_emptyCount_returnsOne() {
+        let buf = UnsafeMutablePointer<Float>.allocate(capacity: 1)
+        defer { buf.deallocate() }
+        buf[0] = 1.0
+        let result = SignalMeasurement.spectralFlatness(powerSpectrum: buf, count: 0)
+        XCTAssertEqual(result, 1.0)
+    }
 }

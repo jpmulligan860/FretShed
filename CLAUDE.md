@@ -58,7 +58,7 @@ FretShed includes a full audio calibration system that measures the user's envir
 
 ### Signal Processing Chain (in order)
 ```
-HPF (70Hz Butterworth) → Adaptive Noise Gate → AGC (target −18 dBFS) → AccelerateYIN → Note Decision
+HPF (60Hz Butterworth) → Adaptive Noise Gate → AGC (target −18 dBFS) → Spectral Flatness Gate → AccelerateYIN + HPS Verification → Note Decision (consecutive frame gate + string-aware frequency constraint)
 ```
 
 ### Input Sources Detected
@@ -143,7 +143,7 @@ QuizView `.task` loads `calibrationRepository.activeProfile()` and pre-seeds:
 ---
 
 ## Testing
-- Test suite: 214 tests passing
+- Test suite: 219 tests passing
 - Run: `xcodebuild test -scheme FretShed -destination 'platform=iOS Simulator,name=iPhone 16 Pro'`
 - All tests must pass before marking any task complete
 - New audio processing functions should have unit tests using pre-recorded PCM buffer fixtures
@@ -172,11 +172,13 @@ QuizView `.task` loads `calibrationRepository.activeProfile()` and pre-seeds:
 **Phase 3:** Tasks 3.1–3.6 complete ✅ · Task 3.7 🔲 (device timing test)
 **Phase 4:** Not started
 **Phase 5:** Not started
-**Test suite:** 214 tests passing
+**Test suite:** 219 tests passing
 
 **Audio Calibration System (F22) — IMPLEMENTED.** Full calibration flow: silence measurement → 6-string test → profile saved to SwiftData. Quiz launch gated on calibration. Do This First card with action buttons. Settings > Audio Setup with trim sliders. PitchDetector pre-seeded from calibration profile. Single profile (re-calibrate overwrites).
 
-**All BUGLOG items resolved.** All device-testing bugs (Practice, Progress, Tuner, MetroDrone, Settings, Quiz) fixed. All feature ideas (F1–F22) complete.
+**Pitch Detection Enhancements (F23) — IMPLEMENTED.** Five improvements to reduce false detections: (1) Spectral flatness gate rejects broadband string slide noise; (2) Consecutive frame gate requires 3 frames of same note; (3) HPF lowered to 60 Hz for better low-string fundamental capture; (4) String-aware frequency constraints narrow detection to target string's Hz range during quiz; (5) HPS octave verification cross-checks YIN with Harmonic Product Spectrum for low-string octave correction.
+
+**All BUGLOG items resolved** except Q15 (open — single string octave acceptance). All feature ideas (F1–F23) complete.
 
 **Next task:** Task 3.7 (onboarding device test), then Phase 4.
 
@@ -194,7 +196,8 @@ QuizView `.task` loads `calibrationRepository.activeProfile()` and pre-seeds:
 ---
 
 ## Known Issues (from BUGLOG.md)
-All device-testing bugs are resolved. All feature ideas (F1–F22) are complete.
+- **Q15 (Open):** Single String mode should accept either octave of the target note as correct, overriding the exact note setting.
+All other device-testing bugs are resolved. All feature ideas (F1–F23) are complete.
 
 ---
 

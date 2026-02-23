@@ -16,8 +16,9 @@ The core product is feature-complete and well-architected:
 - Live pitch detection (AccelerateYIN)
 - Metronome + drone generator (AVAudioEngine)
 - SwiftData persistence + repository pattern
-- 214 passing unit tests
+- 219 passing unit tests
 - Full audio calibration system (F22) — required before quiz, pre-seeds PitchDetector
+- Advanced pitch detection: spectral flatness gate, consecutive frame gate, HPS octave verification, string-aware frequency constraints, 60 Hz HPF
 - Swift 6 strict concurrency
 
 > **Note on naming**: The Xcode project is `FretShed`; the MVP plan targets the `FretShed` brand. Decide on a final product name before Phase 4 (bundle IDs are permanent once submitted).

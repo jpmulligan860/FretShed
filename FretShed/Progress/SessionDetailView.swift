@@ -18,6 +18,12 @@ struct SessionDetailView: View {
         return Double(session.correctCount) / Double(session.attemptCount)
     }
 
+    private var avgResponseTimeMs: Int {
+        let correctTimes = attempts.filter { $0.wasCorrect }.map { $0.responseTimeMs }
+        guard !correctTimes.isEmpty else { return 0 }
+        return correctTimes.reduce(0, +) / correctTimes.count
+    }
+
     private var bestStreak: Int {
         var current = 0
         var best = 0
@@ -106,8 +112,14 @@ struct SessionDetailView: View {
         LazyVGrid(columns: [.init(), .init()], spacing: 12) {
             SessionStatCard(label: "Accuracy", value: "\(Int(accuracy * 100))%",
                             icon: "target", color: accuracyColor)
-            SessionStatCard(label: "Questions", value: "\(session.attemptCount)",
-                            icon: "list.number", color: .blue)
+            if session.gameMode == .timed, avgResponseTimeMs > 0 {
+                SessionStatCard(label: "Avg Time",
+                                value: String(format: "%.1fs", Double(avgResponseTimeMs) / 1000.0),
+                                icon: "clock.fill", color: .cyan)
+            } else {
+                SessionStatCard(label: "Questions", value: "\(session.attemptCount)",
+                                icon: "list.number", color: .blue)
+            }
             SessionStatCard(label: "Best Streak", value: "\(bestStreak)",
                             icon: "flame.fill", color: .orange)
             SessionStatCard(label: "Correct", value: "\(session.correctCount)",

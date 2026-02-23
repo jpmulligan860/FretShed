@@ -22,6 +22,27 @@ public struct ProgressTabView: View {
     @State private var sessionToDelete: Session? = nil
     @State private var showDeleteAllConfirm = false
     @State private var showMasteryInfo = false
+    @State private var showOverallInfo = false
+    @State private var showAccuracyInfo = false
+    @State private var showResponseTimeInfo = false
+    @State private var showSessionsInfo = false
+
+    @AppStorage(LocalUserPreferences.Key.defaultFretCount)
+    private var defaultFretCount: Int = LocalUserPreferences.Default.defaultFretCount
+
+    private var totalCells: Int {
+        container.fretboardMap.uniqueCellCount(fretCount: defaultFretCount)
+    }
+
+    private var activeFilterLabel: String {
+        if let focus = vm.focusModeFilter {
+            return "Filtered: \(focus.localizedLabel)"
+        }
+        if let game = vm.gameModeFilter {
+            return "Filtered: \(game.localizedLabel)"
+        }
+        return "Filter Results"
+    }
 
     public init(vm: ProgressViewModel) {
         _vm = State(initialValue: vm)
@@ -43,9 +64,6 @@ public struct ProgressTabView: View {
                                 HStack(alignment: .top, spacing: 16) {
                                     VStack(spacing: 20) {
                                         overallCard
-                                        if !vm.accuracyTrend.isEmpty {
-                                            accuracyChart
-                                        }
                                     }
                                     .frame(maxWidth: .infinity)
 
@@ -63,16 +81,22 @@ public struct ProgressTabView: View {
                                 }
                                 .padding(.horizontal, 16)
                                 .padding(.top, 8)
-                            } else {
-                                // iPhone: stacked layout
-                                overallCard
-                                    .padding(.horizontal, 16)
-                                    .padding(.top, 8)
 
                                 if !vm.accuracyTrend.isEmpty {
                                     accuracyChart
                                         .padding(.horizontal, 16)
                                 }
+
+                                if !vm.responseTimeTrend.isEmpty {
+                                    responseTimeChart
+                                        .padding(.horizontal, 16)
+                                }
+                            } else {
+                                // iPhone: stacked layout
+                                // Order: Overall → Fretboard Mastery → Accuracy Trend → Avg Response Time
+                                overallCard
+                                    .padding(.horizontal, 16)
+                                    .padding(.top, 8)
 
                                 VStack(alignment: .leading, spacing: 8) {
                                     masterySectionHeader
@@ -86,6 +110,16 @@ public struct ProgressTabView: View {
                                     HeatmapLegend()
                                         .padding(.horizontal, 20)
                                 }
+
+                                if !vm.accuracyTrend.isEmpty {
+                                    accuracyChart
+                                        .padding(.horizontal, 16)
+                                }
+
+                                if !vm.responseTimeTrend.isEmpty {
+                                    responseTimeChart
+                                        .padding(.horizontal, 16)
+                                }
                             }
 
                             // Recent sessions (VStack replaces List to avoid
@@ -93,13 +127,13 @@ public struct ProgressTabView: View {
                             VStack(alignment: .leading, spacing: 8) {
                                 HStack {
                                     sectionHeader("RECENT SESSIONS")
+                                    infoButton { showSessionsInfo = true }
                                     Spacer()
-                                    filterMenu
                                 }
                                 .padding(.horizontal, 16)
 
                                 if vm.filteredSessions.isEmpty {
-                                    if vm.focusModeFilter != nil {
+                                    if vm.isAnyFilterActive {
                                         filteredEmptyState
                                     } else {
                                         sessionEmptyState
@@ -153,6 +187,11 @@ public struct ProgressTabView: View {
         .background(Color(.systemGroupedBackground))
         .navigationTitle("Progress")
         .navigationBarTitleDisplayMode(.large)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                filterMenu
+            }
+        }
         .task { await vm.load() }
         .sheet(item: $vm.selectedCell) { detail in
             CellDetailSheet(detail: detail)
@@ -162,6 +201,44 @@ public struct ProgressTabView: View {
         }
         .sheet(isPresented: $showMasteryInfo) {
             MasteryInfoSheet()
+        }
+        .sheet(isPresented: $showOverallInfo) {
+            ProgressInfoSheet(
+                title: "Overall Results",
+                items: [
+                    ("Cells Attempted", "The number of unique note+string positions you have practiced out of \(totalCells) total cells on your \(defaultFretCount)-fret fretboard."),
+                    ("Cells Mastered", "Cells where your accuracy is 90% or higher with at least 15 attempts. These are notes you consistently identify correctly."),
+                    ("Overall Mastery", "A weighted average of your mastery across all cells. Cells with more attempts carry more weight in the calculation.")
+                ]
+            )
+        }
+        .sheet(isPresented: $showAccuracyInfo) {
+            ProgressInfoSheet(
+                title: "Accuracy Trend",
+                items: [
+                    ("What it shows", "Your daily accuracy (correct answers ÷ total attempts) over the last 30 days of practice."),
+                    ("How it's calculated", "All completed sessions on the same day are combined. The chart shows one data point per day you practiced.")
+                ]
+            )
+        }
+        .sheet(isPresented: $showResponseTimeInfo) {
+            ProgressInfoSheet(
+                title: "Avg Response Time",
+                items: [
+                    ("What it shows", "Your average time to answer correctly in timed quiz sessions, tracked over the last 30 days."),
+                    ("How it's calculated", "Only correct answers from timed sessions are included. Incorrect answers and timeouts are excluded. A lower time means faster note recognition.")
+                ]
+            )
+        }
+        .sheet(isPresented: $showSessionsInfo) {
+            ProgressInfoSheet(
+                title: "Recent Sessions",
+                items: [
+                    ("What it shows", "Your most recent 50 practice sessions with focus mode, date, duration, and accuracy."),
+                    ("Filtering", "Use the Filter button to show only specific session types. When a filter is active, the charts and heatmap above also update to reflect only the filtered sessions."),
+                    ("Session detail", "Tap any session row to see detailed stats and a fretboard heatmap for that session.")
+                ]
+            )
         }
         // Single-session delete confirmation
         .alert("Delete Session?", isPresented: Binding(
@@ -250,23 +327,32 @@ public struct ProgressTabView: View {
         Menu {
             Button {
                 vm.focusModeFilter = nil
+                vm.gameModeFilter = nil
             } label: {
-                Label("All Sessions", systemImage: vm.focusModeFilter == nil ? "checkmark" : "")
+                Label("All Sessions", systemImage: !vm.isAnyFilterActive ? "checkmark" : "")
             }
             Divider()
             ForEach(FocusMode.allCases, id: \.self) { mode in
                 Button {
+                    vm.gameModeFilter = nil
                     vm.focusModeFilter = mode
                 } label: {
                     Label(mode.localizedLabel, systemImage: vm.focusModeFilter == mode ? "checkmark" : "")
                 }
             }
+            Divider()
+            Button {
+                vm.focusModeFilter = nil
+                vm.gameModeFilter = .timed
+            } label: {
+                Label("Timed Sessions", systemImage: vm.gameModeFilter == .timed ? "checkmark" : "")
+            }
         } label: {
             HStack(spacing: 4) {
-                Image(systemName: vm.focusModeFilter == nil
-                      ? "line.3.horizontal.decrease.circle"
-                      : "line.3.horizontal.decrease.circle.fill")
-                Text("Filter Results")
+                Image(systemName: vm.isAnyFilterActive
+                      ? "line.3.horizontal.decrease.circle.fill"
+                      : "line.3.horizontal.decrease.circle")
+                Text(activeFilterLabel)
             }
             .font(.subheadline)
             .foregroundStyle(DesignSystem.Colors.primary)
@@ -277,7 +363,7 @@ public struct ProgressTabView: View {
         HStack(spacing: DesignSystem.Spacing.sm) {
             Image(systemName: "line.3.horizontal.decrease.circle")
                 .foregroundStyle(.tertiary)
-            Text("No \(vm.focusModeFilter?.localizedLabel ?? "") sessions recorded")
+            Text("No \(vm.focusModeFilter?.localizedLabel ?? vm.gameModeFilter?.localizedLabel ?? "") sessions recorded")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
         }
@@ -309,7 +395,10 @@ public struct ProgressTabView: View {
 
     private var accuracyChart: some View {
         VStack(alignment: .leading, spacing: 8) {
-            sectionHeader("ACCURACY TREND")
+            HStack {
+                sectionHeader("ACCURACY TREND")
+                infoButton { showAccuracyInfo = true }
+            }
 
             Chart(vm.accuracyTrend) { point in
                 LineMark(
@@ -365,28 +454,97 @@ public struct ProgressTabView: View {
                     in: RoundedRectangle(cornerRadius: 18))
     }
 
+    // MARK: - Response Time Trend Chart
+
+    private var responseTimeChart: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                sectionHeader("AVG RESPONSE TIME (TIMED SESSIONS ONLY)")
+                infoButton { showResponseTimeInfo = true }
+            }
+
+            Chart(vm.responseTimeTrend) { point in
+                LineMark(
+                    x: .value("Date", point.date, unit: .day),
+                    y: .value("Time", point.avgTimeMs / 1000.0)
+                )
+                .foregroundStyle(.cyan)
+                .interpolationMethod(.catmullRom)
+
+                AreaMark(
+                    x: .value("Date", point.date, unit: .day),
+                    y: .value("Time", point.avgTimeMs / 1000.0)
+                )
+                .foregroundStyle(
+                    LinearGradient(
+                        colors: [Color.cyan.opacity(0.3), Color.cyan.opacity(0.0)],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                .interpolationMethod(.catmullRom)
+
+                PointMark(
+                    x: .value("Date", point.date, unit: .day),
+                    y: .value("Time", point.avgTimeMs / 1000.0)
+                )
+                .foregroundStyle(.cyan)
+                .symbolSize(30)
+            }
+            .chartYAxis {
+                AxisMarks { value in
+                    AxisGridLine()
+                    AxisValueLabel {
+                        if let v = value.as(Double.self) {
+                            Text(String(format: "%.1fs", v))
+                                .font(.system(size: 10))
+                        }
+                    }
+                }
+            }
+            .chartXAxis {
+                AxisMarks(values: .stride(by: .day, count: max(1, vm.responseTimeTrend.count / 5))) { _ in
+                    AxisGridLine()
+                    AxisValueLabel(format: .dateTime.month(.abbreviated).day())
+                }
+            }
+            .frame(height: 160)
+            .padding(.top, 4)
+        }
+        .padding(16)
+        .background(Color(.secondarySystemGroupedBackground),
+                    in: RoundedRectangle(cornerRadius: 18))
+    }
+
     // MARK: - Overall Card
 
     private var overallCard: some View {
-        HStack(spacing: 20) {
-            OverallMasteryRing(value: vm.overallMastery)
-                .frame(width: 100, height: 100)
-
-            VStack(alignment: .leading, spacing: 10) {
-                summaryRow(icon: "square.grid.3x3.fill",
-                           label: "Cells attempted",
-                           value: "\(vm.attemptedCells) / \(ProgressViewModel.totalCells)",
-                           color: DesignSystem.Colors.primary)
-                summaryRow(icon: "checkmark.seal.fill",
-                           label: "Mastered",
-                           value: "\(vm.masteredCells) cells",
-                           color: .green)
-                summaryRow(icon: "chart.line.uptrend.xyaxis",
-                           label: "Overall mastery",
-                           value: "\(Int(vm.overallMastery * 100))%",
-                           color: masteryColor(vm.overallMastery))
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                sectionHeader("OVERALL RESULTS")
+                infoButton { showOverallInfo = true }
             }
-            Spacer(minLength: 0)
+
+            HStack(spacing: 20) {
+                OverallMasteryRing(value: vm.overallMastery)
+                    .frame(width: 100, height: 100)
+
+                VStack(alignment: .leading, spacing: 10) {
+                    summaryRow(icon: "square.grid.3x3.fill",
+                               label: "Cells Attempted",
+                               value: "\(vm.attemptedCells) / \(totalCells)",
+                               color: DesignSystem.Colors.primary)
+                    summaryRow(icon: "checkmark.seal.fill",
+                               label: "Cells Mastered",
+                               value: "\(vm.masteredCells)",
+                               color: .green)
+                    summaryRow(icon: "chart.line.uptrend.xyaxis",
+                               label: "Overall Mastery",
+                               value: "\(Int(vm.overallMastery * 100))%",
+                               color: masteryColor(vm.overallMastery))
+                }
+                Spacer(minLength: 0)
+            }
         }
         .padding(16)
         .background(Color(.secondarySystemGroupedBackground),
@@ -413,6 +571,14 @@ public struct ProgressTabView: View {
         Text(text)
             .font(DesignSystem.Typography.caption)
             .foregroundStyle(.secondary)
+    }
+
+    private func infoButton(action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: "info.circle")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
     }
 
     private var masterySectionHeader: some View {
@@ -490,6 +656,11 @@ private struct SessionRow: View {
                 HStack(spacing: 4) {
                     Text(session.focusMode.localizedLabel)
                         .font(.subheadline.weight(.semibold))
+                    if session.gameMode == .timed {
+                        Image(systemName: "clock.fill")
+                            .font(.caption)
+                            .foregroundStyle(.cyan)
+                    }
                     if session.isAdaptive {
                         Image(systemName: "brain")
                             .font(.caption)
@@ -613,6 +784,44 @@ private struct MasteryInfoSheet: View {
             }
             .background(Color(.systemGroupedBackground))
             .navigationTitle("Mastery Levels")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
+                }
+            }
+        }
+        .presentationDetents([.medium])
+        .presentationDragIndicator(.visible)
+    }
+}
+
+// MARK: - ProgressInfoSheet
+
+private struct ProgressInfoSheet: View {
+
+    let title: String
+    let items: [(String, String)]
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    ForEach(items, id: \.0) { label, description in
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(label)
+                                .font(.subheadline.weight(.semibold))
+                            Text(description)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+                .padding(20)
+            }
+            .background(Color(.systemGroupedBackground))
+            .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {

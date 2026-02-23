@@ -103,6 +103,19 @@ public struct FretboardMap: Sendable {
         return map[string]?[fret]
     }
 
+    /// Returns the number of unique (note, string) cells reachable within the given fret count.
+    public func uniqueCellCount(fretCount: Int) -> Int {
+        var cells: Set<Int> = []   // encode as stringNumber * 100 + noteRaw
+        for string in 1...kStringCount {
+            for fret in 0...min(fretCount, kMaxFrets) {
+                if let note = self.note(string: string, fret: fret) {
+                    cells.insert(string * 100 + note.rawValue)
+                }
+            }
+        }
+        return cells.count
+    }
+
     /// Returns every `Position` on the fretboard where a given note appears.
     /// - Parameters:
     ///   - note: The target `MusicalNote`.

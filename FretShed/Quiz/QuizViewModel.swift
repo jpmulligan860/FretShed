@@ -49,6 +49,12 @@ public final class QuizViewModel: Identifiable {
     /// Current per-question time budget for Tempo mode (shrinks with each correct answer).
     public private(set) var tempoTimeAllowance: Double = 10
 
+    /// Average response time in milliseconds for correct answers only.
+    public var averageResponseTimeMs: Int {
+        guard !correctResponseTimes.isEmpty else { return 0 }
+        return correctResponseTimes.reduce(0, +) / correctResponseTimes.count
+    }
+
     // MARK: - Configuration
     public let session: Session
     public let fretboardMap: FretboardMap
@@ -80,6 +86,9 @@ public final class QuizViewModel: Identifiable {
     public private(set) var currentChord: ChordSlot? = nil
     /// The current tone step label ("Root", "3rd", "5th"), for display in the UI.
     public private(set) var currentToneLabel: String = ""
+
+    /// Response times (ms) for correct answers only — used to compute average for timed sessions.
+    private var correctResponseTimes: [Int] = []
 
     private static let feedbackDuration: TimeInterval = 0.9
     private static let timerInterval: TimeInterval = 0.05
@@ -131,6 +140,7 @@ public final class QuizViewModel: Identifiable {
         session.attemptCount += 1
         lastAnswerWasCorrect = correct
         if correct {
+            correctResponseTimes.append(responseMs)
             correctCount += 1
             session.correctCount += 1
             currentStreak += 1

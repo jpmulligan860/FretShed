@@ -167,13 +167,16 @@ Buttons: Re-Calibrate (opens screens 5–7 as modal), Reset to defaults.
 ## Current Status (as of Feb 2026)
 **Phase 1:** Tasks 1.1–1.8 complete ✅
 **Phase 2:** Tasks 2.1–2.17 complete ✅ (Design System fully applied to all tabs)
-**Phase 3:** Tasks 3.1–3.6 complete ✅ · Task 3.7 🔲 (device timing test — blocked by Q6)
+**Phase 3:** Tasks 3.1–3.6 complete ✅ · Task 3.7 🔲 (device timing test)
 **Phase 4:** Not started
 **Phase 5:** Not started
+**Test suite:** 206 tests passing
 
-**🚨 Blocking Bug — Q6:** Results page buttons (Done, View Progress, Repeat) do not respond to taps on iPhone 16 Pro (iOS 26.2.1). Seven presentation approaches tried across two sessions. Current architecture: `fullScreenCover` on `TabView` driven by `activeQuizVM: QuizViewModel?` in `ContentView`; all button actions post `NotificationCenter` notifications handled by `ContentView`. This resolves correctly in simulator but buttons remain dead on device.
+**All BUGLOG items resolved.** Q6 (results buttons) fixed via ZStack overlay + direct closures. All device-testing bugs (Practice, Progress, Tuner, MetroDrone, Settings, Quiz) fixed.
 
-**Next task after Q6 resolved:** Task 3.7 (onboarding device test), then Phase 4.
+**Progress tab enhancements (Feb 2026):** F2 (response time tracking), F9–F16 (section reorder, info buttons, filter-reactive charts/heatmap, dynamic cell count, toolbar filter with label). Only F5 (Chord Progression note selection) remains open in Feature Ideas.
+
+**Next task:** Task 3.7 (onboarding device test), then Phase 4.
 
 **Quiz Presentation Architecture (current — ZStack overlay + direct closures):**
 - `ContentView.body` is `ZStack { TabView { ... }; if let vm = activeQuizVM { quizOverlay(vm: vm).zIndex(1) } }`
@@ -189,7 +192,7 @@ Buttons: Re-Calibrate (opens screens 5–7 as modal), Reset to defaults.
 ---
 
 ## Known Issues (from BUGLOG.md)
-Update this section when new bugs are discovered during device testing.
+All device-testing bugs are resolved. Only open item: F5 (Chord Progression note selection — feature idea, not a bug).
 
 ---
 

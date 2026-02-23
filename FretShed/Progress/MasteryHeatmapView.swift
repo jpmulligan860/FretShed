@@ -152,8 +152,8 @@ private struct HeatCell: View {
 
 struct HeatmapLegend: View {
     var body: some View {
-        HStack(spacing: 12) {
-            legendItem(color: DesignSystem.Colors.surfaceSecondary, label: "Not tried")
+        HStack(spacing: 6) {
+            legendItem(color: DesignSystem.Colors.surfaceSecondary, label: "Untried")
             legendItem(color: .red.opacity(0.35),    label: "Beginner")
             legendItem(color: .orange.opacity(0.45), label: "Developing")
             legendItem(color: .blue.opacity(0.55),   label: "Proficient")
@@ -164,10 +164,10 @@ struct HeatmapLegend: View {
     }
 
     private func legendItem(color: Color, label: String) -> some View {
-        HStack(spacing: 4) {
+        HStack(spacing: 3) {
             RoundedRectangle(cornerRadius: 2)
                 .fill(color)
-                .frame(width: 12, height: 12)
+                .frame(width: 10, height: 10)
             Text(label)
         }
     }

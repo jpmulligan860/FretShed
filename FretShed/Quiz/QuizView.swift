@@ -587,6 +587,12 @@ public struct QuizView: View {
         let accColor: Color = completedAccuracy >= 0.8 ? .green
             : completedAccuracy >= 0.6 ? .orange : .red
 
+        let avgTimeLabel: String = {
+            let ms = vm.averageResponseTimeMs
+            guard ms > 0 else { return "—" }
+            return String(format: "%.1fs", Double(ms) / 1000.0)
+        }()
+
         return LazyVGrid(columns: [.init(), .init()], spacing: 12) {
             switch vm.session.gameMode {
             case .streak:
@@ -594,6 +600,11 @@ public struct QuizView: View {
                 CompletedStatCard(label: "Correct",     value: "\(vm.correctCount)",         icon: "checkmark.circle", color: .green)
                 CompletedStatCard(label: "Accuracy",    value: "\(Int(completedAccuracy * 100))%", icon: "target", color: accColor)
                 CompletedStatCard(label: "Questions",   value: "\(vm.attemptCount)",         icon: "list.number",      color: .blue)
+            case .timed:
+                CompletedStatCard(label: "Accuracy",    value: "\(Int(completedAccuracy * 100))%", icon: "target",          color: accColor)
+                CompletedStatCard(label: "Avg Time",    value: avgTimeLabel,                       icon: "clock.fill",      color: .cyan)
+                CompletedStatCard(label: "Best Streak", value: "\(vm.bestStreak)🔥",              icon: "flame",           color: .orange)
+                CompletedStatCard(label: "Correct",     value: "\(vm.correctCount)",               icon: "checkmark.circle", color: .green)
             case .tempo:
                 CompletedStatCard(label: "Best Streak", value: "\(vm.bestStreak)🔥",        icon: "flame.fill",       color: .orange)
                 CompletedStatCard(label: "Fastest",     value: String(format: "%.1fs", vm.tempoTimeAllowance),

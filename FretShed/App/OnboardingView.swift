@@ -122,20 +122,26 @@ struct OnboardingView: View {
                 featureRow(
                     icon: "tuningfork",
                     color: DesignSystem.Colors.primary,
-                    title: "Play a note",
-                    subtitle: "FretShed listens through your microphone and instantly identifies what you played."
+                    title: "Flexible Fretboard Trainer:",
+                    subtitle: "FretShed listens and instantly identifies if you played the right note."
+                )
+                featureRow(
+                    icon: "slider.horizontal.3",
+                    color: .orange,
+                    title: "Great Practice Tools",
+                    subtitle: "FretShed's Tuner, Metronome, Speed Trainer and Drones, keep practice interesting."
                 )
                 featureRow(
                     icon: "brain",
                     color: DesignSystem.Colors.secondary,
                     title: "Adaptive learning",
-                    subtitle: "The app focuses on the notes you find hardest, so every session targets your weak spots."
+                    subtitle: "FretShed learns the notes you find hardest and helps you overcome your weak spots."
                 )
                 featureRow(
                     icon: "chart.bar.fill",
                     color: DesignSystem.Colors.info,
                     title: "Track your progress",
-                    subtitle: "A live heatmap shows your mastery across all 72 positions on the fretboard."
+                    subtitle: "Tons of stats, a fretboard heatmap and graphs shows your mastery across all areas of the fretboard."
                 )
             }
             .padding(.horizontal, DesignSystem.Spacing.xl)

@@ -8,7 +8,7 @@
 // Thread-safety strategy for the drone:
 //   DroneState uses fixed-size scalar fields (no Swift arrays) so every
 //   read/write is naturally atomic on ARM64. The main thread writes config
-//   fields (freq0-2, voiceCount, volume, soundIsRich, targetFadeGain,
+//   fields (freq0-2, voiceCount, volume, soundMode, targetFadeGain,
 //   isPlaying, needsPhaseReset). The audio thread reads those fields and
 //   exclusively owns the phase/fade fields it writes every sample.
 
@@ -72,7 +72,7 @@ private func droneRenderBlock(
         }
 
         let voices = state.voiceCount
-        let rich = state.soundIsRich
+        let mode = state.soundMode // 0=pure, 1=rich, 2=piano
         let vol = state.volume
         let f0 = state.freq0
         let f1 = state.freq1
@@ -88,23 +88,34 @@ private func droneRenderBlock(
         let inc2 = twoPi * f2 / sampleRate
 
         let detuneFactor = 1.0011552453009332 // pow(2.0, 2.0/1200.0) — +2 cents, precomputed
+        let chorusFactor = 1.002              // +3.5 cents — piano chorus detune
+        let inharmonicity = 0.0003            // B coefficient for piano wire stiffness
         let lfoInc = twoPi * state.lfoRateHz / sampleRate
-        // 1-pole LPF coefficient for ~4000 Hz cutoff
-        let lpfAlpha = Float(min(max(twoPi * 4000.0 / sampleRate, 0), 1))
+        // 1-pole LPF coefficients: 4000 Hz for rich, 2500 Hz for piano
+        let lpfAlphaRich  = Float(min(max(twoPi * 4000.0 / sampleRate, 0), 1))
+        let lpfAlphaPiano = Float(min(max(twoPi * 2500.0 / sampleRate, 0), 1))
 
         for i in 0..<count {
             var sample: Double = 0
 
             // Voice 0 (root — always present when voices >= 1)
             if voices >= 1 {
-                if rich {
+                if mode == 1 { // rich
                     sample += sin(p0)
                     sample += 0.5 * sin(p0 * 0.5)
                     sample += 0.25 * sin(p0 * 1.5)
                     sample += 0.3 * sin(p0 * detuneFactor)
-                    sample += 0.15 * sin(p0 * 3.0)  // 3rd harmonic
-                    sample += 0.08 * sin(p0 * 5.0)  // 5th harmonic
-                } else {
+                    sample += 0.15 * sin(p0 * 3.0)
+                    sample += 0.08 * sin(p0 * 5.0)
+                } else if mode == 2 { // piano
+                    sample += sin(p0)
+                    sample += 0.35 * sin(p0 * chorusFactor)
+                    sample += 0.4  * sin(p0 * 2.0 * (1 + inharmonicity))
+                    sample += 0.3  * sin(p0 * 3.0 * (1 + 4 * inharmonicity))
+                    sample += 0.15 * sin(p0 * 4.0 * (1 + 9 * inharmonicity))
+                    sample += 0.08 * sin(p0 * 5.0 * (1 + 16 * inharmonicity))
+                    sample += 0.04 * sin(p0 * 6.0 * (1 + 25 * inharmonicity))
+                } else { // pure
                     sample += sin(p0)
                 }
                 p0 += inc0
@@ -113,13 +124,21 @@ private func droneRenderBlock(
 
             // Voice 1 (5th or 3rd)
             if voices >= 2 {
-                if rich {
+                if mode == 1 {
                     sample += sin(p1)
                     sample += 0.5 * sin(p1 * 0.5)
                     sample += 0.25 * sin(p1 * 1.5)
                     sample += 0.3 * sin(p1 * detuneFactor)
                     sample += 0.15 * sin(p1 * 3.0)
                     sample += 0.08 * sin(p1 * 5.0)
+                } else if mode == 2 {
+                    sample += sin(p1)
+                    sample += 0.35 * sin(p1 * chorusFactor)
+                    sample += 0.4  * sin(p1 * 2.0 * (1 + inharmonicity))
+                    sample += 0.3  * sin(p1 * 3.0 * (1 + 4 * inharmonicity))
+                    sample += 0.15 * sin(p1 * 4.0 * (1 + 9 * inharmonicity))
+                    sample += 0.08 * sin(p1 * 5.0 * (1 + 16 * inharmonicity))
+                    sample += 0.04 * sin(p1 * 6.0 * (1 + 25 * inharmonicity))
                 } else {
                     sample += sin(p1)
                 }
@@ -129,13 +148,21 @@ private func droneRenderBlock(
 
             // Voice 2 (5th in triads)
             if voices >= 3 {
-                if rich {
+                if mode == 1 {
                     sample += sin(p2)
                     sample += 0.5 * sin(p2 * 0.5)
                     sample += 0.25 * sin(p2 * 1.5)
                     sample += 0.3 * sin(p2 * detuneFactor)
                     sample += 0.15 * sin(p2 * 3.0)
                     sample += 0.08 * sin(p2 * 5.0)
+                } else if mode == 2 {
+                    sample += sin(p2)
+                    sample += 0.35 * sin(p2 * chorusFactor)
+                    sample += 0.4  * sin(p2 * 2.0 * (1 + inharmonicity))
+                    sample += 0.3  * sin(p2 * 3.0 * (1 + 4 * inharmonicity))
+                    sample += 0.15 * sin(p2 * 4.0 * (1 + 9 * inharmonicity))
+                    sample += 0.08 * sin(p2 * 5.0 * (1 + 16 * inharmonicity))
+                    sample += 0.04 * sin(p2 * 6.0 * (1 + 25 * inharmonicity))
                 } else {
                     sample += sin(p2)
                 }
@@ -143,15 +170,23 @@ private func droneRenderBlock(
                 if p2 > twoPi { p2 -= twoPi }
             }
 
-            // Normalize (account for additional harmonic energy in rich mode)
+            // Normalize (account for additional harmonic energy in rich/piano mode)
             let vCount = Double(max(voices, 1))
-            let normalizer = rich ? vCount * 2.28 : vCount
+            let normalizer: Double
+            switch mode {
+            case 1:  normalizer = vCount * 2.28  // rich
+            case 2:  normalizer = vCount * 2.32  // piano
+            default: normalizer = vCount         // pure
+            }
             sample /= normalizer
 
-            // Apply 1-pole LPF in rich mode to soften harsh high partials
+            // Apply 1-pole LPF in rich/piano mode to soften harsh high partials
             var outSample = Float(sample)
-            if rich {
-                lpfState = lpfAlpha * outSample + (1.0 - lpfAlpha) * lpfState
+            if mode == 1 {
+                lpfState = lpfAlphaRich * outSample + (1.0 - lpfAlphaRich) * lpfState
+                outSample = lpfState
+            } else if mode == 2 {
+                lpfState = lpfAlphaPiano * outSample + (1.0 - lpfAlphaPiano) * lpfState
                 outSample = lpfState
             }
 
@@ -250,7 +285,7 @@ final class MetroDroneEngine {
     /// read/write is naturally atomic on ARM64. No locks needed.
     ///
     /// - Config fields (written by main thread): freq0/1/2, voiceCount,
-    ///   volume, soundIsRich, isPlaying, targetFadeGain, needsPhaseReset
+    ///   volume, soundMode, isPlaying, targetFadeGain, needsPhaseReset
     /// - Render fields (written by audio thread): phase0/1/2, fadeGain,
     ///   lfoPhase, lpfState
     final class DroneState: @unchecked Sendable {
@@ -260,7 +295,8 @@ final class MetroDroneEngine {
         var freq2: Double = 0
         var voiceCount: Int = 0
         var volume: Float = 0.5
-        var soundIsRich: Bool = true
+        /// 0 = pure, 1 = rich, 2 = piano
+        var soundMode: Int = 1
         var isPlaying: Bool = false
         var targetFadeGain: Float = 0.0
         var needsPhaseReset: Bool = false
@@ -698,7 +734,7 @@ final class MetroDroneEngine {
         droneState.freq1 = intervals.count > 1 ? baseFreq * pow(2.0, Double(intervals[1]) / 12.0) : 0
         droneState.freq2 = intervals.count > 2 ? baseFreq * pow(2.0, Double(intervals[2]) / 12.0) : 0
         droneState.voiceCount = intervals.count
-        droneState.soundIsRich = (sound == .rich)
+        droneState.soundMode = sound == .pure ? 0 : sound == .rich ? 1 : 2
         droneState.volume = volume
 
         if resetPhases {

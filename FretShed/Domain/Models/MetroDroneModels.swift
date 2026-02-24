@@ -77,13 +77,15 @@ enum DroneVoicing: String, Codable, CaseIterable, Sendable {
 
 /// Timbre of the drone oscillator.
 enum DroneSound: String, Codable, CaseIterable, Sendable {
-    case pure  // single sine wave
-    case rich  // fundamental + harmonics + slight detune for warmth
+    case pure   // single sine wave
+    case rich   // fundamental + harmonics + slight detune for warmth
+    case piano  // piano-like: chorus detune + inharmonic partials + warm LPF
 
     var label: String {
         switch self {
         case .pure: return "Pure"
         case .rich: return "Rich"
+        case .piano: return "Piano"
         }
     }
 }

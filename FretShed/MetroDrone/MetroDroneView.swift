@@ -511,7 +511,7 @@ struct MetroDroneView: View {
                     }
                 }
                 .pickerStyle(.segmented)
-                .frame(maxWidth: 200)
+                .frame(maxWidth: 280)
             }
 
             // Drone volume

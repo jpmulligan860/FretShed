@@ -48,14 +48,16 @@ struct FretShedApp: App {
 
     private var launchScreen: some View {
         ZStack {
-            Color(.systemBackground).ignoresSafeArea()
+            DesignSystem.Colors.background.ignoresSafeArea()
             VStack(spacing: 20) {
                 Image(systemName: "guitars.fill")
                     .font(.system(size: 64))
-                    .foregroundStyle(DesignSystem.Colors.primary)
+                    .foregroundStyle(DesignSystem.Colors.cherry)
                 Text("FretShed")
-                    .font(.largeTitle.bold())
+                    .font(DesignSystem.Typography.display)
+                    .foregroundStyle(DesignSystem.Gradients.sunburst)
                 ProgressView()
+                    .tint(DesignSystem.Colors.amber)
                     .controlSize(.regular)
             }
         }

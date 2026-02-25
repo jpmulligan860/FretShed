@@ -49,7 +49,7 @@ public struct SettingsView: View {
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
             }
-            .navigationTitle("Settings")
+            .navigationTitle("Setup")
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(.visible, for: .navigationBar)
         }
@@ -163,7 +163,7 @@ public struct SettingsView: View {
             }
         } header: {
             HStack {
-                Label("Display", systemImage: "eye")
+                DesignSystem.Typography.capsLabel("Display")
                 infoButton { showDisplayInfo = true }
             }
         }
@@ -287,7 +287,7 @@ public struct SettingsView: View {
 
         } header: {
             HStack {
-                Label("Audio", systemImage: "mic")
+                DesignSystem.Typography.capsLabel("Audio")
                 infoButton { showAudioInfo = true }
             }
         } footer: {
@@ -308,7 +308,7 @@ public struct SettingsView: View {
                     Spacer()
                     Label("Completed", systemImage: "checkmark.circle.fill")
                         .font(.subheadline)
-                        .foregroundStyle(.green)
+                        .foregroundStyle(DesignSystem.Colors.correct)
                 }
 
                 // Input source
@@ -395,7 +395,7 @@ public struct SettingsView: View {
                     Text("Status")
                     Spacer()
                     Text("Not Done")
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(DesignSystem.Colors.amber)
                 }
 
                 Button {
@@ -406,7 +406,7 @@ public struct SettingsView: View {
             }
         } header: {
             HStack {
-                Label("Audio Setup", systemImage: "waveform.badge.mic")
+                DesignSystem.Typography.capsLabel("Audio Setup")
                 infoButton { showAudioSetupInfo = true }
             }
         } footer: {
@@ -434,9 +434,9 @@ public struct SettingsView: View {
     }
 
     private func qualityBadgeColor(_ score: Float) -> Color {
-        if score >= 0.8 { return .green }
-        if score >= 0.5 { return .orange }
-        return .red
+        if score >= 0.8 { return DesignSystem.Colors.correct }
+        if score >= 0.5 { return DesignSystem.Colors.amber }
+        return DesignSystem.Colors.wrong
     }
 
     // MARK: - Quiz Defaults Section
@@ -551,7 +551,7 @@ public struct SettingsView: View {
             }
         } header: {
             HStack {
-                Label("Quiz Defaults", systemImage: "gamecontroller")
+                DesignSystem.Typography.capsLabel("Quiz Defaults")
                 infoButton { showQuizDefaultsInfo = true }
             }
         }
@@ -568,11 +568,11 @@ public struct SettingsView: View {
                     Label("Delete All Data", systemImage: "trash")
                     Spacer()
                 }
-                .foregroundStyle(.red)
+                .foregroundStyle(DesignSystem.Colors.wrong)
             }
         } header: {
             HStack {
-                Label("Data", systemImage: "externaldrive")
+                DesignSystem.Typography.capsLabel("Data")
                 infoButton { showDataInfo = true }
             }
         } footer: {
@@ -647,7 +647,7 @@ private struct SettingsInfoSheet: View {
                 }
                 .padding(20)
             }
-            .background(Color(.systemGroupedBackground))
+            .background(DesignSystem.Colors.background)
             .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

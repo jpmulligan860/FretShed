@@ -115,7 +115,7 @@ private struct HeatCell: View {
                 .overlay(
                     RoundedRectangle(cornerRadius: 4)
                         .strokeBorder(
-                            level == .mastered && isAttempted ? Color.green.opacity(0.6) : Color.clear,
+                            level == .mastered && isAttempted ? DesignSystem.Colors.correct.opacity(0.6) : Color.clear,
                             lineWidth: 1.5
                         )
                 )
@@ -131,13 +131,13 @@ private struct HeatCell: View {
 
     private var cellColor: Color {
         guard isAttempted else {
-            return DesignSystem.Colors.surfaceSecondary
+            return DesignSystem.Colors.surface2
         }
         switch level {
-        case .mastered:   return Color.green.opacity(lerp(0.55, 1.0, score, in: 0.9...1.0))
-        case .proficient: return Color.blue.opacity(lerp(0.35, 0.65, score, in: 0.7...0.9))
-        case .developing: return Color.orange.opacity(lerp(0.3, 0.55, score, in: 0.4...0.7))
-        case .beginner:   return Color.red.opacity(lerp(0.2, 0.45, score, in: 0.0...0.4))
+        case .mastered:   return DesignSystem.Colors.correct.opacity(lerp(0.55, 1.0, score, in: 0.9...1.0))
+        case .proficient: return DesignSystem.Colors.gold.opacity(lerp(0.35, 0.65, score, in: 0.7...0.9))
+        case .developing: return DesignSystem.Colors.amber.opacity(lerp(0.3, 0.55, score, in: 0.4...0.7))
+        case .beginner:   return DesignSystem.Colors.cherry.opacity(lerp(0.2, 0.45, score, in: 0.0...0.4))
         }
     }
 
@@ -153,11 +153,11 @@ private struct HeatCell: View {
 struct HeatmapLegend: View {
     var body: some View {
         HStack(spacing: 6) {
-            legendItem(color: DesignSystem.Colors.surfaceSecondary, label: "Untried")
-            legendItem(color: .red.opacity(0.35),    label: "Beginner")
-            legendItem(color: .orange.opacity(0.45), label: "Developing")
-            legendItem(color: .blue.opacity(0.55),   label: "Proficient")
-            legendItem(color: .green.opacity(0.85),  label: "Mastered")
+            legendItem(color: DesignSystem.Colors.surface2, label: "Untried")
+            legendItem(color: DesignSystem.Colors.cherry.opacity(0.35),  label: "Beginner")
+            legendItem(color: DesignSystem.Colors.amber.opacity(0.45),   label: "Developing")
+            legendItem(color: DesignSystem.Colors.gold.opacity(0.55),    label: "Proficient")
+            legendItem(color: DesignSystem.Colors.correct.opacity(0.85), label: "Mastered")
         }
         .font(.system(size: 10))
         .foregroundStyle(.secondary)

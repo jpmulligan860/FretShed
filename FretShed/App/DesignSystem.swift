@@ -1,55 +1,158 @@
 import SwiftUI
+import UIKit
 
 enum DesignSystem {
 
-    // MARK: - Colors (Task 2.2)
+    // MARK: - Colors — Woodshop Cherry Sunburst Palette (A1)
     enum Colors {
-        // Brand
-        static let primary   = Color.indigo
-        static let secondary = Color.teal
+        // Brand primaries
+        static let cherry = Color(UIColor { $0.userInterfaceStyle == .dark
+            ? UIColor(red: 0.698, green: 0.133, blue: 0.133, alpha: 1)  // #B22222
+            : UIColor(red: 0.600, green: 0.100, blue: 0.100, alpha: 1)  // #991A1A
+        })
+        static let cherryLight = Color(UIColor { $0.userInterfaceStyle == .dark
+            ? UIColor(red: 0.800, green: 0.200, blue: 0.200, alpha: 1)  // #CC3333
+            : UIColor(red: 0.698, green: 0.133, blue: 0.133, alpha: 1)  // #B22222
+        })
+        static let amber = Color(UIColor { $0.userInterfaceStyle == .dark
+            ? UIColor(red: 0.850, green: 0.550, blue: 0.100, alpha: 1)  // #D98C1A
+            : UIColor(red: 0.750, green: 0.470, blue: 0.050, alpha: 1)  // #BF780D
+        })
+        static let honey = Color(UIColor { $0.userInterfaceStyle == .dark
+            ? UIColor(red: 0.900, green: 0.720, blue: 0.250, alpha: 1)  // #E6B840
+            : UIColor(red: 0.800, green: 0.620, blue: 0.150, alpha: 1)  // #CC9E26
+        })
+        static let gold = Color(UIColor { $0.userInterfaceStyle == .dark
+            ? UIColor(red: 0.950, green: 0.800, blue: 0.300, alpha: 1)  // #F2CC4D
+            : UIColor(red: 0.850, green: 0.700, blue: 0.200, alpha: 1)  // #D9B333
+        })
+        static let cream = Color(UIColor { $0.userInterfaceStyle == .dark
+            ? UIColor(red: 0.950, green: 0.920, blue: 0.860, alpha: 1)  // #F2EBDB
+            : UIColor(red: 0.980, green: 0.965, blue: 0.930, alpha: 1)  // #FAF7ED
+        })
+        static let rosewood = Color(UIColor { $0.userInterfaceStyle == .dark
+            ? UIColor(red: 0.200, green: 0.120, blue: 0.080, alpha: 1)  // #331F14
+            : UIColor(red: 0.280, green: 0.180, blue: 0.120, alpha: 1)  // #472E1F
+        })
+        static let woodMed = Color(UIColor { $0.userInterfaceStyle == .dark
+            ? UIColor(red: 0.300, green: 0.220, blue: 0.160, alpha: 1)  // #4D3829
+            : UIColor(red: 0.420, green: 0.320, blue: 0.230, alpha: 1)  // #6B523B
+        })
+        static let woodLight = Color(UIColor { $0.userInterfaceStyle == .dark
+            ? UIColor(red: 0.400, green: 0.320, blue: 0.240, alpha: 1)  // #66523D
+            : UIColor(red: 0.550, green: 0.450, blue: 0.350, alpha: 1)  // #8C7359
+        })
 
-        // Semantic
-        static let success = Color.green
+        // Light-mode accent variants
+        static let amberLight = Color(UIColor { $0.userInterfaceStyle == .dark
+            ? UIColor(red: 0.900, green: 0.650, blue: 0.200, alpha: 1)  // #E6A633
+            : UIColor(red: 0.850, green: 0.600, blue: 0.150, alpha: 1)  // #D99926
+        })
+        static let goldLight = Color(UIColor { $0.userInterfaceStyle == .dark
+            ? UIColor(red: 0.960, green: 0.850, blue: 0.400, alpha: 1)  // #F5D966
+            : UIColor(red: 0.900, green: 0.780, blue: 0.320, alpha: 1)  // #E6C752
+        })
+
+        // Surfaces & backgrounds
+        static let background = Color(UIColor { $0.userInterfaceStyle == .dark
+            ? UIColor(red: 0.078, green: 0.071, blue: 0.063, alpha: 1)  // #141210
+            : UIColor(red: 0.980, green: 0.965, blue: 0.945, alpha: 1)  // #FAF6F1
+        })
+        static let surface = Color(UIColor { $0.userInterfaceStyle == .dark
+            ? UIColor(red: 0.118, green: 0.106, blue: 0.094, alpha: 1)  // #1E1B18
+            : UIColor(red: 1.000, green: 1.000, blue: 1.000, alpha: 1)  // #FFFFFF
+        })
+        static let surface2 = Color(UIColor { $0.userInterfaceStyle == .dark
+            ? UIColor(red: 0.165, green: 0.149, blue: 0.133, alpha: 1)  // #2A2622
+            : UIColor(red: 0.960, green: 0.945, blue: 0.925, alpha: 1)  // #F5F1EC
+        })
+        static let border = Color(UIColor { $0.userInterfaceStyle == .dark
+            ? UIColor(red: 0.220, green: 0.200, blue: 0.180, alpha: 1)  // #38332E
+            : UIColor(red: 0.860, green: 0.830, blue: 0.800, alpha: 1)  // #DBD4CC
+        })
+
+        // Text
+        static let text = Color(UIColor { $0.userInterfaceStyle == .dark
+            ? UIColor(red: 0.950, green: 0.930, blue: 0.900, alpha: 1)  // #F2EDE6
+            : UIColor(red: 0.120, green: 0.100, blue: 0.080, alpha: 1)  // #1F1A14
+        })
+        static let text2 = Color(UIColor { $0.userInterfaceStyle == .dark
+            ? UIColor(red: 0.750, green: 0.720, blue: 0.680, alpha: 1)  // #BFB8AD
+            : UIColor(red: 0.350, green: 0.310, blue: 0.270, alpha: 1)  // #594F45
+        })
+        static let muted = Color(UIColor { $0.userInterfaceStyle == .dark
+            ? UIColor(red: 0.500, green: 0.470, blue: 0.430, alpha: 1)  // #80786E
+            : UIColor(red: 0.550, green: 0.510, blue: 0.470, alpha: 1)  // #8C8278
+        })
+
+        // Semantic — feedback
+        static let correct = Color(UIColor { $0.userInterfaceStyle == .dark
+            ? UIColor(red: 0.200, green: 0.700, blue: 0.350, alpha: 1)  // #33B359
+            : UIColor(red: 0.150, green: 0.600, blue: 0.300, alpha: 1)  // #26994D
+        })
+        static let correctBg = Color(UIColor { $0.userInterfaceStyle == .dark
+            ? UIColor(red: 0.100, green: 0.250, blue: 0.140, alpha: 1)  // #1A4024
+            : UIColor(red: 0.900, green: 0.970, blue: 0.920, alpha: 1)  // #E6F8EB
+        })
+        static let wrong = Color(UIColor { $0.userInterfaceStyle == .dark
+            ? UIColor(red: 0.850, green: 0.250, blue: 0.250, alpha: 1)  // #D94040
+            : UIColor(red: 0.750, green: 0.200, blue: 0.200, alpha: 1)  // #BF3333
+        })
+        static let wrongBg = Color(UIColor { $0.userInterfaceStyle == .dark
+            ? UIColor(red: 0.280, green: 0.100, blue: 0.100, alpha: 1)  // #471A1A
+            : UIColor(red: 0.980, green: 0.910, blue: 0.910, alpha: 1)  // #FAE8E8
+        })
+
+        // Info / caution (keep from before)
         static let warning = Color.orange
-        static let error   = Color.red
         static let caution = Color.yellow
         static let info    = Color.blue
 
-        // Text (system-adaptive)
-        static let text          = Color.primary
-        static let textSecondary = Color.secondary
+        // Mastery level palette — sunburst progression
+        static let masteryMastered   = correct
+        static let masteryProficient = gold
+        static let masteryDeveloping = amber
+        static let masteryBeginner   = cherry
 
-        // Surfaces (system-adaptive)
-        static let surface          = Color(uiColor: .secondarySystemGroupedBackground)
-        static let surfaceSecondary = Color(uiColor: .tertiarySystemGroupedBackground)
-
-        // Custom fretboard pigments (extracted from FretboardView)
-        static let fretboardWood    = Color(.sRGB, red: 0.20, green: 0.14, blue: 0.07)
+        // Fretboard
+        static let fretboardWood    = rosewood
         static let fretboardStrings = Color(.sRGB, red: 0.82, green: 0.82, blue: 0.82)
 
-        // Mastery level palette
-        static let masteryMastered   = Color.green
-        static let masteryProficient = Color.blue
-        static let masteryDeveloping = Color.orange
-        static let masteryBeginner   = Color.red
     }
 
-    // MARK: - Typography (Task 2.3)
+    // MARK: - Typography — Three-Family System (A2)
     enum Typography {
-        // Standard scale
-        static let title:    Font = .title2.weight(.bold)
-        static let headline: Font = .headline
-        static let body:     Font = .body
-        static let caption:  Font = .caption.weight(.semibold)
-        static let caption2: Font = .caption2
+        // --- Montserrat (UI headings & labels) ---
+        static let display:       Font = .custom("Montserrat-Black", size: 34)
+        static let screenTitle:   Font = .custom("Montserrat-ExtraBold", size: 22)
+        static let sectionHeader: Font = .custom("Montserrat-Bold", size: 15)
+        static let bodyLabel:     Font = .custom("Montserrat-SemiBold", size: 14)
+        static let smallLabel:    Font = .custom("Montserrat-SemiBold", size: 11)
 
-        // App-specific display fonts
-        static let noteDisplay:  Font = .system(size: 80, weight: .black,    design: .rounded)
-        static let bpmDisplay:   Font = .system(size: 72, weight: .bold,     design: .rounded)
-        static let centsDisplay: Font = .system(size: 18, weight: .semibold, design: .monospaced)
+        // --- Crimson Pro (accent / descriptive text) ---
+        static let tagline:          Font = .custom("CrimsonPro-Italic", size: 15)
+        static let accentDescription: Font = .custom("CrimsonPro-Italic", size: 14)
+
+        // --- JetBrains Mono (data readouts) ---
+        static let dataDisplay:  Font = .custom("JetBrainsMono-Bold", size: 18)
+        static let dataSmall:    Font = .custom("JetBrainsMono-Medium", size: 11)
+        static let sectionLabel: Font = .custom("JetBrainsMono-SemiBold", size: 9.5)
+
+        // --- App-specific display sizes (Montserrat) ---
+        static let noteDisplay:  Font = .custom("Montserrat-Black", size: 80)
+        static let bpmDisplay:   Font = .custom("Montserrat-Bold", size: 64)
+        static let centsDisplay: Font = .custom("JetBrainsMono-SemiBold", size: 18)
+
+        /// Helper for CAPS section labels with letter spacing
+        static func capsLabel(_ text: String) -> Text {
+            Text(text.uppercased())
+                .font(sectionLabel)
+                .tracking(1.5)
+                .foregroundStyle(Colors.muted)
+        }
     }
 
-    // MARK: - Spacing (Task 2.4)
+    // MARK: - Spacing (unchanged)
     enum Spacing {
         static let xs: CGFloat = 4
         static let sm: CGFloat = 8
@@ -58,11 +161,91 @@ enum DesignSystem {
         static let xl: CGFloat = 32
     }
 
-    // MARK: - Corner Radius
+    // MARK: - Corner Radius (unchanged)
     enum Radius {
         static let sm: CGFloat = 8
         static let md: CGFloat = 12
         static let lg: CGFloat = 16
         static let xl: CGFloat = 20
+    }
+
+    // MARK: - Gradients (A4)
+    enum Gradients {
+        static let primary = LinearGradient(
+            colors: [Colors.cherry, Colors.amber],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+        static let sunburst = LinearGradient(
+            colors: [Colors.cherry, Colors.amber, Colors.honey],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+        static let progress = LinearGradient(
+            colors: [Colors.cherry, Colors.amber],
+            startPoint: .top,
+            endPoint: .bottom
+        )
+        static let warmSurface = LinearGradient(
+            colors: [Colors.surface, Colors.surface2],
+            startPoint: .top,
+            endPoint: .bottom
+        )
+    }
+}
+
+// MARK: - View Modifiers (A4)
+
+struct WoodshopCardModifier: ViewModifier {
+    @Environment(\.colorScheme) private var colorScheme
+
+    func body(content: Content) -> some View {
+        content
+            .background(DesignSystem.Colors.surface)
+            .clipShape(RoundedRectangle(cornerRadius: DesignSystem.Radius.lg))
+            .overlay(
+                RoundedRectangle(cornerRadius: DesignSystem.Radius.lg)
+                    .stroke(DesignSystem.Colors.border, lineWidth: colorScheme == .light ? 1 : 0)
+            )
+            .shadow(
+                color: colorScheme == .light ? .black.opacity(0.06) : .clear,
+                radius: 8, x: 0, y: 2
+            )
+    }
+}
+
+struct PrimaryButtonModifier: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .font(DesignSystem.Typography.bodyLabel)
+            .foregroundStyle(.white)
+            .padding(.horizontal, DesignSystem.Spacing.lg)
+            .padding(.vertical, DesignSystem.Spacing.md)
+            .background(DesignSystem.Gradients.primary)
+            .clipShape(RoundedRectangle(cornerRadius: 14))
+    }
+}
+
+struct SectionLabelModifier: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .font(DesignSystem.Typography.sectionLabel)
+            .tracking(1.5)
+            .foregroundStyle(DesignSystem.Colors.muted)
+            .textCase(.uppercase)
+    }
+}
+
+extension View {
+    func woodshopCard() -> some View {
+        modifier(WoodshopCardModifier())
+    }
+
+    func primaryButtonStyle() -> some View {
+        modifier(PrimaryButtonModifier())
+    }
+
+    func sectionLabelStyle() -> some View {
+        modifier(SectionLabelModifier())
     }
 }

@@ -100,7 +100,40 @@ Estimated: 6–8 hours
 | 3.4 | `OnboardingView` screen 4: Audio test — play any open string, app shows detected note | 1–2 hrs | ✅ |
 | 3.5 | Wire onboarding to app launch — show only on first launch via `UserDefaults` (`hasCompletedOnboarding`) | 30 min | ✅ |
 | 3.6 | Add "Skip" option — allow skipping from screen 2 onward | 30 min | ✅ |
-| 3.7 | Test on device — target under 90 seconds from cold launch to first quiz question | 30 min | 🔲 |
+| 3.7 | Test on device — cold launch → onboarding → Practice tab → 'Use Tap Mode' → Session Setup → Start → first quiz question (target: under 60s). Also test audio path: Do This First → Use Audio Detection → tune → Calibrate → success → Session Setup → Start (target: under 3 min including tuning). | 30 min | 🔲 |
+
+---
+
+## Phase 3.5 — Visual Redesign ("Woodshop")
+
+**Cherry sunburst Les Paul aesthetic — premium look before monetization.**
+
+| # | Task | Est. | Status |
+|---|---|---|---|
+| A1 | Color palette — full Woodshop adaptive light/dark palette in DesignSystem.swift | M | ✅ |
+| A2 | Typography scale — Montserrat + Crimson Pro + JetBrains Mono three-family system | M | ✅ |
+| A3 | Font files — download 10 TTFs, register in Info.plist, add to Xcode project | M | ✅ |
+| A4 | Gradients + view modifiers — sunburst gradients, `.woodshopCard()`, `.primaryButtonStyle()` | S | ✅ |
+| B1 | Tab bar — rename tabs (Shed, Journey, Tuner, Tempo, Setup), cherry tint | M | ✅ |
+| B2 | App shell — warm launch screen, sunburst gradient "FretShed" text | S | ✅ |
+| C1 | Settings — "Setup" nav title, CAPS section headers, warm colors throughout | M | ✅ |
+| D1 | Tuner — warm background, Montserrat note display, amber needle, Woodshop tuning colors | M | ✅ |
+| E1 | Practice Home — "The Shed" title + Crimson Pro subtitle, gradient cards, cherry icons | L | ✅ |
+| F1 | Session Setup — cherry chips, gradient start button, correct-tinted toggles | L | ✅ |
+| G1 | Quiz View — cherry/amber stats, warm surfaces, Woodshop feedback colors | L | ✅ |
+| G2 | Fretboard — rosewood background, cream nut, amber target dot | M | ✅ |
+| G3 | Session Summary — warm surfaces, Woodshop mastery colors, gradient buttons | S | ✅ |
+| H1 | Progress Tab — "Journey" nav title, cherry/amber charts, CAPS headers | L | ✅ |
+| H2 | Mastery Heatmap — sunburst progression (cherry→amber→gold→correct) | M | ✅ |
+| H3 | Cell Detail Sheet — surface2 backgrounds, smallLabel typography | S | ✅ |
+| H4 | Session Detail + Heatmap — cherry/amber mode colors, warm surfaces | S | ✅ |
+| I1 | MetroDrone — cherry metronome, amber drone, warm card backgrounds | L | ✅ |
+| J1 | Calibration View — cherry icons, gradient buttons, correct checkmarks | M | ✅ |
+| J2 | Calibration Tuner — matching Phase D tuner styling | S | ✅ |
+| K1 | Onboarding — cherry/amber/gold feature icons, gradient buttons, warm background | M | ✅ |
+| L1 | Remove deprecated aliases — zero stray Color.indigo/teal/systemGroupedBackground | M | ✅ |
+| L2 | Light/dark mode audit — pending device testing | M | 🔲 |
+| L3 | Full test suite — 219 tests, 3 pre-existing failures (unrelated to redesign) | S | ✅ |
 
 ---
 

@@ -29,7 +29,7 @@ struct OnboardingView: View {
 
     var body: some View {
         ZStack {
-            Color(.systemGroupedBackground).ignoresSafeArea()
+            DesignSystem.Colors.background.ignoresSafeArea()
 
             TabView(selection: $currentPage) {
                 welcomePage.tag(0)
@@ -69,8 +69,8 @@ struct OnboardingView: View {
             ForEach(0..<pageCount, id: \.self) { i in
                 Capsule()
                     .fill(i == currentPage
-                          ? DesignSystem.Colors.primary
-                          : DesignSystem.Colors.surfaceSecondary)
+                          ? DesignSystem.Colors.cherry
+                          : DesignSystem.Colors.surface2)
                     .frame(width: i == currentPage ? 20 : 7, height: 7)
                     .animation(.spring(duration: 0.3), value: currentPage)
             }
@@ -85,7 +85,7 @@ struct OnboardingView: View {
 
             Image(systemName: "guitars.fill")
                 .font(.system(size: 80))
-                .foregroundStyle(DesignSystem.Colors.primary)
+                .foregroundStyle(DesignSystem.Colors.cherry)
                 .padding(.bottom, DesignSystem.Spacing.lg)
 
             Text("Welcome to\nFretShed")
@@ -121,7 +121,7 @@ struct OnboardingView: View {
             VStack(spacing: DesignSystem.Spacing.lg) {
                 featureRow(
                     icon: "tuningfork",
-                    color: DesignSystem.Colors.primary,
+                    color: DesignSystem.Colors.cherry,
                     title: "Flexible Fretboard Trainer:",
                     subtitle: "FretShed listens and instantly identifies if you played the right note."
                 )
@@ -133,13 +133,13 @@ struct OnboardingView: View {
                 )
                 featureRow(
                     icon: "brain",
-                    color: DesignSystem.Colors.secondary,
+                    color: DesignSystem.Colors.amber,
                     title: "Adaptive learning",
                     subtitle: "FretShed learns the notes you find hardest and helps you overcome your weak spots."
                 )
                 featureRow(
                     icon: "chart.bar.fill",
-                    color: DesignSystem.Colors.info,
+                    color: DesignSystem.Colors.gold,
                     title: "Track your progress",
                     subtitle: "Tons of stats, a fretboard heatmap and graphs shows your mastery across all areas of the fretboard."
                 )
@@ -163,7 +163,7 @@ struct OnboardingView: View {
 
             Image(systemName: "mic.fill")
                 .font(.system(size: 64))
-                .foregroundStyle(DesignSystem.Colors.primary)
+                .foregroundStyle(DesignSystem.Colors.cherry)
                 .padding(.bottom, DesignSystem.Spacing.lg)
 
             Text("Allow Microphone\nAccess")
@@ -213,7 +213,7 @@ struct OnboardingView: View {
                 .font(.headline)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, DesignSystem.Spacing.md)
-                .background(DesignSystem.Colors.primary,
+                .background(DesignSystem.Colors.cherry,
                             in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
                 .foregroundStyle(.white)
         }
@@ -241,7 +241,7 @@ struct OnboardingView: View {
         HStack(spacing: DesignSystem.Spacing.sm) {
             Image(systemName: icon)
                 .font(.body)
-                .foregroundStyle(DesignSystem.Colors.primary)
+                .foregroundStyle(DesignSystem.Colors.cherry)
                 .frame(width: 24)
             Text(text)
                 .font(.subheadline)

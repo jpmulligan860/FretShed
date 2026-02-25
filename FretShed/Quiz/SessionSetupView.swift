@@ -235,7 +235,7 @@ public struct SessionSetupView: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Label("Focus Mode", systemImage: "scope")
-                    .font(DesignSystem.Typography.caption)
+                    .font(DesignSystem.Typography.smallLabel)
                     .foregroundStyle(.secondary)
                 Button {
                     showFocusModeInfo = true
@@ -268,7 +268,7 @@ public struct SessionSetupView: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Label("Practice Mode", systemImage: "metronome")
-                    .font(DesignSystem.Typography.caption)
+                    .font(DesignSystem.Typography.smallLabel)
                     .foregroundStyle(.secondary)
                 Button {
                     showPracticeModeInfo = true
@@ -298,7 +298,7 @@ public struct SessionSetupView: View {
         HStack(spacing: 12) {
             Image(systemName: focusModeIcon(selectedFocusMode))
                 .font(.title2)
-                .foregroundStyle(DesignSystem.Colors.primary)
+                .foregroundStyle(DesignSystem.Colors.cherry)
                 .frame(width: 36)
 
             VStack(alignment: .leading, spacing: 2) {
@@ -324,7 +324,7 @@ public struct SessionSetupView: View {
     private var circleConstraintSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             Label("Circle Constraint", systemImage: "scope")
-                .font(DesignSystem.Typography.caption)
+                .font(DesignSystem.Typography.smallLabel)
                 .foregroundStyle(.secondary)
                 .padding(.horizontal, 20)
 
@@ -346,7 +346,7 @@ public struct SessionSetupView: View {
             Toggle(isOn: $isAdaptive) {
                 Label("Prioritize Weak Spots", systemImage: "brain")
             }
-            .tint(DesignSystem.Colors.primary)
+            .tint(DesignSystem.Colors.correct)
             .padding(.horizontal, 20)
             .padding(.bottom, 12)
         }
@@ -363,7 +363,7 @@ public struct SessionSetupView: View {
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 16)
-            .background(DesignSystem.Colors.primary, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
+            .background(DesignSystem.Gradients.primary, in: RoundedRectangle(cornerRadius: 14))
             .foregroundStyle(.white)
         }
         .padding(.horizontal, 20)
@@ -373,7 +373,7 @@ public struct SessionSetupView: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Label("Strings", systemImage: "minus")
-                    .font(DesignSystem.Typography.caption)
+                    .font(DesignSystem.Typography.smallLabel)
                     .foregroundStyle(.secondary)
                 Spacer()
                 // "All" shortcut
@@ -381,7 +381,7 @@ public struct SessionSetupView: View {
                     selectedStrings = [1, 2, 3, 4, 5, 6]
                 }
                 .font(.caption.weight(.semibold))
-                .foregroundStyle(DesignSystem.Colors.primary)
+                .foregroundStyle(DesignSystem.Colors.cherry)
             }
             .padding(.horizontal, 20)
 
@@ -408,7 +408,7 @@ public struct SessionSetupView: View {
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 8)
                         .background(
-                            isSelected ? DesignSystem.Colors.primary : DesignSystem.Colors.surface,
+                            isSelected ? DesignSystem.Colors.cherry : DesignSystem.Colors.surface2,
                             in: Capsule()
                         )
                         .foregroundStyle(isSelected ? .white : .primary)
@@ -451,7 +451,7 @@ public struct SessionSetupView: View {
     private var notePickerSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             Label("Note", systemImage: "music.note")
-                .font(DesignSystem.Typography.caption)
+                .font(DesignSystem.Typography.smallLabel)
                 .foregroundStyle(.secondary)
                 .padding(.horizontal, 20)
 
@@ -467,7 +467,7 @@ public struct SessionSetupView: View {
                                 .padding(.horizontal, 14)
                                 .padding(.vertical, 8)
                                 .background(
-                                    selectedNote == note ? DesignSystem.Colors.primary : DesignSystem.Colors.surface,
+                                    selectedNote == note ? DesignSystem.Colors.cherry : DesignSystem.Colors.surface2,
                                     in: Capsule()
                                 )
                                 .foregroundStyle(selectedNote == note ? .white : .primary)
@@ -484,7 +484,7 @@ public struct SessionSetupView: View {
     private var sessionLengthSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             Label("Session Length", systemImage: "number.circle")
-                .font(DesignSystem.Typography.caption)
+                .font(DesignSystem.Typography.smallLabel)
                 .foregroundStyle(.secondary)
                 .padding(.horizontal, 20)
 
@@ -494,7 +494,7 @@ public struct SessionSetupView: View {
                 } label: {
                     Image(systemName: "minus.circle.fill")
                         .font(.title2)
-                        .foregroundStyle(sessionLength > 5 ? DesignSystem.Colors.primary : .secondary)
+                        .foregroundStyle(sessionLength > 5 ? DesignSystem.Colors.cherry : .secondary)
                 }
                 .buttonStyle(.plain)
                 .disabled(sessionLength <= 5)
@@ -510,7 +510,7 @@ public struct SessionSetupView: View {
                 } label: {
                     Image(systemName: "plus.circle.fill")
                         .font(.title2)
-                        .foregroundStyle(sessionLength < 100 ? DesignSystem.Colors.primary : .secondary)
+                        .foregroundStyle(sessionLength < 100 ? DesignSystem.Colors.cherry : .secondary)
                 }
                 .buttonStyle(.plain)
                 .disabled(sessionLength >= 100)
@@ -524,15 +524,15 @@ public struct SessionSetupView: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Label("Frets", systemImage: "rectangle.grid.1x2")
-                    .font(DesignSystem.Typography.caption)
+                    .font(DesignSystem.Typography.smallLabel)
                     .foregroundStyle(.secondary)
                 Spacer()
                 Button("Open") { selectedFrets = Set(0...4) }
                     .font(.caption.weight(.semibold))
-                    .foregroundStyle(DesignSystem.Colors.primary)
+                    .foregroundStyle(DesignSystem.Colors.cherry)
                 Button("All") { selectedFrets = Set(0...12) }
                     .font(.caption.weight(.semibold))
-                    .foregroundStyle(DesignSystem.Colors.primary)
+                    .foregroundStyle(DesignSystem.Colors.cherry)
             }
             .padding(.horizontal, 20)
 
@@ -557,7 +557,7 @@ public struct SessionSetupView: View {
                                     // Position marker dot indicator
                                     Circle()
                                         .fill(Self.isMarkerFret(fret)
-                                              ? (isSelected ? Color.white.opacity(0.7) : DesignSystem.Colors.primary.opacity(0.5))
+                                              ? (isSelected ? Color.white.opacity(0.7) : DesignSystem.Colors.cherry.opacity(0.5))
                                               : Color.clear)
                                         .frame(width: 5, height: 5)
                                 } else {
@@ -567,7 +567,7 @@ public struct SessionSetupView: View {
                             .frame(width: 46)
                             .padding(.vertical, 8)
                             .background(
-                                isSelected ? DesignSystem.Colors.primary : DesignSystem.Colors.surface,
+                                isSelected ? DesignSystem.Colors.cherry : DesignSystem.Colors.surface2,
                                 in: RoundedRectangle(cornerRadius: DesignSystem.Radius.sm)
                             )
                             .foregroundStyle(isSelected ? .white : .primary)
@@ -617,7 +617,7 @@ public struct SessionSetupView: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Label("Chord Progression", systemImage: "pianokeys")
-                    .font(DesignSystem.Typography.caption)
+                    .font(DesignSystem.Typography.smallLabel)
                     .foregroundStyle(.secondary)
                 Button {
                     showChordProgressionInfo = true
@@ -646,7 +646,7 @@ public struct SessionSetupView: View {
                                     .padding(.horizontal, 12)
                                     .padding(.vertical, 7)
                                     .background(
-                                        progressionKey == note ? DesignSystem.Colors.primary : DesignSystem.Colors.surface,
+                                        progressionKey == note ? DesignSystem.Colors.cherry : DesignSystem.Colors.surface2,
                                         in: Capsule()
                                     )
                                     .foregroundStyle(progressionKey == note ? .white : .primary)
@@ -676,7 +676,7 @@ public struct SessionSetupView: View {
                                     .padding(.horizontal, 12)
                                     .padding(.vertical, 7)
                                     .background(
-                                        chordToneSelection == selection ? DesignSystem.Colors.primary : DesignSystem.Colors.surface,
+                                        chordToneSelection == selection ? DesignSystem.Colors.cherry : DesignSystem.Colors.surface2,
                                         in: Capsule()
                                     )
                                     .foregroundStyle(chordToneSelection == selection ? .white : .primary)
@@ -724,7 +724,7 @@ public struct SessionSetupView: View {
                                     .padding(.horizontal, 12)
                                     .padding(.vertical, 7)
                                     .background(
-                                        isSelected ? DesignSystem.Colors.primary : DesignSystem.Colors.surface,
+                                        isSelected ? DesignSystem.Colors.cherry : DesignSystem.Colors.surface2,
                                         in: Capsule()
                                     )
                                     .foregroundStyle(isSelected ? .white : .primary)
@@ -758,7 +758,7 @@ public struct SessionSetupView: View {
                         .padding(.horizontal, 10)
                         .padding(.vertical, 8)
                         .background(
-                            selectedPresetIndex == idx ? DesignSystem.Colors.primary : DesignSystem.Colors.surface,
+                            selectedPresetIndex == idx ? DesignSystem.Colors.cherry : DesignSystem.Colors.surface2,
                             in: RoundedRectangle(cornerRadius: DesignSystem.Radius.sm)
                         )
                         .foregroundStyle(selectedPresetIndex == idx ? .white : .primary)
@@ -782,7 +782,7 @@ public struct SessionSetupView: View {
                     .padding(.horizontal, 10)
                     .padding(.vertical, 8)
                     .background(
-                        selectedPresetIndex == nil ? DesignSystem.Colors.primary : DesignSystem.Colors.surface,
+                        selectedPresetIndex == nil ? DesignSystem.Colors.cherry : DesignSystem.Colors.surface2,
                         in: RoundedRectangle(cornerRadius: DesignSystem.Radius.sm)
                     )
                     .foregroundStyle(selectedPresetIndex == nil ? .white : .primary)
@@ -805,7 +805,7 @@ public struct SessionSetupView: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
                 Text("Custom Chords")
-                    .font(DesignSystem.Typography.caption)
+                    .font(DesignSystem.Typography.smallLabel)
                     .foregroundStyle(.secondary)
                 Spacer()
                 // Add / remove chord buttons
@@ -816,7 +816,7 @@ public struct SessionSetupView: View {
                         )
                     } label: {
                         Image(systemName: "plus.circle.fill")
-                            .foregroundStyle(DesignSystem.Colors.primary)
+                            .foregroundStyle(DesignSystem.Colors.cherry)
                     }
                     .buttonStyle(.plain)
                 }
@@ -973,7 +973,7 @@ private struct FocusModeChip: View {
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 10)
                 .background(
-                    isSelected ? DesignSystem.Colors.primary : DesignSystem.Colors.surface,
+                    isSelected ? DesignSystem.Colors.cherry : DesignSystem.Colors.surface2,
                     in: RoundedRectangle(cornerRadius: DesignSystem.Radius.sm)
                 )
                 .foregroundStyle(isSelected ? .white : .primary)
@@ -1026,7 +1026,7 @@ private struct PracticeModeInfoSheet: View {
                 }
                 .padding(20)
             }
-            .background(Color(.systemGroupedBackground))
+            .background(DesignSystem.Colors.background)
             .navigationTitle("Practice Modes")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -1096,7 +1096,7 @@ private struct ChordProgressionInfoSheet: View {
                 }
                 .padding(20)
             }
-            .background(Color(.systemGroupedBackground))
+            .background(DesignSystem.Colors.background)
             .navigationTitle("Chord Progression Mode")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -1177,7 +1177,7 @@ private struct FocusModeInfoSheet: View {
                 }
                 .padding(20)
             }
-            .background(Color(.systemGroupedBackground))
+            .background(DesignSystem.Colors.background)
             .navigationTitle("Focus Modes")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -1206,7 +1206,7 @@ private struct GameModeChip: View {
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 10)
                 .background(
-                    isSelected ? DesignSystem.Colors.primary : DesignSystem.Colors.surface,
+                    isSelected ? DesignSystem.Colors.cherry : DesignSystem.Colors.surface2,
                     in: RoundedRectangle(cornerRadius: DesignSystem.Radius.sm)
                 )
                 .foregroundStyle(isSelected ? .white : .primary)

@@ -102,7 +102,7 @@ public struct QuizView: View {
 
     public var body: some View {
         ZStack(alignment: .top) {
-            Color(.systemGroupedBackground).ignoresSafeArea()
+            DesignSystem.Colors.background.ignoresSafeArea()
 
             VStack(spacing: 0) {
                 // ── Stats bar — always at the top ─────────────────────
@@ -301,7 +301,7 @@ public struct QuizView: View {
             } label: {
                 Image(systemName: vm.isTimerMuted ? "speaker.slash.fill" : "speaker.wave.2.fill")
                     .font(.caption2)
-                    .foregroundStyle(vm.isTimerMuted ? .secondary : DesignSystem.Colors.primary)
+                    .foregroundStyle(vm.isTimerMuted ? .secondary : DesignSystem.Colors.cherry)
             }
             .buttonStyle(.plain)
             .frame(width: 24)
@@ -411,7 +411,7 @@ public struct QuizView: View {
                 HStack(spacing: 6) {
                     Text(chord.label)
                         .font(.subheadline.weight(.bold))
-                        .foregroundStyle(DesignSystem.Colors.primary)
+                        .foregroundStyle(DesignSystem.Colors.cherry)
                     Text("·")
                         .foregroundStyle(.secondary)
                     Text(vm.currentToneLabel)
@@ -449,7 +449,7 @@ public struct QuizView: View {
                     } label: {
                         Label("Show Fret", systemImage: "eye")
                             .font(.system(size: 27, weight: .semibold))
-                            .foregroundStyle(DesignSystem.Colors.primary)
+                            .foregroundStyle(DesignSystem.Colors.cherry)
                     }
                     .buttonStyle(.plain)
                     .transition(.opacity)
@@ -468,7 +468,7 @@ public struct QuizView: View {
                 VStack(spacing: 2) {
                     Text(chord.label)
                         .font(.caption.weight(.bold))
-                        .foregroundStyle(DesignSystem.Colors.primary)
+                        .foregroundStyle(DesignSystem.Colors.cherry)
                     Text(vm.currentToneLabel)
                         .font(.caption2)
                         .foregroundStyle(.secondary)
@@ -502,7 +502,7 @@ public struct QuizView: View {
                     } label: {
                         Image(systemName: "eye")
                             .font(.subheadline)
-                            .foregroundStyle(DesignSystem.Colors.primary)
+                            .foregroundStyle(DesignSystem.Colors.cherry)
                     }
                     .buttonStyle(.plain)
                 }
@@ -674,7 +674,7 @@ public struct QuizView: View {
                 .foregroundStyle(tColor)
                 .symbolEffect(.bounce, value: true)
             Text(title)
-                .font(DesignSystem.Typography.title)
+                .font(DesignSystem.Typography.screenTitle)
             Text(subtitle)
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
@@ -760,7 +760,7 @@ public struct QuizView: View {
                     .font(.headline)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 16)
-                    .background(DesignSystem.Colors.primary, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
+                    .background(DesignSystem.Colors.cherry, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
                     .foregroundStyle(.white)
             }
             .buttonStyle(.plain)
@@ -775,7 +775,7 @@ public struct QuizView: View {
                     .padding(.vertical, 12)
             }
             .buttonStyle(.bordered)
-            .tint(DesignSystem.Colors.success)
+            .tint(DesignSystem.Colors.correct)
             .padding(.horizontal, 20)
 
             Label("Session saved to Progress", systemImage: "checkmark.circle")
@@ -796,7 +796,7 @@ public struct QuizView: View {
                             .font(.subheadline.weight(.semibold))
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 13)
-                            .background(DesignSystem.Colors.primary,
+                            .background(DesignSystem.Colors.cherry,
                                         in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
                             .foregroundStyle(.white)
                     }
@@ -829,7 +829,7 @@ public struct QuizView: View {
         VStack(spacing: 10) {
             HStack(spacing: 8) {
                 Image(systemName: "hand.tap.fill")
-                    .foregroundStyle(DesignSystem.Colors.primary)
+                    .foregroundStyle(DesignSystem.Colors.cherry)
                 Text("Tap the fretboard where you think this note is.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
@@ -895,7 +895,7 @@ public struct QuizView: View {
                     .font(.subheadline.weight(.semibold))
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 10)
-                    .background(DesignSystem.Colors.primary,
+                    .background(DesignSystem.Colors.cherry,
                                 in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
                     .foregroundStyle(.white)
             }
@@ -975,7 +975,7 @@ public struct QuizView: View {
                         .font(.subheadline.weight(.semibold))
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 13)
-                        .background(DesignSystem.Colors.primary, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
+                        .background(DesignSystem.Colors.cherry, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
                         .foregroundStyle(.white)
                 }
 
@@ -1054,6 +1054,6 @@ private struct CompletedStatCard: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 14)
-        .background(.background, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
+        .background(DesignSystem.Colors.surface, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
     }
 }

@@ -157,7 +157,7 @@ private struct SessionHeatCell: View {
 
     private var cellColor: Color {
         guard let r = result, r.total > 0 else {
-            return DesignSystem.Colors.surfaceSecondary
+            return DesignSystem.Colors.surface2
         }
         let opacity = 0.35 + 0.65 * (Double(r.total) / Double(max(maxCount, 1)))
         if r.wrong == 0 {
@@ -175,7 +175,7 @@ private struct SessionHeatCell: View {
 struct SessionHeatmapLegend: View {
     var body: some View {
         HStack(spacing: 12) {
-            legendItem(color: DesignSystem.Colors.surfaceSecondary, label: "Not asked")
+            legendItem(color: DesignSystem.Colors.surface2, label: "Not asked")
             legendItem(color: .green.opacity(0.65), label: "Correct")
             legendItem(color: .red.opacity(0.65),   label: "Wrong")
             legendItem(color: .orange.opacity(0.65), label: "Mixed")

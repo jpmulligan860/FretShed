@@ -41,7 +41,7 @@ public struct TunerView: View {
     public var body: some View {
         NavigationStack {
             ZStack {
-                Color(.systemGroupedBackground).ignoresSafeArea()
+                DesignSystem.Colors.background.ignoresSafeArea()
 
                 if vSizeClass == .compact {
                     // ── Landscape: note header left, display + controls right ──
@@ -156,44 +156,44 @@ public struct TunerView: View {
         VStack(spacing: 6) {
             if let note = detector.detectedNote {
                 Text(note.displayName(format: noteFormat))
-                    .font(.system(size: 80, weight: .black, design: .rounded))
+                    .font(DesignSystem.Typography.noteDisplay)
                     .foregroundStyle(tuningColor)
                     .contentTransition(.numericText())
                     .animation(.spring(duration: 0.2), value: note)
 
                 if let freq = detector.detectedFrequency {
                     Text(String(format: "%.1f Hz", freq))
-                        .font(.subheadline.monospacedDigit())
-                        .foregroundStyle(.secondary)
+                        .font(DesignSystem.Typography.dataSmall)
+                        .foregroundStyle(DesignSystem.Colors.muted)
                         .contentTransition(.numericText())
                 }
             } else if let err = detector.error, case .microphonePermissionDenied = err {
                 Image(systemName: "mic.slash.fill")
                     .font(.system(size: 36))
-                    .foregroundStyle(.red.opacity(0.7))
+                    .foregroundStyle(DesignSystem.Colors.wrong.opacity(0.7))
                 Text("Microphone access required")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.primary)
+                    .font(DesignSystem.Typography.bodyLabel)
+                    .foregroundStyle(DesignSystem.Colors.text)
                 Button {
                     if let url = URL(string: UIApplication.openSettingsURLString) {
                         UIApplication.shared.open(url)
                     }
                 } label: {
                     Label("Open Settings", systemImage: "gear")
-                        .font(.caption.weight(.semibold))
+                        .font(DesignSystem.Typography.smallLabel)
                         .padding(.horizontal, 14)
                         .padding(.vertical, 6)
-                        .background(DesignSystem.Colors.primary.opacity(0.12), in: Capsule())
-                        .foregroundStyle(DesignSystem.Colors.primary)
+                        .background(DesignSystem.Colors.cherry.opacity(0.12), in: Capsule())
+                        .foregroundStyle(DesignSystem.Colors.cherry)
                 }
                 .buttonStyle(.plain)
             } else {
                 Text("–")
-                    .font(.system(size: 80, weight: .black, design: .rounded))
+                    .font(DesignSystem.Typography.noteDisplay)
                     .foregroundStyle(.quaternary)
                 Text(detector.isRunning ? "Play a note…" : "Starting…")
-                    .font(.subheadline)
-                    .foregroundStyle(.tertiary)
+                    .font(DesignSystem.Typography.accentDescription)
+                    .foregroundStyle(DesignSystem.Colors.muted)
             }
         }
         .frame(height: 110)
@@ -205,7 +205,7 @@ public struct TunerView: View {
         let c = detector.centsDeviation
         let sign = c >= 0 ? "+" : ""
         return Text("\(sign)\(Int(c.rounded())) ¢")
-            .font(.system(size: 22, weight: .semibold, design: .monospaced))
+            .font(DesignSystem.Typography.dataDisplay)
             .foregroundStyle(tuningColor)
             .contentTransition(.numericText())
             .opacity(detector.detectedNote != nil ? 1 : 0)
@@ -216,22 +216,22 @@ public struct TunerView: View {
     private var controls: some View {
         HStack {
             Image(systemName: "tuningfork")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .font(DesignSystem.Typography.dataSmall)
+                .foregroundStyle(DesignSystem.Colors.muted)
             Text("A4 = 440 Hz")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .font(DesignSystem.Typography.dataSmall)
+                .foregroundStyle(DesignSystem.Colors.muted)
         }
     }
 
     // MARK: - Colour
 
     private var tuningColor: Color {
-        guard detector.detectedNote != nil else { return .secondary }
+        guard detector.detectedNote != nil else { return DesignSystem.Colors.muted }
         let absCents = abs(detector.centsDeviation)
-        if absCents <= 5  { return .green }
-        if absCents <= 15 { return .yellow }
-        return .red
+        if absCents <= 5  { return DesignSystem.Colors.correct }
+        if absCents <= 15 { return DesignSystem.Colors.amber }
+        return DesignSystem.Colors.wrong
     }
 }
 
@@ -249,12 +249,12 @@ private struct NeedleDisplay: View {
     var body: some View {
         ZStack {
             DialArc()
-                .stroke(DesignSystem.Colors.surfaceSecondary, lineWidth: 4)
+                .stroke(DesignSystem.Colors.surface2, lineWidth: 4)
                 .frame(width: 260, height: 130)
 
             DialArc()
                 .trim(from: 0.44, to: 0.56)
-                .stroke(Color.green.opacity(0.35), lineWidth: 6)
+                .stroke(DesignSystem.Colors.correct.opacity(0.35), lineWidth: 6)
                 .frame(width: 260, height: 130)
 
             DialTicks()
@@ -265,7 +265,7 @@ private struct NeedleDisplay: View {
                 .animation(.spring(response: 0.3, dampingFraction: 1.0), value: angle)
 
             Circle()
-                .fill(Color(.label))
+                .fill(DesignSystem.Colors.amber)
                 .frame(width: 10, height: 10)
                 .offset(y: 65)
         }
@@ -325,7 +325,7 @@ private struct Needle: View {
             var path = Path()
             path.move(to: centre)
             path.addLine(to: tip)
-            ctx.stroke(path, with: .color(Color(.label)), lineWidth: 2)
+            ctx.stroke(path, with: .color(DesignSystem.Colors.amber), lineWidth: 2)
         }
     }
 }
@@ -396,11 +396,11 @@ private final class StrobeAnimator: @unchecked Sendable {
 private struct CentsScale: View {
     var body: some View {
         HStack {
-            Text("-50¢").font(.caption).foregroundStyle(.secondary)
+            Text("-50¢").font(DesignSystem.Typography.dataSmall).foregroundStyle(DesignSystem.Colors.muted)
             Spacer()
-            Text("0").font(.caption.weight(.bold)).foregroundStyle(.green)
+            Text("0").font(DesignSystem.Typography.dataSmall).bold().foregroundStyle(DesignSystem.Colors.correct)
             Spacer()
-            Text("+50¢").font(.caption).foregroundStyle(.secondary)
+            Text("+50¢").font(DesignSystem.Typography.dataSmall).foregroundStyle(DesignSystem.Colors.muted)
         }
     }
 }
@@ -418,7 +418,7 @@ struct InputLevelBar: View {
             ZStack(alignment: .leading) {
                 // Background
                 RoundedRectangle(cornerRadius: 4)
-                    .fill(DesignSystem.Colors.surfaceSecondary)
+                    .fill(DesignSystem.Colors.surface2)
 
                 // Filled bar with 3 color zones
                 HStack(spacing: 0) {

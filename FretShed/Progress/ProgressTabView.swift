@@ -187,8 +187,8 @@ public struct ProgressTabView: View {
                     .background(.ultraThinMaterial)
             }
         }
-        .background(Color(.systemGroupedBackground))
-        .navigationTitle("Progress")
+        .background(DesignSystem.Colors.background)
+        .navigationTitle("Journey")
         .navigationBarTitleDisplayMode(.large)
         .task { await vm.load() }
         .sheet(item: $vm.selectedCell) { detail in
@@ -276,7 +276,7 @@ public struct ProgressTabView: View {
                 .foregroundStyle(.orange.opacity(0.7))
             VStack(spacing: DesignSystem.Spacing.sm) {
                 Text("Could not load progress")
-                    .font(DesignSystem.Typography.title)
+                    .font(DesignSystem.Typography.screenTitle)
                 Text("Something went wrong loading your data. Pull down to try again.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
@@ -293,10 +293,10 @@ public struct ProgressTabView: View {
         VStack(spacing: DesignSystem.Spacing.lg) {
             Image(systemName: "guitars")
                 .font(.system(size: 64))
-                .foregroundStyle(DesignSystem.Colors.primary.opacity(0.35))
+                .foregroundStyle(DesignSystem.Colors.cherry.opacity(0.35))
             VStack(spacing: DesignSystem.Spacing.sm) {
                 Text("No progress yet")
-                    .font(DesignSystem.Typography.title)
+                    .font(DesignSystem.Typography.screenTitle)
                 Text("Complete your first session to start tracking your fretboard mastery.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
@@ -310,7 +310,7 @@ public struct ProgressTabView: View {
                     .font(.headline)
                     .frame(maxWidth: 240)
                     .padding(.vertical, 14)
-                    .background(DesignSystem.Colors.primary,
+                    .background(DesignSystem.Colors.cherry,
                                 in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
                     .foregroundStyle(.white)
             }
@@ -371,7 +371,7 @@ public struct ProgressTabView: View {
                 Text(activeFilterLabel)
             }
             .font(.subheadline)
-            .foregroundStyle(DesignSystem.Colors.primary)
+            .foregroundStyle(DesignSystem.Colors.cherry)
         }
     }
 
@@ -421,7 +421,7 @@ public struct ProgressTabView: View {
                     x: .value("Date", point.date, unit: .day),
                     y: .value("Accuracy", point.accuracy)
                 )
-                .foregroundStyle(DesignSystem.Colors.primary)
+                .foregroundStyle(DesignSystem.Colors.cherry)
                 .interpolationMethod(.catmullRom)
 
                 AreaMark(
@@ -430,7 +430,7 @@ public struct ProgressTabView: View {
                 )
                 .foregroundStyle(
                     LinearGradient(
-                        colors: [DesignSystem.Colors.primary.opacity(0.3), DesignSystem.Colors.primary.opacity(0.0)],
+                        colors: [DesignSystem.Colors.cherry.opacity(0.3), DesignSystem.Colors.cherry.opacity(0.0)],
                         startPoint: .top,
                         endPoint: .bottom
                     )
@@ -441,7 +441,7 @@ public struct ProgressTabView: View {
                     x: .value("Date", point.date, unit: .day),
                     y: .value("Accuracy", point.accuracy)
                 )
-                .foregroundStyle(DesignSystem.Colors.primary)
+                .foregroundStyle(DesignSystem.Colors.cherry)
                 .symbolSize(30)
             }
             .chartYScale(domain: 0...1)
@@ -549,7 +549,7 @@ public struct ProgressTabView: View {
                     summaryRow(icon: "square.grid.3x3.fill",
                                label: "Cells Attempted",
                                value: "\(vm.attemptedCells) / \(totalCells)",
-                               color: DesignSystem.Colors.primary)
+                               color: DesignSystem.Colors.cherry)
                     summaryRow(icon: "checkmark.seal.fill",
                                label: "Cells Mastered",
                                value: "\(vm.masteredCells)",
@@ -585,7 +585,7 @@ public struct ProgressTabView: View {
 
     private func sectionHeader(_ text: String) -> some View {
         Text(text)
-            .font(DesignSystem.Typography.caption)
+            .font(DesignSystem.Typography.smallLabel)
             .foregroundStyle(.secondary)
     }
 
@@ -798,7 +798,7 @@ private struct MasteryInfoSheet: View {
                 }
                 .padding(20)
             }
-            .background(Color(.systemGroupedBackground))
+            .background(DesignSystem.Colors.background)
             .navigationTitle("Mastery Levels")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -836,7 +836,7 @@ private struct ProgressInfoSheet: View {
                 }
                 .padding(20)
             }
-            .background(Color(.systemGroupedBackground))
+            .background(DesignSystem.Colors.background)
             .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

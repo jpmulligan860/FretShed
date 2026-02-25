@@ -35,13 +35,13 @@ struct CalibrationTunerView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Color(.systemGroupedBackground).ignoresSafeArea()
+                DesignSystem.Colors.background.ignoresSafeArea()
 
                 VStack(spacing: 0) {
                     // Instructional header
                     VStack(spacing: 6) {
                         Text("Tune Your Guitar")
-                            .font(DesignSystem.Typography.title)
+                            .font(DesignSystem.Typography.screenTitle)
                         Text("Tune each string, then tap Calibrate to set up audio detection")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
@@ -83,7 +83,7 @@ struct CalibrationTunerView: View {
                             .font(.headline)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 16)
-                            .background(DesignSystem.Colors.primary, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
+                            .background(DesignSystem.Colors.cherry, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
                             .foregroundStyle(.white)
                     }
                     .buttonStyle(.plain)
@@ -198,14 +198,14 @@ struct CalibrationTunerView: View {
 
     private var successOverlay: some View {
         ZStack {
-            Color(.systemBackground).opacity(0.95).ignoresSafeArea()
+            DesignSystem.Colors.background.opacity(0.95).ignoresSafeArea()
 
             VStack(spacing: 20) {
                 Image(systemName: "checkmark.circle.fill")
                     .font(.system(size: 64))
                     .foregroundStyle(.green)
                 Text("Calibration Complete!")
-                    .font(DesignSystem.Typography.title)
+                    .font(DesignSystem.Typography.screenTitle)
                 Text("Setting up your practice session…")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
@@ -228,7 +228,7 @@ private struct TunerNeedleDisplay: View {
     var body: some View {
         ZStack {
             TunerDialArc()
-                .stroke(DesignSystem.Colors.surfaceSecondary, lineWidth: 4)
+                .stroke(DesignSystem.Colors.surface2, lineWidth: 4)
                 .frame(width: 240, height: 120)
 
             TunerDialArc()

@@ -109,7 +109,7 @@ struct MetroDroneView: View {
 
             // Slider
             Slider(value: $vm.bpm, in: 20...300, step: 1)
-                .tint(DesignSystem.Colors.primary)
+                .tint(DesignSystem.Colors.cherry)
 
             // -1 / Tap / +1 buttons
             HStack(spacing: 16) {
@@ -126,7 +126,7 @@ struct MetroDroneView: View {
                     Text("Tap")
                         .font(.headline)
                         .frame(width: 80, height: 44)
-                        .background(DesignSystem.Colors.primary.opacity(0.15), in: Capsule())
+                        .background(DesignSystem.Colors.cherry.opacity(0.15), in: Capsule())
                 }
 
                 Button {
@@ -141,7 +141,7 @@ struct MetroDroneView: View {
             .buttonStyle(.plain)
         }
         .padding()
-        .background(.background, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.lg))
+        .background(DesignSystem.Colors.surface, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.lg))
     }
 
     // MARK: - Beat Indicators
@@ -182,8 +182,8 @@ struct MetroDroneView: View {
 
     private func accentColor(_ accent: BeatAccent) -> Color {
         switch accent {
-        case .accent: return DesignSystem.Colors.warning
-        case .normal: return DesignSystem.Colors.primary
+        case .accent: return DesignSystem.Colors.amber
+        case .normal: return DesignSystem.Colors.cherry
         case .muted:  return .gray
         }
     }
@@ -235,7 +235,7 @@ struct MetroDroneView: View {
                                 .foregroundStyle(vm.subdivision == div ? .white : .primary)
                                 .background(
                                     vm.subdivision == div
-                                        ? DesignSystem.Colors.primary
+                                        ? DesignSystem.Colors.cherry
                                         : Color.gray.opacity(0.15),
                                     in: RoundedRectangle(cornerRadius: DesignSystem.Radius.sm)
                                 )
@@ -268,14 +268,14 @@ struct MetroDroneView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 Slider(value: $vm.metronomeVolume, in: 0...1)
-                    .tint(DesignSystem.Colors.primary)
+                    .tint(DesignSystem.Colors.cherry)
                 Image(systemName: "speaker.wave.3.fill")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
         }
         .padding()
-        .background(.background, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.lg))
+        .background(DesignSystem.Colors.surface, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.lg))
     }
 
     @ViewBuilder
@@ -298,8 +298,8 @@ struct MetroDroneView: View {
 
     private func accentButtonBackground(_ accent: BeatAccent) -> Color {
         switch accent {
-        case .accent: return DesignSystem.Colors.warning
-        case .normal: return DesignSystem.Colors.primary
+        case .accent: return DesignSystem.Colors.amber
+        case .normal: return DesignSystem.Colors.cherry
         case .muted:  return .gray.opacity(0.3)
         }
     }
@@ -315,7 +315,7 @@ struct MetroDroneView: View {
             .font(.headline)
             .frame(maxWidth: .infinity, minHeight: 50)
             .foregroundStyle(.white)
-            .background(vm.isMetronomePlaying ? DesignSystem.Colors.error : DesignSystem.Colors.primary, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
+            .background(vm.isMetronomePlaying ? DesignSystem.Colors.wrong : DesignSystem.Colors.cherry, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
         }
         .buttonStyle(.plain)
     }
@@ -423,7 +423,7 @@ struct MetroDroneView: View {
                     .font(.subheadline.weight(.semibold))
                     .frame(maxWidth: .infinity, minHeight: 40)
                     .foregroundStyle(.white)
-                    .background(vm.isSpeedTrainerActive ? DesignSystem.Colors.error : DesignSystem.Colors.warning, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.sm))
+                    .background(vm.isSpeedTrainerActive ? DesignSystem.Colors.wrong : DesignSystem.Colors.amber, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.sm))
                 }
                 .buttonStyle(.plain)
             }
@@ -435,7 +435,7 @@ struct MetroDroneView: View {
             }
         }
         .padding()
-        .background(.background, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.lg))
+        .background(DesignSystem.Colors.surface, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.lg))
     }
 
     // MARK: - Drone Section
@@ -464,7 +464,7 @@ struct MetroDroneView: View {
                                 .frame(maxWidth: .infinity, minHeight: 36)
                                 .foregroundStyle(vm.droneKey == note ? .white : .primary)
                                 .background(
-                                    vm.droneKey == note ? DesignSystem.Colors.secondary : Color.gray.opacity(0.15),
+                                    vm.droneKey == note ? DesignSystem.Colors.amber : DesignSystem.Colors.surface2,
                                     in: RoundedRectangle(cornerRadius: DesignSystem.Radius.sm)
                                 )
                         }
@@ -520,7 +520,7 @@ struct MetroDroneView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 Slider(value: $vm.droneVolume, in: 0...1)
-                    .tint(DesignSystem.Colors.secondary)
+                    .tint(DesignSystem.Colors.amber)
                 Image(systemName: "speaker.wave.3.fill")
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -535,13 +535,13 @@ struct MetroDroneView: View {
                 .font(.headline)
                 .frame(maxWidth: .infinity, minHeight: 50)
                 .foregroundStyle(.white)
-                .background(vm.isDronePlaying ? DesignSystem.Colors.error : DesignSystem.Colors.secondary,
+                .background(vm.isDronePlaying ? DesignSystem.Colors.wrong : DesignSystem.Colors.amber,
                             in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
             }
             .buttonStyle(.plain)
         }
         .padding()
-        .background(.background, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.lg))
+        .background(DesignSystem.Colors.surface, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.lg))
     }
 
     // MARK: - Info Button
@@ -579,7 +579,7 @@ private struct MetroDroneInfoSheet: View {
                 }
                 .padding(20)
             }
-            .background(Color(.systemGroupedBackground))
+            .background(DesignSystem.Colors.background)
             .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

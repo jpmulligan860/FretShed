@@ -50,11 +50,11 @@ struct ContentView: View {
     // MARK: - Tab Enum
 
     enum Tab: String, CaseIterable {
-        case practice   = "Practice"
-        case progress   = "Progress"
+        case practice   = "Shed"
+        case progress   = "Journey"
         case tuner      = "Tuner"
-        case metroDrone = "MetroDrone"
-        case settings   = "Settings"
+        case metroDrone = "Tempo"
+        case settings   = "Setup"
 
         var icon: String {
             switch self {
@@ -93,6 +93,7 @@ struct ContentView: View {
                     .tabItem { Label(Tab.settings.rawValue,   systemImage: Tab.settings.icon) }
                     .tag(Tab.settings)
             }
+            .tint(DesignSystem.Colors.cherry)
             // Disable all TabView hit testing (including the Liquid Glass
             // tab bar's gesture recogniser) while the quiz overlay is
             // showing. Without this, the tab bar intercepts taps in the
@@ -221,7 +222,7 @@ struct ContentView: View {
         // The background colour extends edge-to-edge via ignoresSafeArea
         // so the tab bar area is visually covered.
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(.systemGroupedBackground).ignoresSafeArea())
+        .background(DesignSystem.Colors.background.ignoresSafeArea())
     }
 
     // MARK: - Quiz Launch
@@ -321,6 +322,17 @@ struct PracticeHomeView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 28) {
+                // Title
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("The Shed")
+                        .font(DesignSystem.Typography.screenTitle)
+                        .foregroundStyle(DesignSystem.Colors.text)
+                    Text("Time to put in the work.")
+                        .font(DesignSystem.Typography.tagline)
+                        .foregroundStyle(DesignSystem.Colors.muted)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+
                 doThisFirstCard
                 heroCard
                 quickStartGrid
@@ -330,6 +342,7 @@ struct PracticeHomeView: View {
             .frame(maxWidth: 800)
             .frame(maxWidth: .infinity)
         }
+        .background(DesignSystem.Colors.background)
         .task {
             lastSession = try? container.sessionRepository.recentSessions(limit: 1).first
         }
@@ -341,15 +354,15 @@ struct PracticeHomeView: View {
             // Compact "Calibrated" status line
             HStack(spacing: 10) {
                 Image(systemName: "checkmark.circle.fill")
-                    .foregroundStyle(.green)
+                    .foregroundStyle(DesignSystem.Colors.correct)
                 Text("Audio Calibrated")
-                    .font(.subheadline.weight(.semibold))
+                    .font(DesignSystem.Typography.bodyLabel)
                 Spacer()
                 Button("Re-calibrate") {
                     onCalibrateAudio()
                 }
-                .font(.caption.weight(.medium))
-                .foregroundStyle(DesignSystem.Colors.primary)
+                .font(DesignSystem.Typography.smallLabel)
+                .foregroundStyle(DesignSystem.Colors.cherry)
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 12)
@@ -358,20 +371,14 @@ struct PracticeHomeView: View {
             // Full "Do This First" card — two paths: audio detection or tap mode
             ZStack(alignment: .bottomLeading) {
                 RoundedRectangle(cornerRadius: DesignSystem.Radius.xl)
-                    .fill(
-                        LinearGradient(
-                            colors: [Color.orange, Color.yellow.opacity(0.7)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
+                    .fill(DesignSystem.Gradients.primary)
 
                 VStack(alignment: .leading, spacing: DesignSystem.Spacing.sm) {
                     Text("Do This First")
-                        .font(DesignSystem.Typography.title)
+                        .font(DesignSystem.Typography.screenTitle)
                         .foregroundStyle(.white)
                     Text("Choose how you want to practice:")
-                        .font(.subheadline)
+                        .font(DesignSystem.Typography.accentDescription)
                         .foregroundStyle(.white.opacity(0.85))
 
                     HStack(spacing: 12) {
@@ -379,7 +386,7 @@ struct PracticeHomeView: View {
                             onSetupAudio()
                         } label: {
                             Label("Use Audio Detection", systemImage: "mic.fill")
-                                .font(.subheadline.weight(.semibold))
+                                .font(DesignSystem.Typography.bodyLabel)
                                 .padding(.horizontal, 14)
                                 .padding(.vertical, 10)
                                 .background(.white.opacity(0.25), in: Capsule())
@@ -391,7 +398,7 @@ struct PracticeHomeView: View {
                             onUseTapMode()
                         } label: {
                             Label("Use Tap Mode", systemImage: "hand.tap")
-                                .font(.subheadline.weight(.semibold))
+                                .font(DesignSystem.Typography.bodyLabel)
                                 .padding(.horizontal, 14)
                                 .padding(.vertical, 10)
                                 .background(.white.opacity(0.25), in: Capsule())
@@ -417,7 +424,7 @@ struct PracticeHomeView: View {
             RoundedRectangle(cornerRadius: DesignSystem.Radius.xl)
                 .fill(
                     LinearGradient(
-                        colors: [DesignSystem.Colors.primary, Color.purple.opacity(0.7)],
+                        colors: [DesignSystem.Colors.cherry, DesignSystem.Colors.amber],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     )
@@ -425,10 +432,10 @@ struct PracticeHomeView: View {
 
             VStack(alignment: .leading, spacing: DesignSystem.Spacing.xs) {
                 Text("Ready to practice?")
-                    .font(DesignSystem.Typography.title)
+                    .font(DesignSystem.Typography.screenTitle)
                     .foregroundStyle(.white)
                 Text("Tap here, design a session and start building your fretboard knowledge.")
-                    .font(.subheadline)
+                    .font(DesignSystem.Typography.accentDescription)
                     .foregroundStyle(.white.opacity(0.85))
             }
             .padding(20)
@@ -447,16 +454,15 @@ struct PracticeHomeView: View {
             RoundedRectangle(cornerRadius: DesignSystem.Radius.xl)
                 .fill(
                     LinearGradient(
-                        colors: [Color.teal, Color.cyan.opacity(0.7)],
+                        colors: [DesignSystem.Colors.amber, DesignSystem.Colors.honey],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     )
                 )
 
             VStack(alignment: .leading, spacing: 12) {
-                Text("Quick Start")
-                    .font(DesignSystem.Typography.title)
-                    .foregroundStyle(.white)
+                DesignSystem.Typography.capsLabel("QUICK START")
+                    .foregroundStyle(.white.opacity(0.8))
 
                 ViewThatFits(in: .horizontal) {
                     LazyVGrid(columns: [.init(), .init(), .init(), .init()], spacing: 12) {
@@ -484,15 +490,15 @@ struct PracticeHomeView: View {
             VStack(alignment: .leading, spacing: 6) {
                 Image(systemName: "arrow.counterclockwise.circle.fill")
                     .font(.title2)
-                    .foregroundStyle(DesignSystem.Colors.success)
+                    .foregroundStyle(DesignSystem.Colors.correct)
                 Text("Repeat Last")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.primary)
+                    .font(DesignSystem.Typography.bodyLabel)
+                    .foregroundStyle(DesignSystem.Colors.text)
                     .lineLimit(2)
             }
             .frame(maxWidth: .infinity, minHeight: 70, alignment: .leading)
             .padding(14)
-            .background(.background, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
+            .background(DesignSystem.Colors.surface, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
         }
         .buttonStyle(.plain)
     }
@@ -574,15 +580,15 @@ private struct QuickModeCard: View {
             VStack(alignment: .leading, spacing: 6) {
                 Image(systemName: modeIcon)
                     .font(.title2)
-                    .foregroundStyle(modeColor)
+                    .foregroundStyle(DesignSystem.Colors.cherry)
                 Text(label ?? mode.localizedLabel)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.primary)
+                    .font(DesignSystem.Typography.bodyLabel)
+                    .foregroundStyle(DesignSystem.Colors.text)
                     .lineLimit(2)
             }
             .frame(maxWidth: .infinity, minHeight: 70, alignment: .leading)
             .padding(14)
-            .background(.background, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
+            .background(DesignSystem.Colors.surface, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
         }
         .buttonStyle(.plain)
     }
@@ -596,17 +602,6 @@ private struct QuickModeCard: View {
         case .circleOfFourths:    return "circle.grid.2x1"
         case .singleString:       return "line.3.horizontal"
         case .chordProgression:   return "pianokeys"
-        }
-    }
-
-    private var modeColor: Color {
-        switch mode {
-        case .fullFretboard:      return DesignSystem.Colors.primary
-        case .fretboardPosition:  return DesignSystem.Colors.secondary
-        case .singleNote:         return DesignSystem.Colors.info
-        case .circleOfFifths:     return DesignSystem.Colors.warning
-        case .singleString:       return DesignSystem.Colors.secondary
-        default:                  return DesignSystem.Colors.secondary
         }
     }
 }

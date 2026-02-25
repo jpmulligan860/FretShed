@@ -84,10 +84,10 @@ struct CalibrationView: View {
 
             Image(systemName: "waveform.badge.mic")
                 .font(.system(size: 72))
-                .foregroundStyle(DesignSystem.Colors.primary)
+                .foregroundStyle(DesignSystem.Colors.cherry)
 
             Text("Audio Calibration")
-                .font(DesignSystem.Typography.title)
+                .font(DesignSystem.Typography.screenTitle)
 
             Text("This process measures your environment's noise level and tests detection for each guitar string. It takes about 30 seconds.")
                 .font(.body)
@@ -114,7 +114,7 @@ struct CalibrationView: View {
                     .font(.headline)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 16)
-                    .background(DesignSystem.Colors.primary, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
+                    .background(DesignSystem.Colors.cherry, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
                     .foregroundStyle(.white)
             }
             .buttonStyle(.plain)
@@ -135,17 +135,17 @@ struct CalibrationView: View {
                     .stroke(Color.gray.opacity(0.2), lineWidth: 6)
                 Circle()
                     .trim(from: 0, to: noiseProgress)
-                    .stroke(DesignSystem.Colors.primary, style: StrokeStyle(lineWidth: 6, lineCap: .round))
+                    .stroke(DesignSystem.Colors.cherry, style: StrokeStyle(lineWidth: 6, lineCap: .round))
                     .rotationEffect(.degrees(-90))
                     .animation(.linear(duration: 0.1), value: noiseProgress)
                 Image(systemName: "waveform.path")
                     .font(.system(size: 32))
-                    .foregroundStyle(DesignSystem.Colors.primary)
+                    .foregroundStyle(DesignSystem.Colors.cherry)
             }
             .frame(width: 100, height: 100)
 
             Text("Measuring Silence")
-                .font(DesignSystem.Typography.title)
+                .font(DesignSystem.Typography.screenTitle)
 
             Text("Stay quiet for a few seconds.\nKeep your guitar still and don't play.")
                 .font(.body)
@@ -176,7 +176,7 @@ struct CalibrationView: View {
             Spacer()
 
             Text("String Test")
-                .font(DesignSystem.Typography.title)
+                .font(DesignSystem.Typography.screenTitle)
 
             Text("Play each open string when prompted.\nHold until the checkmark appears.")
                 .font(.body)
@@ -195,7 +195,7 @@ struct CalibrationView: View {
                         .font(.system(size: 28, weight: .bold, design: .rounded))
                     Text(note.sharpName)
                         .font(.system(size: 48, weight: .black, design: .rounded))
-                        .foregroundStyle(DesignSystem.Colors.primary)
+                        .foregroundStyle(DesignSystem.Colors.cherry)
                 }
                 .padding()
             }
@@ -276,7 +276,7 @@ struct CalibrationView: View {
             .frame(width: 120, height: 120)
 
             Text("Calibration Complete")
-                .font(DesignSystem.Typography.title)
+                .font(DesignSystem.Typography.screenTitle)
 
             Text("Input: \(engine.detectedInputSource.displayName)")
                 .font(.subheadline)
@@ -307,7 +307,7 @@ struct CalibrationView: View {
                     .font(.headline)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 16)
-                    .background(DesignSystem.Colors.primary, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
+                    .background(DesignSystem.Colors.cherry, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
                     .foregroundStyle(.white)
             }
             .buttonStyle(.plain)

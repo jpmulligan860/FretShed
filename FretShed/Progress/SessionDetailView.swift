@@ -54,7 +54,7 @@ struct SessionDetailView: View {
                     if !attempts.isEmpty {
                         VStack(alignment: .leading, spacing: 8) {
                             Text("FRETBOARD HEATMAP")
-                                .font(DesignSystem.Typography.caption)
+                                .font(DesignSystem.Typography.smallLabel)
                                 .foregroundStyle(.secondary)
                                 .padding(.horizontal, 20)
                             SessionHeatmapView(
@@ -70,7 +70,7 @@ struct SessionDetailView: View {
                 }
             }
         }
-        .background(Color(.systemGroupedBackground))
+        .background(DesignSystem.Colors.background)
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
     }
@@ -149,13 +149,13 @@ struct SessionDetailView: View {
 
     private var modeColor: Color {
         switch session.focusMode {
-        case .fullFretboard:     return DesignSystem.Colors.primary
+        case .fullFretboard:     return DesignSystem.Colors.cherry
         case .singleNote:        return .blue
         case .circleOfFifths:    return .orange
         case .fretboardPosition: return .cyan
         case .circleOfFourths,
              .singleString,
-             .chordProgression:  return DesignSystem.Colors.secondary
+             .chordProgression:  return DesignSystem.Colors.amber
         }
     }
 
@@ -181,7 +181,7 @@ private struct SessionStatCard: View {
                 .font(.title3)
                 .foregroundStyle(color)
             Text(value)
-                .font(DesignSystem.Typography.title)
+                .font(DesignSystem.Typography.screenTitle)
                 .monospacedDigit()
             Text(label)
                 .font(.caption)
@@ -189,6 +189,6 @@ private struct SessionStatCard: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 14)
-        .background(.background, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
+        .background(DesignSystem.Colors.surface, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
     }
 }

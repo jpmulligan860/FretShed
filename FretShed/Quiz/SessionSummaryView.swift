@@ -112,7 +112,7 @@ public struct SessionSummaryView: View {
                 }
             }
         }
-        .background(Color(.systemGroupedBackground).ignoresSafeArea())
+        .background(DesignSystem.Colors.background.ignoresSafeArea())
         .task {
             attempts = (try? container.attemptRepository.attempts(forSession: vm.session.id)) ?? []
         }
@@ -128,7 +128,7 @@ public struct SessionSummaryView: View {
                 .symbolEffect(.bounce, value: true)
 
             Text(trophyTitle)
-                .font(DesignSystem.Typography.title)
+                .font(DesignSystem.Typography.screenTitle)
 
             Text(trophySubtitle)
                 .font(.subheadline)
@@ -203,7 +203,7 @@ public struct SessionSummaryView: View {
                 .font(.headline)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 16)
-                .background(DesignSystem.Colors.primary, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
+                .background(DesignSystem.Colors.cherry, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
                 .foregroundStyle(.white)
         }
         .padding(.horizontal, 20)
@@ -219,7 +219,7 @@ public struct SessionSummaryView: View {
                 .padding(.vertical, 12)
         }
         .buttonStyle(.bordered)
-        .tint(DesignSystem.Colors.primary)
+        .tint(DesignSystem.Colors.cherry)
         .padding(.leading, 20)
     }
 
@@ -233,7 +233,7 @@ public struct SessionSummaryView: View {
                 .padding(.vertical, 12)
         }
         .buttonStyle(.bordered)
-        .tint(DesignSystem.Colors.success)
+        .tint(DesignSystem.Colors.correct)
         .padding(.trailing, 20)
     }
 
@@ -338,6 +338,6 @@ private struct StatCard: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 14)
-        .background(.background, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
+        .background(DesignSystem.Colors.surface, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
     }
 }

@@ -76,7 +76,7 @@ struct CellDetailSheet: View {
                         }
                         GeometryReader { geo in
                             ZStack(alignment: .leading) {
-                                Capsule().fill(DesignSystem.Colors.surfaceSecondary)
+                                Capsule().fill(DesignSystem.Colors.surface2)
                                 Capsule().fill(levelColor)
                                     .frame(width: geo.size.width * masteryValue)
                                     .animation(.spring(duration: 0.6), value: masteryValue)
@@ -90,7 +90,7 @@ struct CellDetailSheet: View {
                 if !detail.recentAttempts.isEmpty {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("RECENT ATTEMPTS")
-                            .font(DesignSystem.Typography.caption)
+                            .font(DesignSystem.Typography.smallLabel)
                             .foregroundStyle(.secondary)
                             .padding(.horizontal, 20)
 
@@ -112,7 +112,7 @@ struct CellDetailSheet: View {
                 Spacer(minLength: 20)
             }
         }
-        .background(Color(.systemGroupedBackground))
+        .background(DesignSystem.Colors.background)
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
     }

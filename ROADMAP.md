@@ -148,7 +148,7 @@ Estimated: 10–13 hours
 
 | # | Task | Est. | Status |
 |---|---|---|---|
-| 4.1 | Create Apple Developer account — developer.apple.com, $99/year, allow 24–48 hrs for approval | 30 min + wait | 🔲 |
+| 4.1 | Create Apple Developer account — developer.apple.com, $99/year, allow 24–48 hrs for approval | 30 min + wait | ✅ |
 | 4.2 | Create app in App Store Connect — choose and lock in Bundle ID | 30 min | 🔲 |
 | 4.3 | Create subscription products — monthly ($4.99/mo) and annual ($29.99/yr), both with 7-day free trials | 1 hr | 🔲 |
 | 4.4 | Set up sandbox test account — App Store Connect > Users and Access > Sandbox Testers | 30 min | 🔲 |

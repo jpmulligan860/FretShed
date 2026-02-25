@@ -60,7 +60,9 @@ public struct ProgressTabView: View {
                         VStack(spacing: 20) {
 
                             if hSizeClass == .regular {
-                                // iPad / wide: overall card and heatmap side-by-side
+                                // iPad / wide: streak/filter row + overall card and heatmap side-by-side
+                                streakFilterRow
+
                                 HStack(alignment: .top, spacing: 16) {
                                     VStack(spacing: 20) {
                                         overallCard
@@ -93,10 +95,11 @@ public struct ProgressTabView: View {
                                 }
                             } else {
                                 // iPhone: stacked layout
-                                // Order: Overall → Fretboard Mastery → Accuracy Trend → Avg Response Time
+                                // Order: Streak/Filter → Overall → Fretboard Mastery → Accuracy Trend → Avg Response Time
+                                streakFilterRow
+
                                 overallCard
                                     .padding(.horizontal, 16)
-                                    .padding(.top, 8)
 
                                 VStack(alignment: .leading, spacing: 8) {
                                     masterySectionHeader
@@ -187,11 +190,6 @@ public struct ProgressTabView: View {
         .background(Color(.systemGroupedBackground))
         .navigationTitle("Progress")
         .navigationBarTitleDisplayMode(.large)
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                filterMenu
-            }
-        }
         .task { await vm.load() }
         .sheet(item: $vm.selectedCell) { detail in
             CellDetailSheet(detail: detail)
@@ -321,6 +319,24 @@ public struct ProgressTabView: View {
         .frame(maxWidth: .infinity)
         .padding(.top, 80)
         .padding(.horizontal, 32)
+    }
+
+    private var streakFilterRow: some View {
+        HStack {
+            HStack(spacing: 6) {
+                Image(systemName: "flame.fill")
+                    .foregroundStyle(.orange)
+                Text("\(vm.currentStreak)")
+                    .font(.headline.weight(.bold).monospacedDigit())
+                Text(vm.currentStreak == 1 ? "day streak" : "day streak")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer()
+            filterMenu
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 4)
     }
 
     private var filterMenu: some View {

@@ -55,6 +55,7 @@ public final class ProgressViewModel {
     public private(set) var recentSessions: [Session] = []
     public private(set) var accuracyTrend: [AccuracyDataPoint] = []
     public private(set) var responseTimeTrend: [ResponseTimeDataPoint] = []
+    public private(set) var currentStreak: Int = 0
     public private(set) var isLoading: Bool = false
     public private(set) var loadFailed: Bool = false
     public var selectedCell: CellDetail? = nil
@@ -88,6 +89,7 @@ public final class ProgressViewModel {
     private var baseMasteredCells: Int = 0
     private var baseAccuracyTrend: [AccuracyDataPoint] = []
     private var baseResponseTimeTrend: [ResponseTimeDataPoint] = []
+    private var baseCurrentStreak: Int = 0
 
     private let masteryRepository: any MasteryRepository
     private let sessionRepository: any SessionRepository
@@ -128,6 +130,8 @@ public final class ProgressViewModel {
             baseAccuracyTrend = accuracyTrend
             responseTimeTrend = buildResponseTimeTrend(from: recentSessions)
             baseResponseTimeTrend = responseTimeTrend
+            currentStreak = Self.calculateStreak(from: recentSessions)
+            baseCurrentStreak = currentStreak
 
             // Re-apply active filter if one exists
             if isAnyFilterActive {
@@ -157,6 +161,41 @@ public final class ProgressViewModel {
         return points
             .sorted { $0.date < $1.date }
             .suffix(30)
+    }
+
+    // MARK: - Streak Calculation
+
+    /// Counts consecutive calendar days with at least one completed session,
+    /// walking backwards from today. If no session exists today, checks from
+    /// yesterday (user may not have practiced yet today).
+    static func calculateStreak(from sessions: [Session]) -> Int {
+        let calendar = Calendar.current
+        let practiceDays: Set<Date> = Set(
+            sessions
+                .filter { $0.isCompleted }
+                .map { calendar.startOfDay(for: $0.startTime) }
+        )
+        guard !practiceDays.isEmpty else { return 0 }
+
+        let today = calendar.startOfDay(for: Date())
+        var checkDate = today
+
+        // If no session today, try starting from yesterday
+        if !practiceDays.contains(today) {
+            let yesterday = calendar.date(byAdding: .day, value: -1, to: today)!
+            if practiceDays.contains(yesterday) {
+                checkDate = yesterday
+            } else {
+                return 0
+            }
+        }
+
+        var streak = 0
+        while practiceDays.contains(checkDate) {
+            streak += 1
+            checkDate = calendar.date(byAdding: .day, value: -1, to: checkDate)!
+        }
+        return streak
     }
 
     // MARK: - Response Time Trend Builder
@@ -201,6 +240,9 @@ public final class ProgressViewModel {
     /// Recalculates charts, heatmap, and overall stats from filtered sessions.
     /// When the filter is cleared, restores base (unfiltered) data.
     private func recalculateForFilter() {
+        // Streak always reflects all sessions regardless of filter
+        currentStreak = baseCurrentStreak
+
         guard isAnyFilterActive else {
             // No filter — restore base data
             scoreGrid = baseScoreGrid

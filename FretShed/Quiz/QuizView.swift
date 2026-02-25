@@ -378,9 +378,11 @@ public struct QuizView: View {
                         // and fret 12 are both correct). Overrides exact fret check.
                         let isCorrect: Bool
                         if vm.session.focusMode == .singleString {
+                            // Single String: must be on the target string, any octave
                             isCorrect = string == q.string && note == q.note
                         } else {
-                            isCorrect = string == q.string && fret == q.fret
+                            // All other modes: any position with the same note name
+                            isCorrect = note == q.note
                         }
                         if !isCorrect {
                             wrongAnswerPosition = (string, fret)

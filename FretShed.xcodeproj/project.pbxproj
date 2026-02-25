@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 63;
+	objectVersion = 77;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -19,6 +19,7 @@
 		3679E6E6C395D4CF33C3B179 /* FretboardMap.swift in Sources */ = {isa = PBXBuildFile; fileRef = C97A5E570DD542CE6BE2A7DE /* FretboardMap.swift */; };
 		39AD25909A0A7C8465961526 /* MusicalNoteTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D08375D0D742EB497DA8C1B5 /* MusicalNoteTests.swift */; };
 		3BA1749981D64C8E7900D5BF /* SignalMeasurementTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 940F20D459475ADCDF1F786C /* SignalMeasurementTests.swift */; };
+		3CD9F05095A4FFA448A52A8A /* CalibrationTunerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B32719655DF20923553DFBF1 /* CalibrationTunerView.swift */; };
 		3F84D2B9568EE2A97A7CE465 /* MasteryHeatmapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40EADCDC7EF4F4CB8E8D8B6A /* MasteryHeatmapView.swift */; };
 		41A8D1A0AB8A3E4CE8AA2D9B /* settings.local.json in Resources */ = {isa = PBXBuildFile; fileRef = 616D897D4D1484E19B0FEA2F /* settings.local.json */; };
 		4A962BA3BCC7B96F8E70CA59 /* SessionHeatmapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 368D92459DC9EF2DC0B7DC23 /* SessionHeatmapView.swift */; };
@@ -72,7 +73,7 @@
 /* Begin PBXFileReference section */
 		0B55D5F37496FC09E7CADD12 /* FretShedApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FretShedApp.swift; sourceTree = "<group>"; };
 		0E09B79F825D97199C8FD5CE /* MusicalNote.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicalNote.swift; sourceTree = "<group>"; };
-		11D3BDBDA01662AE732E4282 /* FretShed.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FretShed.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		11D3BDBDA01662AE732E4282 /* FretShed.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = FretShed.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		1BFFA59339D000888D580604 /* SignalMeasurement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignalMeasurement.swift; sourceTree = "<group>"; };
 		1DE95D278240B6AAD1413451 /* FretboardMapTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FretboardMapTests.swift; sourceTree = "<group>"; };
 		1EF081CC52C037C265273111 /* SessionDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionDetailView.swift; sourceTree = "<group>"; };
@@ -97,6 +98,7 @@
 		9594943EB347CFE0054D2D86 /* UserSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserSettings.swift; sourceTree = "<group>"; };
 		9795F3F426B68D2C05721457 /* MetroDroneEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetroDroneEngine.swift; sourceTree = "<group>"; };
 		97B0E4D90EBB4ECE1E66BA12 /* ChordProgression.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChordProgression.swift; sourceTree = "<group>"; };
+		9935814B59638C33E9F835DD /* Local.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Local.xcconfig; sourceTree = "<group>"; };
 		9A49C34D79598F0C40D67A54 /* QuizViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuizViewModelTests.swift; sourceTree = "<group>"; };
 		9FE5B2CFA6EF2400E6CCF60B /* SettingsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsTests.swift; sourceTree = "<group>"; };
 		A0D7B77AA22E14EB8A7365EA /* PracticeLogTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PracticeLogTests.swift; sourceTree = "<group>"; };
@@ -106,6 +108,7 @@
 		AFF9E8822A71F3321284E3E8 /* MasteryScore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MasteryScore.swift; sourceTree = "<group>"; };
 		B249D088A3BF526B9663DD4D /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		B2BA6E158C16D88608168965 /* MetroDroneView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetroDroneView.swift; sourceTree = "<group>"; };
+		B32719655DF20923553DFBF1 /* CalibrationTunerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalibrationTunerView.swift; sourceTree = "<group>"; };
 		B6FDEB3EA727B49B54ACBB1C /* QuizView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuizView.swift; sourceTree = "<group>"; };
 		B90F2903BC076D7BFEF7665A /* CalibrationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalibrationView.swift; sourceTree = "<group>"; };
 		BD97CC80B02ADF5F5BAE2DAE /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -131,6 +134,7 @@
 			children = (
 				307D70BE2E5AE3372D94B9EA /* AudioCalibrationProfile.swift */,
 				F4A56A5807EDBEDFF6EC3BBB /* CalibrationEngine.swift */,
+				B32719655DF20923553DFBF1 /* CalibrationTunerView.swift */,
 				B90F2903BC076D7BFEF7665A /* CalibrationView.swift */,
 			);
 			path = Calibration;
@@ -160,6 +164,15 @@
 			path = UnitTests;
 			sourceTree = "<group>";
 		};
+		28F354A992ECFC3E26A370E7 /* FretShed */ = {
+			isa = PBXGroup;
+			children = (
+				9935814B59638C33E9F835DD /* Local.xcconfig */,
+			);
+			name = FretShed;
+			path = .;
+			sourceTree = "<group>";
+		};
 		4A5749E5E3EE724458EEB270 /* FretShedTests */ = {
 			isa = PBXGroup;
 			children = (
@@ -182,6 +195,7 @@
 			children = (
 				FE2D409E59D0757557617013 /* NotificationScheduler.swift */,
 				5773D0A6622D273623BE9DF8 /* FretShed */,
+				28F354A992ECFC3E26A370E7 /* FretShed */,
 				4A5749E5E3EE724458EEB270 /* FretShedTests */,
 				7CA537042F0A55611E30B4D7 /* Products */,
 			);
@@ -329,6 +343,13 @@
 			path = Repositories;
 			sourceTree = "<group>";
 		};
+		"TEMP_DEFEC069-988E-4D39-81A2-57206D1A7EAE" /* SnapshotTests */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = SnapshotTests;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -376,6 +397,11 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1600;
+				TargetAttributes = {
+					5F88877F67F73744122AA111 = {
+						DevelopmentTeam = W86YKV677Z;
+					};
+				};
 			};
 			buildConfigurationList = C3EB24449BB91D4EA0C05F13 /* Build configuration list for PBXProject "FretShed" */;
 			compatibilityVersion = "Xcode 14.0";
@@ -387,6 +413,7 @@
 			);
 			mainGroup = 506BA9E636029B910BF8FF46;
 			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
@@ -418,6 +445,7 @@
 				C6CBB4F9D7052F2111DD9F7A /* Attempt.swift in Sources */,
 				509F2DA23C4EB8FEB01F7D33 /* AudioCalibrationProfile.swift in Sources */,
 				12DAA222A1C52E3094C2C70A /* CalibrationEngine.swift in Sources */,
+				3CD9F05095A4FFA448A52A8A /* CalibrationTunerView.swift in Sources */,
 				4B5D130E35BADB2648D0E601 /* CalibrationView.swift in Sources */,
 				90C6CE68DFA597F6BC629DCE /* CellDetailSheet.swift in Sources */,
 				1D2ADF8BA76519EDEEBE5EF8 /* ChordProgression.swift in Sources */,
@@ -484,11 +512,11 @@
 /* Begin XCBuildConfiguration section */
 		06F83BE2B2E99F5DF017C5B9 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 9935814B59638C33E9F835DD /* Local.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = W86YKV677Z;
 				ENABLE_HARDENED_RUNTIME = YES;
 				INFOPLIST_FILE = FretShed/Resources/Info.plist;
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "FretShed uses the microphone to detect the notes you play on your guitar.";
@@ -528,11 +556,11 @@
 		};
 		5C426166D57AD4358B4D1E41 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 9935814B59638C33E9F835DD /* Local.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = W86YKV677Z;
 				ENABLE_HARDENED_RUNTIME = YES;
 				INFOPLIST_FILE = FretShed/Resources/Info.plist;
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "FretShed uses the microphone to detect the notes you play on your guitar.";

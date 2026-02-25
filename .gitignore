@@ -101,3 +101,6 @@ fastlane/test_output/
 
 # Generated file manifests (regenerate with: find . -name "*.swift" | sort)
 FILE_MANIFEST.txt
+
+# Local signing config (contains developer team ID)
+Local.xcconfig

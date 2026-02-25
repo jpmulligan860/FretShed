@@ -38,7 +38,11 @@ struct ContentView: View {
     @State private var pendingQuizVM: QuizViewModel?
     @State private var activeQuizVM: QuizViewModel?
     @State private var showCalibration = false
+    @State private var showCalibrationTuner = false
     @State private var showCalibrationGate = false
+    @State private var pendingTapMode = false
+    @State private var tapModeWasForced = false
+    @State private var gatedQuizVM: QuizViewModel?
 
     @AppStorage(LocalUserPreferences.Key.hasCompletedCalibration)
     private var hasCompletedCalibration = false
@@ -104,7 +108,10 @@ struct ContentView: View {
 
         // ── Setup cover ────────────────────────────────────────────────
         .fullScreenCover(isPresented: $showSetup, onDismiss: {
-            guard let vm = pendingQuizVM else { return }
+            guard let vm = pendingQuizVM else {
+                pendingTapMode = false
+                return
+            }
             pendingQuizVM = nil
             launchQuiz(vm: vm)
         }) {
@@ -115,6 +122,11 @@ struct ContentView: View {
         .onReceive(NotificationCenter.default.publisher(for: .launchQuiz)
             .receive(on: RunLoop.main)) { note in
             guard let vm = note.object as? QuizViewModel else { return }
+            if pendingTapMode {
+                vm.settings.tapToAnswerEnabled = true
+                tapModeWasForced = true
+                pendingTapMode = false
+            }
             if showSetup {
                 pendingQuizVM = vm
                 showSetup = false
@@ -127,17 +139,47 @@ struct ContentView: View {
             selectedTab = .practice
         }
 
-        // ── Calibration cover ────────────────────────────────────────
+        // ── Calibration cover (re-calibrate from compact card / Settings) ──
         .fullScreenCover(isPresented: $showCalibration) {
             CalibrationView()
         }
 
+        // ── Calibration tuner cover (audio setup flow from Do This First) ──
+        .fullScreenCover(isPresented: $showCalibrationTuner, onDismiss: {
+            if hasCompletedCalibration {
+                if let vm = gatedQuizVM {
+                    // Quick-start VM was waiting for calibration — launch it
+                    gatedQuizVM = nil
+                    launchQuiz(vm: vm)
+                } else {
+                    // Came from Do This First card — open session setup
+                    Task { @MainActor in
+                        showSetup = true
+                    }
+                }
+            }
+        }) {
+            CalibrationTunerView()
+        }
+
         // ── Calibration gate alert ──────────────────────────────────
-        .alert("Calibrate Audio First", isPresented: $showCalibrationGate) {
-            Button("Calibrate Now") { showCalibration = true }
-            Button("Cancel", role: .cancel) {}
+        .alert("Audio Setup Required", isPresented: $showCalibrationGate) {
+            Button("Calibrate Now") { showCalibrationTuner = true }
+            Button("Use Tap Mode") {
+                if let vm = gatedQuizVM {
+                    vm.settings.tapToAnswerEnabled = true
+                    tapModeWasForced = true
+                    gatedQuizVM = nil
+                    selectedTab = .practice
+                    activeQuizVM = vm
+                } else {
+                    pendingTapMode = true
+                    showSetup = true
+                }
+            }
+            Button("Cancel", role: .cancel) { gatedQuizVM = nil }
         } message: {
-            Text("Audio calibration is required before starting a quiz. This measures your environment and guitar for accurate note detection.")
+            Text("Audio calibration is required for note detection. You can calibrate now or use tap mode to practice without audio.")
         }
     }
 
@@ -152,9 +194,17 @@ struct ContentView: View {
         QuizView(
             vm: vm,
             onDone: {
+                if tapModeWasForced {
+                    vm.settings.tapToAnswerEnabled = false
+                    tapModeWasForced = false
+                }
                 activeQuizVM = nil
             },
             onRepeat: {
+                if tapModeWasForced {
+                    vm.settings.tapToAnswerEnabled = false
+                    tapModeWasForced = false
+                }
                 // Capture the session before clearing the VM.
                 let session = vm.session
                 activeQuizVM = nil
@@ -177,7 +227,8 @@ struct ContentView: View {
     // MARK: - Quiz Launch
 
     private func launchQuiz(vm: QuizViewModel) {
-        guard hasCompletedCalibration else {
+        guard hasCompletedCalibration || vm.settings.tapToAnswerEnabled || vm.settings.tapModeEnabled else {
+            gatedQuizVM = vm
             showCalibrationGate = true
             return
         }
@@ -223,7 +274,11 @@ struct ContentView: View {
                     }
                     showSetup = true
                 },
-                onOpenTuner: { selectedTab = .tuner },
+                onSetupAudio: { showCalibrationTuner = true },
+                onUseTapMode: {
+                    pendingTapMode = true
+                    showSetup = true
+                },
                 onCalibrateAudio: { showCalibration = true }
             )
             .toolbar(.hidden, for: .navigationBar)
@@ -254,7 +309,8 @@ struct ContentView: View {
 struct PracticeHomeView: View {
 
     let onStartPractice: () -> Void
-    let onOpenTuner: () -> Void
+    let onSetupAudio: () -> Void
+    let onUseTapMode: () -> Void
     let onCalibrateAudio: () -> Void
     @Environment(\.appContainer) private var container
     @State private var lastSession: Session?
@@ -299,7 +355,7 @@ struct PracticeHomeView: View {
             .padding(.vertical, 12)
             .background(DesignSystem.Colors.surface, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
         } else {
-            // Full "Do This First" card with action buttons
+            // Full "Do This First" card — two paths: audio detection or tap mode
             ZStack(alignment: .bottomLeading) {
                 RoundedRectangle(cornerRadius: DesignSystem.Radius.xl)
                     .fill(
@@ -314,33 +370,15 @@ struct PracticeHomeView: View {
                     Text("Do This First")
                         .font(DesignSystem.Typography.title)
                         .foregroundStyle(.white)
-                    Text("For the most accurate note detection:")
+                    Text("Choose how you want to practice:")
                         .font(.subheadline)
                         .foregroundStyle(.white.opacity(0.85))
 
-                    VStack(alignment: .leading, spacing: 8) {
-                        Label {
-                            Text("Tune your guitar.")
-                                .font(.subheadline.weight(.medium))
-                        } icon: {
-                            Text("1.")
-                                .font(.subheadline.weight(.bold))
-                        }
-                        Label {
-                            Text("Calibrate audio for your environment.")
-                                .font(.subheadline.weight(.medium))
-                        } icon: {
-                            Text("2.")
-                                .font(.subheadline.weight(.bold))
-                        }
-                    }
-                    .foregroundStyle(.white.opacity(0.95))
-
                     HStack(spacing: 12) {
                         Button {
-                            onOpenTuner()
+                            onSetupAudio()
                         } label: {
-                            Label("Open Tuner", systemImage: "tuningfork")
+                            Label("Use Audio Detection", systemImage: "mic.fill")
                                 .font(.subheadline.weight(.semibold))
                                 .padding(.horizontal, 14)
                                 .padding(.vertical, 10)
@@ -350,9 +388,9 @@ struct PracticeHomeView: View {
                         .buttonStyle(.plain)
 
                         Button {
-                            onCalibrateAudio()
+                            onUseTapMode()
                         } label: {
-                            Label("Calibrate Audio", systemImage: "waveform.badge.mic")
+                            Label("Use Tap Mode", systemImage: "hand.tap")
                                 .font(.subheadline.weight(.semibold))
                                 .padding(.horizontal, 14)
                                 .padding(.vertical, 10)

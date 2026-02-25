@@ -14,12 +14,14 @@ targets:
     sources:
       - path: FretShed
       - NotificationScheduler.swift
+    configFiles:
+      Debug: Local.xcconfig
+      Release: Local.xcconfig
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.jpm.fretshed
         SWIFT_VERSION: 6.0
         SWIFT_STRICT_CONCURRENCY: complete
-        DEVELOPMENT_TEAM: ""
         ENABLE_HARDENED_RUNTIME: YES
         MARKETING_VERSION: "1.0.0"
         CURRENT_PROJECT_VERSION: "1"

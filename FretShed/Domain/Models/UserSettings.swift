@@ -203,7 +203,7 @@ public final class UserSettings {
         self.forceBuiltInMic = false
         self.defaultGameModeRaw = GameMode.untimed.rawValue
         self.defaultTimerDuration = 10
-        self.defaultSessionLength = 20
+        self.defaultSessionLength = 7
         self.hintTimeoutSeconds = 5
         self.circleDirectionRaw = CircleDirection.fourths.rawValue
         self.masteryThreshold = 0.90
@@ -218,7 +218,7 @@ public final class UserSettings {
         self.isMetronomeEnabled = true
         self.metronomeVolume = 0.7
         self.hapticFeedbackEnabled = true
-        self.tapModeEnabled = false
+        self.tapModeEnabled = true
         self.tapToAnswerEnabled = false
         self.tunerDisplayStyleRaw = TunerDisplayStyle.needle.rawValue
         self.referenceAHz = 440
@@ -252,7 +252,7 @@ public enum LocalUserPreferences {
         public static let hasCompletedOnboarding = false
         public static let noteNameFormat         = NoteNameFormat.sharps.rawValue
         public static let fretboardOrientation   = FretboardOrientation.rightHand.rawValue
-        public static let defaultFretCount       = DefaultFretCount.twentyTwo.rawValue
+        public static let defaultFretCount       = DefaultFretCount.twelve.rawValue
         public static let colorScheme            = "system"
     }
 }

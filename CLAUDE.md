@@ -58,7 +58,7 @@ FretShed includes a full audio calibration system that measures the user's envir
 
 ### Signal Processing Chain (in order)
 ```
-HPF (60Hz Butterworth) → Adaptive Noise Gate → AGC (target −18 dBFS) → Low-Frequency Emphasis (input-source-aware) → Crest Factor + Spectral Subtraction (adaptive noise removal) → Tonal Signal Gate (crest factor OR harmonic regularity OR spectral flatness) → AccelerateYIN + HPS Verification + Harmonic Regularity → Note Decision (consecutive frame gate + string-aware frequency constraint)
+HPF (60Hz Butterworth) → Adaptive Noise Gate → AGC (target −18 dBFS) → Low-Frequency Emphasis (input-source-aware) → Crest Factor + Spectral Subtraction (adaptive noise removal) → Tonal Signal Gate (crest factor OR harmonic regularity OR spectral flatness) → AccelerateYIN + HPS Verification + Harmonic Regularity → Tap Confidence Floor (sustainMode: 0.51, quiz: 0.85) → Consumer Confidence Hysteresis (sustainMode: 0.65 once established) → Note Decision (consecutive frame gate + string-aware frequency constraint + 500ms/250ms hold)
 ```
 
 ### Input Sources Detected
@@ -182,7 +182,9 @@ QuizView `.task` loads `calibrationRepository.activeProfile()` and pre-seeds:
 
 **Distortion Tolerance (F25) — IMPLEMENTED.** Three improvements for distorted guitar signals: (1) Crest factor bypass — `vDSP_maxmgv/vDSP_rmsqv` computes peak/RMS ratio; crest < 2.0 indicates clipping (distortion pedal), bypasses flatness gate; (2) Input-source-aware flatness threshold — USB interface relaxed to 0.50 (vs 0.35 for mic/headset) since distortion pedals are only relevant through interfaces; (3) Harmonic spacing regularity — sums power at first 10 integer multiples of HPS fundamental (±1 bin), divides by total power; ratio > 0.3 indicates tonal signal (even if spectrally flat from distortion), bypasses flatness gate. Three-way tonal signal check: `crestFactor < 2.0 || harmonicReg > 0.3 || flatness < threshold`.
 
-**All BUGLOG items resolved** except Q15 (open — single string octave acceptance). All feature ideas (F1–F25) complete.
+**Tuner Sustain Hysteresis (F29) — IMPLEMENTED.** Fixes 12th-fret sustain dropout where the tuner needle drops while the note is still ringing. Three-layer approach: (1) `sustainMode` flag on PitchDetector — TunerView sets true, QuizView leaves false (default); (2) Tap floor lowered to 60% of confidenceThreshold in sustain mode (0.51 vs 0.85) to pass decay-phase frames; (3) Consumer-side confidence hysteresis — once a note is established (consecutive gate met), accepts confidence >= 0.65 to extend sustain; hold window doubled to 500ms. TunerView onChange split into two handlers: detectedNote (resets displayCents on nil→some) and centsDeviation (amplitude-aware EMA only while note active). Quiz behavior is byte-for-byte identical — sustainMode defaults to false, tap floor and hysteresis are both gated.
+
+**All BUGLOG items resolved.** All feature ideas (F1–F29) complete.
 
 **Next task:** Task 3.7 (onboarding device test), then Phase 4.
 
@@ -200,8 +202,7 @@ QuizView `.task` loads `calibrationRepository.activeProfile()` and pre-seeds:
 ---
 
 ## Known Issues (from BUGLOG.md)
-- **Q15 (Open):** Single String mode should accept either octave of the target note as correct, overriding the exact note setting.
-All other device-testing bugs are resolved. All feature ideas (F1–F25) are complete.
+All device-testing bugs are resolved. All feature ideas (F1–F29) are complete.
 
 ---
 

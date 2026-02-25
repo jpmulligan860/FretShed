@@ -222,7 +222,7 @@ private struct TunerNeedleDisplay: View {
     let isActive: Bool
 
     private var angle: Double {
-        isActive ? (cents / 50.0) * 60.0 : 0
+        isActive ? (cents / 50.0) * 90.0 : -90
     }
 
     var body: some View {
@@ -241,7 +241,7 @@ private struct TunerNeedleDisplay: View {
 
             TunerNeedle(angle: angle)
                 .frame(width: 240, height: 120)
-                .animation(.spring(response: 0.3, dampingFraction: 1.0), value: angle)
+                .animation(.spring(response: 0.2, dampingFraction: 0.85), value: angle)
 
             Circle()
                 .fill(Color(.label))

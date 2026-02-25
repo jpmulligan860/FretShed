@@ -88,6 +88,11 @@ public final class PitchDetector {
     /// AGC starts from this value instead of the default 2.0.
     public var calibratedAGCGain: Float? = nil
 
+    /// When true, enables sustain-optimised detection for tuner use:
+    /// lower tap confidence floor and consumer-side hysteresis.
+    /// QuizView leaves this false to preserve strict detection.
+    public var sustainMode: Bool = false
+
     /// Optional frequency range constraint. When set, the consumer task
     /// ignores detected frequencies outside this range. Used by QuizView
     /// to narrow detection to the target string's frequency band.
@@ -204,6 +209,7 @@ public final class PitchDetector {
         // runtime to insert an actor-isolation check that crashes on the audio thread.
         let isStopping = _isStopping
         let threshold = confidenceThreshold
+        let sustainEnabled = sustainMode
 
         // AsyncStream is the safe bridge between the realtime audio thread and
         // the main actor. The continuation is a pure Sendable value type —
@@ -228,7 +234,8 @@ public final class PitchDetector {
             playbackTimestamp: playbackTS,
             calibratedNoiseFloor: calNoiseFloor,
             calibratedAGCGain: calAGCGain,
-            calibratedInputSource: calInputSource
+            calibratedInputSource: calInputSource,
+            sustainEnabled: sustainEnabled
         )
         inputNode.installTap(onBus: 0, bufferSize: bufferSize, format: tapFormat, block: tapClosure)
 
@@ -241,7 +248,7 @@ public final class PitchDetector {
             // Pitch hold: sustain the last detection briefly after the gate closes so the
             // tuner needle doesn't snap back to centre as the note decays (fixes T2, T3).
             var holdUntilDate: Date? = nil
-            let holdDuration: TimeInterval = 0.25   // 250 ms
+            let holdDuration: TimeInterval = sustainEnabled ? 0.5 : 0.25
             // Consecutive frame gate: require the same note for N frames before
             // publishing to detectedNote, preventing transient slide noise artifacts.
             var consecutiveNoteCount: Int = 0
@@ -280,7 +287,7 @@ public final class PitchDetector {
                     holdUntilDate = nil
                     consecutiveNoteCount = 0
                     lastConsecutiveNote = nil
-                case .detected(let freq, let rmsLevel, let noiseFloor, let agcGain):
+                case .detected(let freq, let confidence, let rmsLevel, let noiseFloor, let agcGain):
                     // Publish realtime signal state for calibration / diagnostics.
                     self.currentNoiseFloor = noiseFloor
                     self.currentAGCGain = agcGain
@@ -290,6 +297,20 @@ public final class PitchDetector {
                     // consecutive gate hasn't been met yet.
                     smoothedLevel = 0.3 * Double(rmsLevel) + 0.7 * smoothedLevel
                     self.inputLevel = smoothedLevel
+
+                    // Confidence hysteresis (sustain mode only):
+                    // Once a note is established, accept lower confidence to extend sustain.
+                    let isSustaining = sustainEnabled
+                        && self.detectedNote != nil
+                        && consecutiveNoteCount >= consecutiveFrameThreshold
+                    let effectiveThreshold = isSustaining ? 0.65 : Double(self.confidenceThreshold)
+                    guard confidence >= effectiveThreshold else {
+                        // Low confidence: extend hold to bridge gap, but don't update note
+                        if self.detectedNote != nil {
+                            holdUntilDate = Date().addingTimeInterval(holdDuration)
+                        }
+                        break
+                    }
 
                     // Median filter: detect note changes and maintain sliding window
                     if !freqHistory.isEmpty {
@@ -407,7 +428,8 @@ public final class PitchDetector {
                     playbackTimestamp: playbackTS,
                     calibratedNoiseFloor: calNoiseFloor,
                     calibratedAGCGain: calAGCGain,
-                    calibratedInputSource: newSource
+                    calibratedInputSource: newSource,
+                    sustainEnabled: sustainEnabled
                 )
                 inputNode.installTap(onBus: 0, bufferSize: self.bufferSize, format: fmt, block: newTap)
                 try? self.engine.start()
@@ -493,7 +515,7 @@ private final class AudioAtomicFlag: @unchecked Sendable {
 private enum DetectedPitch: Sendable {
     case none
     case silent(rmsLevel: Float, noiseFloor: Float, agcGain: Float)
-    case detected(frequency: Double, rmsLevel: Float, noiseFloor: Float, agcGain: Float)
+    case detected(frequency: Double, confidence: Double, rmsLevel: Float, noiseFloor: Float, agcGain: Float)
 }
 
 // MARK: - AccelerateYIN
@@ -1009,7 +1031,8 @@ private func makeTapClosure(
     playbackTimestamp: PlaybackTimestamp,
     calibratedNoiseFloor: Float? = nil,
     calibratedAGCGain: Float? = nil,
-    calibratedInputSource: AudioInputSource? = nil
+    calibratedInputSource: AudioInputSource? = nil,
+    sustainEnabled: Bool = false
 ) -> AVAudioNodeTapBlock {
     let windowSize = 4096
     let hopSize = 1024
@@ -1128,11 +1151,19 @@ private func makeTapClosure(
         vDSP_rmsqv(state.analysisBuffer, 1, &postRMS, vDSP_Length(windowSize))
         let crestFactor: Float = postRMS > 1e-10 ? peakValue / postRMS : 10.0
 
+        // sustainMode: lower the hard floor from confidenceThreshold to 60% of it.
+        // Default 0.85 × 0.6 = 0.51 — still rejects garbage, but passes
+        // decay-phase frames for the consumer to evaluate with context.
+        // Non-sustain (quiz): full confidenceThreshold as today.
+        let tapFloor = sustainEnabled
+            ? Double(confidenceThreshold) * 0.6
+            : Double(confidenceThreshold)
+
         guard let (frequency, confidence, flatness, harmonicReg) = state.yin.detectPitch(
             in: state.analysisBuffer,
             count: windowSize,
             sampleRate: sampleRate
-        ), confidence >= Double(confidenceThreshold),
+        ), confidence >= tapFloor,
            // Three-way tonal signal check: pass if ANY of these is true.
            // 1. Low crest factor → clipped/distorted signal (not noise)
            // 2. High harmonic regularity → energy at integer multiples (tonal)
@@ -1145,7 +1176,7 @@ private func makeTapClosure(
             return
         }
 
-        continuation.yield(.detected(frequency: frequency, rmsLevel: gainedLevel, noiseFloor: state.noiseFloor, agcGain: state.agcGain))
+        continuation.yield(.detected(frequency: frequency, confidence: confidence, rmsLevel: gainedLevel, noiseFloor: state.noiseFloor, agcGain: state.agcGain))
     }
 }
 

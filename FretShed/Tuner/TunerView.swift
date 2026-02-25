@@ -19,6 +19,7 @@ public struct TunerView: View {
 
     @State private var detector = PitchDetector()
     @State private var settings: UserSettings? = nil
+    @State private var displayCents: Double = 0
     @Environment(\.verticalSizeClass) private var vSizeClass
 
     // displayStyle and referenceAHz kept in @AppStorage so the tuner tab
@@ -57,10 +58,10 @@ public struct TunerView: View {
                         Divider().padding(.vertical, 20)
 
                         VStack(spacing: 0) {
-                            NeedleDisplay(cents: detector.centsDeviation,
+                            NeedleDisplay(cents: displayCents,
                                               isActive: detector.detectedNote != nil)
                                 .padding(.top, 12)
-                                .animation(.easeInOut(duration: 0.15), value: detector.centsDeviation)
+                                .animation(.easeInOut(duration: 0.15), value: displayCents)
 
                             CentsScale()
                                 .padding(.top, 8)
@@ -83,10 +84,10 @@ public struct TunerView: View {
                         noteHeader
                             .padding(.top, 32)
 
-                        NeedleDisplay(cents: detector.centsDeviation,
+                        NeedleDisplay(cents: displayCents,
                                       isActive: detector.detectedNote != nil)
                             .padding(.top, 32)
-                            .animation(.easeInOut(duration: 0.15), value: detector.centsDeviation)
+                            .animation(.easeInOut(duration: 0.15), value: displayCents)
 
                         centsReadout
                             .padding(.top, 20)
@@ -108,6 +109,7 @@ public struct TunerView: View {
             }
             .toolbar(.hidden, for: .navigationBar)
             .task {
+                detector.sustainMode = true
                 await applySettings()
                 try? await detector.start()
             }
@@ -116,6 +118,18 @@ public struct TunerView: View {
             }
             .onChange(of: referenceAHz) { _, new in
                 detector.referenceA = Double(new)
+            }
+            // Reset displayCents when a NEW note starts (nil → some)
+            .onChange(of: detector.detectedNote) { oldNote, newNote in
+                if newNote != nil && oldNote == nil {
+                    displayCents = detector.centsDeviation
+                }
+            }
+            // During sustained detection, apply amplitude-aware EMA
+            .onChange(of: detector.centsDeviation) { _, newCents in
+                guard detector.detectedNote != nil else { return }
+                let alpha = 0.1 + 0.3 * min(detector.inputLevel, 1.0)
+                displayCents = alpha * newCents + (1.0 - alpha) * displayCents
             }
             .alert("Microphone Access Required",
                    isPresented: Binding(
@@ -202,7 +216,7 @@ public struct TunerView: View {
     // MARK: - Cents Readout
 
     private var centsReadout: some View {
-        let c = detector.centsDeviation
+        let c = displayCents
         let sign = c >= 0 ? "+" : ""
         return Text("\(sign)\(Int(c.rounded())) ¢")
             .font(DesignSystem.Typography.dataDisplay)
@@ -243,7 +257,7 @@ private struct NeedleDisplay: View {
     let isActive: Bool
 
     private var angle: Double {
-        isActive ? (cents / 50.0) * 60.0 : 0
+        isActive ? (cents / 50.0) * 90.0 : -90
     }
 
     var body: some View {
@@ -262,7 +276,7 @@ private struct NeedleDisplay: View {
 
             Needle(angle: angle)
                 .frame(width: 260, height: 130)
-                .animation(.spring(response: 0.3, dampingFraction: 1.0), value: angle)
+                .animation(.spring(response: 0.2, dampingFraction: 0.85), value: angle)
 
             Circle()
                 .fill(DesignSystem.Colors.amber)

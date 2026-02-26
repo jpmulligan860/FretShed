@@ -16,12 +16,13 @@ The core product is feature-complete and well-architected:
 - Live pitch detection (AccelerateYIN)
 - Metronome + drone generator (AVAudioEngine)
 - SwiftData persistence + repository pattern
-- 219 passing unit tests
+- 219 unit tests (3 pre-existing failures unrelated to feature work)
 - Full audio calibration system (F22) — required before quiz, pre-seeds PitchDetector
-- Advanced pitch detection: spectral flatness gate, consecutive frame gate, HPS octave verification, string-aware frequency constraints, 60 Hz HPF, input-source-aware low-frequency emphasis, adaptive spectral subtraction, distortion tolerance (crest factor, harmonic regularity, input-aware flatness threshold)
+- Advanced pitch detection: spectral flatness gate, consecutive frame gate, HPS octave verification, string-aware frequency constraints, 60 Hz HPF, input-source-aware low-frequency emphasis, adaptive spectral subtraction, distortion tolerance (crest factor, harmonic regularity, input-aware flatness threshold), tuner sustain hysteresis (F29)
+- Piano drone timbre (F26), practice streak tracker (F27), tap mode bypass for calibration (F28)
 - Swift 6 strict concurrency
 
-> **Note on naming**: The Xcode project is `FretShed`; the MVP plan targets the `FretShed` brand. Decide on a final product name before Phase 4 (bundle IDs are permanent once submitted).
+> **Product name decided**: FretShed: Guitar Fretboard · Bundle ID: `com.jpm.fretshed` (locked in App Store Connect)
 
 ---
 

@@ -808,6 +808,7 @@ private final class AccelerateYIN: @unchecked Sendable {
             interpolatedTau = Double(bestTau)
         }
 
+        guard interpolatedTau > 0 else { return nil }
         let frequency = sampleRate / interpolatedTau
         // Use the better (lower) CMND: the original detection or the
         // corrected tau. This preserves high confidence when HPS-guided
@@ -1181,7 +1182,9 @@ private func makeTapClosure(
 }
 
 private func pitchDetectorNoteAndCents(frequency: Double, referenceA: Double) -> (MusicalNote, Double) {
+    guard frequency > 0, referenceA > 0 else { return (.a, 0) }
     let midiFloat = 12.0 * log2(frequency / referenceA) + 69.0
+    guard midiFloat.isFinite else { return (.a, 0) }
     let midiRounded = midiFloat.rounded()
     let pitchClass = ((Int(midiRounded) % 12) + 12) % 12
     let note = MusicalNote(rawValue: pitchClass) ?? .a

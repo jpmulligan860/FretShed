@@ -150,6 +150,15 @@ Ideas discovered during testing. Not bugs — things that don't exist yet or cou
 | F27 | ✅ Done | Progress | Streak tracker + filter row redesign | New HStack row below "Progress" headline. Left: flame.fill icon (orange) + bold streak count + "day streak" label. Right: Results filter menu (moved from toolbar). `ProgressViewModel.calculateStreak()` counts consecutive calendar days with completed sessions backwards from today (grace: if no session today, starts from yesterday). Streak always reflects all sessions regardless of active filter. Session 2026-02-24. |
 | F28 | ✅ Done | Practice/Quiz | Tap mode bypass for calibration gate | Do This First card redesigned with two paths: "Use Audio Detection" (CalibrationTunerView → tuner + calibrate → session setup) and "Use Tap Mode" (tap-to-answer, bypasses calibration gate, per-session only). Gate alert also offers tap mode option. New CalibrationTunerView.swift with embedded tuner + success overlay. Session 2026-02-24. |
 | F29 | ✅ Done | Tuner/Audio | Tuner 12th-fret sustain — confidence hysteresis + visual smoothing | Fixes tuner needle dropout at 12th fret (330 Hz high E) where YIN confidence drops below 0.85 during decay while pitch is still correct. Three-layer fix: (1) `sustainMode` flag on PitchDetector (true for tuner, false for quiz — zero quiz impact); (2) Tap floor lowered to 0.51 (60% of 0.85) in sustain mode, passing decay-phase frames to consumer; (3) Consumer hysteresis — once note established via consecutive gate, accepts confidence ≥ 0.65; hold window 500ms (vs 250ms quiz). TunerView: onChange split into detectedNote (resets on nil→some) + centsDeviation (amplitude-aware EMA while active). Needle returns to idle via spring animation when note truly fades. Session 2026-02-25. |
+| F30 | ✅ Done | Data | Session data backup & restore | JSON export/import in Settings > Data Management. Exports all sessions, attempts, mastery scores, settings, and calibration profile to versioned JSON file in Documents. Restore replaces all data with confirmation. Files visible in Files app via UIFileSharingEnabled. Session 2026-02-25. |
+
+---
+
+## Crash Fixes
+
+| # | Status | Description | Root Cause | Fix |
+|---|---|---|---|---|
+| C1 | ✅ Fixed | Fatal error: Double value cannot be converted to Int (infinite or NaN) in `pitchDetectorNoteAndCents` | YIN parabolic interpolation on `bestTau=1` can shift `interpolatedTau` to zero/negative → `frequency = sampleRate / 0` = inf → `Int(inf)` crashes. Triggered after deleting all data (fresh install, no calibration profile). | Two-layer fix: (1) `guard interpolatedTau > 0` in `detectPitch()` rejects as nil; (2) `guard frequency > 0, referenceA > 0` + `guard midiFloat.isFinite` in `pitchDetectorNoteAndCents()` as defense in depth. Session 2026-02-25. |
 
 ---
 

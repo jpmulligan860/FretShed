@@ -68,6 +68,8 @@
 		BB08C4D5E6F70882349BC018 /* JetBrainsMono-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = AA08B3C4D5E6F7088234AB08 /* JetBrainsMono-Bold.ttf */; };
 		BB09C4D5E6F70892349BC019 /* JetBrainsMono-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = AA09B3C4D5E6F7089234AB09 /* JetBrainsMono-SemiBold.ttf */; };
 		BB10C4D5E6F70802349BC010 /* JetBrainsMono-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = AA10B3C4D5E6F7080234AB10 /* JetBrainsMono-Medium.ttf */; };
+		BKUP01A1B2C3D4E5F6A7B8C9 /* BackupPayload.swift in Sources */ = {isa = PBXBuildFile; fileRef = BKUP02A1B2C3D4E5F6A7B8C9 /* BackupPayload.swift */; };
+		BKUP03A1B2C3D4E5F6A7B8C9 /* BackupManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BKUP04A1B2C3D4E5F6A7B8C9 /* BackupManager.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -136,6 +138,8 @@
 		FD139E6B657D0E39796CC232 /* FretShedTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = FretShedTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		FE2D409E59D0757557617013 /* NotificationScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationScheduler.swift; sourceTree = "<group>"; };
 		FF830EB86FB19BE84235BC01 /* Attempt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Attempt.swift; sourceTree = "<group>"; };
+		BKUP02A1B2C3D4E5F6A7B8C9 /* BackupPayload.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupPayload.swift; sourceTree = "<group>"; };
+		BKUP04A1B2C3D4E5F6A7B8C9 /* BackupManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupManager.swift; sourceTree = "<group>"; };
 		AA01B3C4D5E6F7081234AB01 /* Montserrat-Black.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Montserrat-Black.ttf"; sourceTree = "<group>"; };
 		AA02B3C4D5E6F7082234AB02 /* Montserrat-ExtraBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Montserrat-ExtraBold.ttf"; sourceTree = "<group>"; };
 		AA03B3C4D5E6F7083234AB03 /* Montserrat-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Montserrat-Bold.ttf"; sourceTree = "<group>"; };
@@ -163,6 +167,8 @@
 		081E770ECD554FF54BE510C6 /* Data */ = {
 			isa = PBXGroup;
 			children = (
+				BKUP04A1B2C3D4E5F6A7B8C9 /* BackupManager.swift */,
+				BKUP02A1B2C3D4E5F6A7B8C9 /* BackupPayload.swift */,
 				8FD22EAFA6F891D4C0D4EEBB /* SwiftData */,
 			);
 			path = Data;
@@ -492,6 +498,8 @@
 				721F80E6AEB10D3E83D48022 /* AppContainer.swift in Sources */,
 				C6CBB4F9D7052F2111DD9F7A /* Attempt.swift in Sources */,
 				509F2DA23C4EB8FEB01F7D33 /* AudioCalibrationProfile.swift in Sources */,
+				BKUP01A1B2C3D4E5F6A7B8C9 /* BackupPayload.swift in Sources */,
+				BKUP03A1B2C3D4E5F6A7B8C9 /* BackupManager.swift in Sources */,
 				12DAA222A1C52E3094C2C70A /* CalibrationEngine.swift in Sources */,
 				3CD9F05095A4FFA448A52A8A /* CalibrationTunerView.swift in Sources */,
 				4B5D130E35BADB2648D0E601 /* CalibrationView.swift in Sources */,

@@ -3,6 +3,7 @@
 
 import SwiftUI
 import SwiftData
+import UniformTypeIdentifiers
 
 // MARK: - SettingsView
 
@@ -13,6 +14,15 @@ public struct SettingsView: View {
     @State private var settings: UserSettings? = nil
     @State private var showDeleteWarning1 = false
     @State private var showDeleteWarning2 = false
+    @State private var showBackupSuccess = false
+    @State private var backupFileURL: URL? = nil
+    @State private var showBackupError = false
+    @State private var backupErrorMessage = ""
+    @State private var showFileImporter = false
+    @State private var showRestoreWarning = false
+    @State private var pendingRestoreURL: URL? = nil
+    @State private var showRestoreSuccess = false
+    @State private var restoreResult: BackupImportResult? = nil
 
     @State private var showDisplayInfo = false
     @State private var showAudioInfo = false
@@ -129,6 +139,8 @@ public struct SettingsView: View {
             SettingsInfoSheet(
                 title: "Data",
                 items: [
+                    ("Back Up Data", "Exports all sessions, attempts, mastery scores, settings, and calibration profile to a JSON file in the Documents folder."),
+                    ("Restore from Backup", "Imports a previously exported backup file. Replaces all current data with the backup contents."),
                     ("Delete All Data", "Permanently removes all session history, mastery scores, and attempts. This cannot be undone.")
                 ]
             )
@@ -561,6 +573,24 @@ public struct SettingsView: View {
 
     private var dataSection: some View {
         Section {
+            Button {
+                performBackup()
+            } label: {
+                HStack {
+                    Label("Back Up Data", systemImage: "square.and.arrow.up")
+                    Spacer()
+                }
+            }
+
+            Button {
+                showFileImporter = true
+            } label: {
+                HStack {
+                    Label("Restore from Backup", systemImage: "square.and.arrow.down")
+                    Spacer()
+                }
+            }
+
             Button(role: .destructive) {
                 showDeleteWarning1 = true
             } label: {
@@ -576,11 +606,86 @@ public struct SettingsView: View {
                 infoButton { showDataInfo = true }
             }
         } footer: {
-            Text("Removes all sessions, attempts, and mastery scores. Your settings will be kept.")
+            Text("Back up your sessions, mastery scores, and settings to a JSON file. Restore replaces all current data with the backup.")
+        }
+        .fileImporter(
+            isPresented: $showFileImporter,
+            allowedContentTypes: [UTType.json],
+            allowsMultipleSelection: false
+        ) { result in
+            switch result {
+            case .success(let urls):
+                guard let url = urls.first else { return }
+                pendingRestoreURL = url
+                showRestoreWarning = true
+            case .failure(let error):
+                backupErrorMessage = error.localizedDescription
+                showBackupError = true
+            }
+        }
+        .alert("Back Up Successful", isPresented: $showBackupSuccess) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            if let url = backupFileURL {
+                Text("Saved to \(url.lastPathComponent). You can access it in the Files app under FretShed.")
+            }
+        }
+        .alert("Backup Error", isPresented: $showBackupError) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(backupErrorMessage)
+        }
+        .alert("Restore from Backup?", isPresented: $showRestoreWarning) {
+            Button("Replace All Data", role: .destructive) {
+                performRestore()
+            }
+            Button("Cancel", role: .cancel) {
+                pendingRestoreURL = nil
+            }
+        } message: {
+            Text("This will replace all current sessions, mastery scores, and attempts with the backup data. This cannot be undone.")
+        }
+        .alert("Restore Successful", isPresented: $showRestoreSuccess) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            if let result = restoreResult {
+                Text("\(result.sessionsRestored) sessions, \(result.attemptsRestored) attempts, \(result.masteryScoresRestored) mastery scores restored."
+                     + (result.settingsRestored ? " Settings restored." : "")
+                     + (result.calibrationRestored ? " Calibration restored." : ""))
+            }
         }
     }
 
     // MARK: - Helpers
+
+    private func performBackup() {
+        let manager = BackupManager(container: container)
+        do {
+            let url = try manager.exportBackup()
+            backupFileURL = url
+            showBackupSuccess = true
+        } catch {
+            backupErrorMessage = error.localizedDescription
+            showBackupError = true
+        }
+    }
+
+    private func performRestore() {
+        guard let url = pendingRestoreURL else { return }
+        let manager = BackupManager(container: container)
+        do {
+            let result = try manager.importBackup(from: url)
+            restoreResult = result
+            showRestoreSuccess = true
+            // Reload settings in the view
+            settings = try? container.settingsRepository.loadSettings()
+            calibrationProfile = try? container.calibrationRepository.activeProfile()
+        } catch {
+            backupErrorMessage = error.localizedDescription
+            showBackupError = true
+        }
+        pendingRestoreURL = nil
+    }
 
     private func deleteAllData() {
         do {

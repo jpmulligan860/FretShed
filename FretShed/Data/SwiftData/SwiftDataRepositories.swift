@@ -52,6 +52,13 @@ public final class SwiftDataAttemptRepository: AttemptRepository {
         return try context.fetch(descriptor)
     }
 
+    public func allAttempts() throws -> [Attempt] {
+        let descriptor = FetchDescriptor<Attempt>(
+            sortBy: [SortDescriptor(\.timestamp)]
+        )
+        return try context.fetch(descriptor)
+    }
+
     public func deleteAttempts(forSession sessionID: UUID) throws {
         let id = sessionID
         let descriptor = FetchDescriptor<Attempt>(

@@ -7,13 +7,8 @@
 import SwiftUI
 
 extension Notification.Name {
-    static let showProgressTab   = Notification.Name("showProgressTab")
     static let showPracticeTab   = Notification.Name("showPracticeTab")
-    static let repeatLastSession = Notification.Name("repeatLastSession")
     static let launchQuiz        = Notification.Name("launchQuiz")
-    /// Posted by any results-screen button that wants to dismiss the quiz flow.
-    /// ContentView receives this and sets activeQuizVM = nil.
-    static let dismissQuiz       = Notification.Name("dismissQuiz")
 }
 
 public struct SessionSummaryView: View {
@@ -132,7 +127,7 @@ public struct SessionSummaryView: View {
 
             Text(trophySubtitle)
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(DesignSystem.Colors.text2)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
         }
@@ -153,21 +148,21 @@ public struct SessionSummaryView: View {
         LazyVGrid(columns: [.init(), .init()], spacing: 12) {
             switch vm.session.gameMode {
             case .streak:
-                StatCard(label: "Best Streak", value: "\(vm.bestStreak)🔥",        icon: "flame.fill",       color: .orange)
-                StatCard(label: "Correct",     value: "\(vm.correctCount)",         icon: "checkmark.circle", color: .green)
+                StatCard(label: "Best Streak", value: "\(vm.bestStreak)🔥",        icon: "flame.fill",       color: DesignSystem.Colors.amber)
+                StatCard(label: "Correct",     value: "\(vm.correctCount)",         icon: "checkmark.circle", color: DesignSystem.Colors.correct)
                 StatCard(label: "Accuracy",    value: "\(Int(accuracy * 100))%",   icon: "target",           color: accuracyColor)
-                StatCard(label: "Questions",   value: "\(vm.attemptCount)",         icon: "list.number",      color: .blue)
+                StatCard(label: "Questions",   value: "\(vm.attemptCount)",         icon: "list.number",      color: DesignSystem.Colors.cherry)
             case .tempo:
-                StatCard(label: "Best Streak", value: "\(vm.bestStreak)🔥",        icon: "flame.fill",       color: .orange)
+                StatCard(label: "Best Streak", value: "\(vm.bestStreak)🔥",        icon: "flame.fill",       color: DesignSystem.Colors.amber)
                 StatCard(label: "Fastest",     value: String(format: "%.1fs", vm.tempoTimeAllowance),
-                                                                                    icon: "bolt.fill",        color: .yellow)
+                                                                                    icon: "bolt.fill",        color: DesignSystem.Colors.honey)
                 StatCard(label: "Accuracy",    value: "\(Int(accuracy * 100))%",   icon: "target",           color: accuracyColor)
-                StatCard(label: "Questions",   value: "\(vm.attemptCount)",         icon: "list.number",      color: .blue)
+                StatCard(label: "Questions",   value: "\(vm.attemptCount)",         icon: "list.number",      color: DesignSystem.Colors.cherry)
             default:
                 StatCard(label: "Accuracy",    value: "\(Int(accuracy * 100))%",   icon: "target",           color: accuracyColor)
-                StatCard(label: "Questions",   value: "\(vm.attemptCount)",         icon: "list.number",      color: .blue)
-                StatCard(label: "Best Streak", value: "\(vm.bestStreak)🔥",        icon: "flame",            color: .orange)
-                StatCard(label: "Correct",     value: "\(vm.correctCount)",         icon: "checkmark.circle", color: .green)
+                StatCard(label: "Questions",   value: "\(vm.attemptCount)",         icon: "list.number",      color: DesignSystem.Colors.cherry)
+                StatCard(label: "Best Streak", value: "\(vm.bestStreak)🔥",        icon: "flame",            color: DesignSystem.Colors.amber)
+                StatCard(label: "Correct",     value: "\(vm.correctCount)",         icon: "checkmark.circle", color: DesignSystem.Colors.correct)
             }
         }
     }
@@ -199,7 +194,7 @@ public struct SessionSummaryView: View {
         Button {
             onDone?()
         } label: {
-            Text("Done")
+            Text("Back to The Shed")
                 .font(.headline)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 16)
@@ -249,7 +244,7 @@ public struct SessionSummaryView: View {
             systemImage: "square.grid.3x3.fill"
         )
         .font(.caption)
-        .foregroundStyle(.secondary)
+        .foregroundStyle(DesignSystem.Colors.text2)
         .padding(.horizontal, DesignSystem.Spacing.md)
         .padding(.vertical, DesignSystem.Spacing.xs)
         .background(DesignSystem.Colors.surface, in: Capsule())
@@ -262,9 +257,9 @@ public struct SessionSummaryView: View {
     }
 
     private var trophyColor: Color {
-        if accuracy >= 0.9 { return .yellow }
-        if accuracy >= 0.7 { return .orange }
-        return .blue
+        if accuracy >= 0.9 { return DesignSystem.Colors.honey }
+        if accuracy >= 0.7 { return DesignSystem.Colors.amber }
+        return DesignSystem.Colors.cherry
     }
 
     private var trophyTitle: String {
@@ -301,9 +296,9 @@ public struct SessionSummaryView: View {
     }
 
     private var accuracyColor: Color {
-        if accuracy >= 0.8 { return .green }
-        if accuracy >= 0.6 { return .orange }
-        return .red
+        if accuracy >= 0.8 { return DesignSystem.Colors.correct }
+        if accuracy >= 0.6 { return DesignSystem.Colors.amber }
+        return DesignSystem.Colors.wrong
     }
 
     private var masteryColor: Color {
@@ -334,7 +329,7 @@ private struct StatCard: View {
                 .monospacedDigit()
             Text(label)
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(DesignSystem.Colors.text2)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 14)

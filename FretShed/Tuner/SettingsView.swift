@@ -109,8 +109,8 @@ public struct SettingsView: View {
             SettingsInfoSheet(
                 title: "Audio",
                 items: [
-                    ("Detection Confidence", "How certain the pitch detector must be before accepting a note. Higher = fewer false detections but requires cleaner playing."),
-                    ("Note Hold Duration", "How long a note must be held before it's accepted. Prevents fleeting detections from triggering wrong answers."),
+                    ("Detection Sensitivity", "How certain the pitch detector must be before accepting a note. Higher = fewer false detections but requires cleaner playing."),
+                    ("Note Hold Time", "How long a note must be held before it's accepted. Prevents fleeting detections from triggering wrong answers."),
                     ("Force Built-In Microphone", "Always use the iPhone mic even when an external audio device is connected."),
                     ("Tap Testing Mode", "Disable microphone detection and use Correct/Wrong buttons instead. Use this to test yourself when you don't have your guitar handy."),
                     ("Tap To Answer", "Tap directly on the fretboard to choose your answer instead of playing a note. For best results, use landscape orientation with Default Fret Count set to 12 so the fretboard positions are large enough to tap accurately."),
@@ -189,10 +189,10 @@ public struct SettingsView: View {
         Section {
             VStack(alignment: .leading, spacing: 4) {
                 HStack {
-                    Text("Detection Confidence")
+                    Text("Detection Sensitivity")
                     Spacer()
                     Text(String(format: "%.0f%%", settings.confidenceThreshold * 100))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(DesignSystem.Colors.text2)
                         .monospacedDigit()
                 }
                 Slider(
@@ -207,10 +207,10 @@ public struct SettingsView: View {
 
             VStack(alignment: .leading, spacing: 4) {
                 HStack {
-                    Text("Note Hold Duration")
+                    Text("Note Hold Time")
                     Spacer()
                     Text("\(settings.noteHoldDurationMs) ms")
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(DesignSystem.Colors.text2)
                         .monospacedDigit()
                 }
                 Slider(
@@ -257,7 +257,7 @@ public struct SettingsView: View {
                         Text("Response Sound Volume")
                         Spacer()
                         Text(String(format: "%.0f%%", settings.correctSoundVolume * 100))
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(DesignSystem.Colors.text2)
                             .monospacedDigit()
                     }
                     Slider(
@@ -283,7 +283,7 @@ public struct SettingsView: View {
                         Text("Metronome Volume")
                         Spacer()
                         Text(String(format: "%.0f%%", settings.metronomeVolume * 100))
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(DesignSystem.Colors.text2)
                             .monospacedDigit()
                     }
                     Slider(
@@ -329,7 +329,7 @@ public struct SettingsView: View {
                     Text("Input Source")
                     Spacer()
                     Text(profile.inputSource.displayName)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(DesignSystem.Colors.text2)
                 }
 
                 // Last calibrated date
@@ -337,7 +337,7 @@ public struct SettingsView: View {
                     Text("Last Calibrated")
                     Spacer()
                     Text(profile.calibrationDate, style: .date)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(DesignSystem.Colors.text2)
                 }
 
                 // Signal quality badge
@@ -349,7 +349,7 @@ public struct SettingsView: View {
                             .fill(qualityBadgeColor(profile.signalQualityScore))
                             .frame(width: 8, height: 8)
                         Text("\(Int(profile.signalQualityScore * 100))%")
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(DesignSystem.Colors.text2)
                     }
                 }
 
@@ -359,7 +359,7 @@ public struct SettingsView: View {
                         Text("Input Gain Trim")
                         Spacer()
                         Text(String(format: "%+.1f dB", profile.userGainTrimDB))
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(DesignSystem.Colors.text2)
                             .monospacedDigit()
                     }
                     Slider(
@@ -381,7 +381,7 @@ public struct SettingsView: View {
                         Text("Noise Gate Trim")
                         Spacer()
                         Text(String(format: "%+.1f dB", profile.userGateTrimDB))
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(DesignSystem.Colors.text2)
                             .monospacedDigit()
                     }
                     Slider(
@@ -496,7 +496,7 @@ public struct SettingsView: View {
                     Text("Timer Duration")
                     Spacer()
                     Text("\(settings.defaultTimerDuration)s")
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(DesignSystem.Colors.text2)
                         .monospacedDigit()
                 }
                 Slider(
@@ -514,7 +514,7 @@ public struct SettingsView: View {
                     Text("Session Length")
                     Spacer()
                     Text("\(settings.defaultSessionLength) questions")
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(DesignSystem.Colors.text2)
                         .monospacedDigit()
                 }
                 Slider(
@@ -532,7 +532,7 @@ public struct SettingsView: View {
                     Text("Hint Timeout")
                     Spacer()
                     Text("\(settings.hintTimeoutSeconds)s")
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(DesignSystem.Colors.text2)
                         .monospacedDigit()
                 }
                 Slider(
@@ -550,7 +550,7 @@ public struct SettingsView: View {
                     Text("Set Mastery Threshold")
                     Spacer()
                     Text(String(format: "%.0f%%", settings.masteryThreshold * 100))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(DesignSystem.Colors.text2)
                         .monospacedDigit()
                 }
                 Slider(
@@ -666,7 +666,7 @@ public struct SettingsView: View {
                     .font(.subheadline.weight(.semibold))
                 Text("Designed by Julieta Ulanovsky. Licensed under the SIL Open Font License.")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(DesignSystem.Colors.text2)
             }
 
             VStack(alignment: .leading, spacing: 4) {
@@ -674,7 +674,7 @@ public struct SettingsView: View {
                     .font(.subheadline.weight(.semibold))
                 Text("Designed by Jacques Le Bailly. Licensed under the SIL Open Font License.")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(DesignSystem.Colors.text2)
             }
 
             VStack(alignment: .leading, spacing: 4) {
@@ -682,7 +682,7 @@ public struct SettingsView: View {
                     .font(.subheadline.weight(.semibold))
                 Text("Designed by JetBrains. Licensed under the Apache License 2.0.")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(DesignSystem.Colors.text2)
             }
         } header: {
             DesignSystem.Typography.capsLabel("Licenses")
@@ -756,7 +756,7 @@ public struct SettingsView: View {
         Button(action: action) {
             Image(systemName: "info.circle")
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(DesignSystem.Colors.text2)
         }
     }
 }
@@ -779,7 +779,7 @@ private struct SettingsInfoSheet: View {
                                 .font(.subheadline.weight(.semibold))
                             Text(description)
                                 .font(.caption)
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(DesignSystem.Colors.text2)
                         }
                     }
                 }

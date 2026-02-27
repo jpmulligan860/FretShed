@@ -71,6 +71,10 @@
 		BKUP01A1B2C3D4E5F6A7B8C9 /* BackupPayload.swift in Sources */ = {isa = PBXBuildFile; fileRef = BKUP02A1B2C3D4E5F6A7B8C9 /* BackupPayload.swift */; };
 		BKUP03A1B2C3D4E5F6A7B8C9 /* BackupManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BKUP04A1B2C3D4E5F6A7B8C9 /* BackupManager.swift */; };
 		PRIV020000000000000000002 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = PRIV010000000000000000001 /* PrivacyInfo.xcprivacy */; };
+		AYIN01A1B2C3D4E5F6A7B8C9 /* AccelerateYINTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AYIN02A1B2C3D4E5F6A7B8C9 /* AccelerateYINTests.swift */; };
+		QLC001A1B2C3D4E5F6A7B8C9 /* QuizLaunchCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = QLC002A1B2C3D4E5F6A7B8C9 /* QuizLaunchCoordinator.swift */; };
+		ANLT01A1B2C3D4E5F6A7B8C9 /* AnalyticsEvents.swift in Sources */ = {isa = PBXBuildFile; fileRef = ANLT02A1B2C3D4E5F6A7B8C9 /* AnalyticsEvents.swift */; };
+		SLGL01A1B2C3D4E5F6A7B8C9 /* SubscriptionLegalText.swift in Sources */ = {isa = PBXBuildFile; fileRef = SLGL02A1B2C3D4E5F6A7B8C9 /* SubscriptionLegalText.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -152,6 +156,10 @@
 		AA09B3C4D5E6F7089234AB09 /* JetBrainsMono-SemiBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "JetBrainsMono-SemiBold.ttf"; sourceTree = "<group>"; };
 		AA10B3C4D5E6F7080234AB10 /* JetBrainsMono-Medium.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "JetBrainsMono-Medium.ttf"; sourceTree = "<group>"; };
 		PRIV010000000000000000001 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		AYIN02A1B2C3D4E5F6A7B8C9 /* AccelerateYINTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccelerateYINTests.swift; sourceTree = "<group>"; };
+		QLC002A1B2C3D4E5F6A7B8C9 /* QuizLaunchCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuizLaunchCoordinator.swift; sourceTree = "<group>"; };
+		ANLT02A1B2C3D4E5F6A7B8C9 /* AnalyticsEvents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsEvents.swift; sourceTree = "<group>"; };
+		SLGL02A1B2C3D4E5F6A7B8C9 /* SubscriptionLegalText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionLegalText.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -179,6 +187,7 @@
 		086DFA85E5F606BA42742668 /* UnitTests */ = {
 			isa = PBXGroup;
 			children = (
+				AYIN02A1B2C3D4E5F6A7B8C9 /* AccelerateYINTests.swift */,
 				3409FE657D2975DA48C4D978 /* ChordProgressionTests.swift */,
 				1DE95D278240B6AAD1413451 /* FretboardMapTests.swift */,
 				C2A41CF0B30565F2D2FE92A7 /* MasteryAlgorithmTests.swift */,
@@ -238,6 +247,7 @@
 				081E770ECD554FF54BE510C6 /* Data */,
 				4C5302DBE0C5AF52DA8E2B7A /* Domain */,
 				BA13665D8F3F06590859F52E /* MetroDrone */,
+				MONT01A1B2C3D4E5F6A7B8C9 /* Monetization */,
 				PRIV010000000000000000001 /* PrivacyInfo.xcprivacy */,
 				71D388ABC05CF10ACBDE9C19 /* Progress */,
 				89BC6702E62D7C0D2F409682 /* Quiz */,
@@ -245,6 +255,15 @@
 				5B8B3473E3FF274F645F732F /* Tuner */,
 			);
 			path = FretShed;
+			sourceTree = "<group>";
+		};
+		MONT01A1B2C3D4E5F6A7B8C9 /* Monetization */ = {
+			isa = PBXGroup;
+			children = (
+				ANLT02A1B2C3D4E5F6A7B8C9 /* AnalyticsEvents.swift */,
+				SLGL02A1B2C3D4E5F6A7B8C9 /* SubscriptionLegalText.swift */,
+			);
+			path = Monetization;
 			sourceTree = "<group>";
 		};
 		5A0CD1D58E114DDF0C31F7A1 /* Models */ = {
@@ -302,6 +321,7 @@
 				2C90013F9A9FA6F14F8611B3 /* DesignSystem.swift */,
 				0B55D5F37496FC09E7CADD12 /* FretShedApp.swift */,
 				6E3FF02A66FF10C9470B4575 /* OnboardingView.swift */,
+				QLC002A1B2C3D4E5F6A7B8C9 /* QuizLaunchCoordinator.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -526,6 +546,9 @@
 				F42692AFF7D645247CCBD61F /* PitchDetector.swift in Sources */,
 				94BC7C432D4A4DB84D559C90 /* ProgressTabView.swift in Sources */,
 				A30A9F3E0E07877AF42A8560 /* ProgressViewModel.swift in Sources */,
+				ANLT01A1B2C3D4E5F6A7B8C9 /* AnalyticsEvents.swift in Sources */,
+				SLGL01A1B2C3D4E5F6A7B8C9 /* SubscriptionLegalText.swift in Sources */,
+				QLC001A1B2C3D4E5F6A7B8C9 /* QuizLaunchCoordinator.swift in Sources */,
 				13665AD12E5FA35C52E3F932 /* QuizView.swift in Sources */,
 				A0251989488DE8BCDA4D42C2 /* QuizViewModel.swift in Sources */,
 				654D659635A6043E21B4FDAE /* Repositories.swift in Sources */,
@@ -547,6 +570,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AYIN01A1B2C3D4E5F6A7B8C9 /* AccelerateYINTests.swift in Sources */,
 				E407C544B041E87FCB8059C5 /* ChordProgressionTests.swift in Sources */,
 				60927EE7E18F6D291911D9A0 /* FretboardMapTests.swift in Sources */,
 				E1F858BAF82851FEC88FF535 /* MasteryAlgorithmTests.swift in Sources */,

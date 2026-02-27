@@ -50,7 +50,7 @@ struct OnboardingView: View {
                             Spacer()
                             Button("Skip") { complete() }
                                 .font(.subheadline.weight(.semibold))
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(DesignSystem.Colors.text2)
                         }
                     }
                 }
@@ -89,13 +89,13 @@ struct OnboardingView: View {
                 .padding(.bottom, DesignSystem.Spacing.lg)
 
             Text("Welcome to\nFretShed")
-                .font(.system(size: 34, weight: .black, design: .rounded))
+                .font(DesignSystem.Typography.display)
                 .multilineTextAlignment(.center)
                 .padding(.bottom, DesignSystem.Spacing.sm)
 
             Text("The guitar trainer that actually\ngets your notes right.")
                 .font(.title3)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(DesignSystem.Colors.text2)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, DesignSystem.Spacing.xl)
 
@@ -115,7 +115,7 @@ struct OnboardingView: View {
             Spacer()
 
             Text("How it works")
-                .font(.system(size: 28, weight: .black, design: .rounded))
+                .font(DesignSystem.Typography.subDisplay)
                 .padding(.bottom, DesignSystem.Spacing.xl)
 
             VStack(spacing: DesignSystem.Spacing.lg) {
@@ -127,9 +127,9 @@ struct OnboardingView: View {
                 )
                 featureRow(
                     icon: "slider.horizontal.3",
-                    color: .orange,
+                    color: DesignSystem.Colors.amber,
                     title: "Great Practice Tools",
-                    subtitle: "FretShed's Tuner, Metronome, Speed Trainer and Drones, keep practice interesting."
+                    subtitle: "FretShed's Tuner, Metronome, Speed Trainer and Drones keep practice interesting."
                 )
                 featureRow(
                     icon: "brain",
@@ -141,7 +141,7 @@ struct OnboardingView: View {
                     icon: "chart.bar.fill",
                     color: DesignSystem.Colors.gold,
                     title: "Track your progress",
-                    subtitle: "Tons of stats, a fretboard heatmap and graphs shows your mastery across all areas of the fretboard."
+                    subtitle: "Tons of stats, a fretboard heatmap and graphs show your mastery across all areas of the fretboard."
                 )
             }
             .padding(.horizontal, DesignSystem.Spacing.xl)
@@ -167,14 +167,14 @@ struct OnboardingView: View {
                 .padding(.bottom, DesignSystem.Spacing.lg)
 
             Text("Allow Microphone\nAccess")
-                .font(.system(size: 26, weight: .black, design: .rounded))
+                .font(DesignSystem.Typography.mediumTitle)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, DesignSystem.Spacing.xl)
                 .padding(.bottom, DesignSystem.Spacing.sm)
 
             Text("FretShed uses your microphone to hear the notes you play — no audio is stored or sent anywhere.")
                 .font(.body)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(DesignSystem.Colors.text2)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, DesignSystem.Spacing.xl)
                 .padding(.bottom, DesignSystem.Spacing.xl)
@@ -232,7 +232,7 @@ struct OnboardingView: View {
                 Text(title).font(.headline)
                 Text(subtitle)
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(DesignSystem.Colors.text2)
             }
         }
     }
@@ -245,7 +245,7 @@ struct OnboardingView: View {
                 .frame(width: 24)
             Text(text)
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(DesignSystem.Colors.text2)
             Spacer()
         }
     }

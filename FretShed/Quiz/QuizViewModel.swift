@@ -58,6 +58,10 @@ public final class QuizViewModel: Identifiable {
     // MARK: - Configuration
     public let session: Session
     public let fretboardMap: FretboardMap
+    /// Live reference to the SwiftData model. Safe because the quiz is a full-screen
+    /// overlay that hides the Settings tab — the user cannot modify settings mid-quiz.
+    /// The coordinator also mutates `tapToAnswerEnabled` before/after the quiz, which
+    /// requires a live reference rather than a frozen snapshot.
     public let settings: UserSettings
 
     // MARK: - Private State

@@ -91,7 +91,7 @@ struct CalibrationView: View {
 
             Text("This process measures your environment's noise level and tests detection for each guitar string. It takes about 30 seconds.")
                 .font(.body)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(DesignSystem.Colors.text2)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
 
@@ -100,7 +100,7 @@ struct CalibrationView: View {
                     .font(.subheadline.weight(.semibold))
                 Text(engine.detectedInputSource.displayName)
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(DesignSystem.Colors.text2)
             }
             .padding()
             .background(DesignSystem.Colors.surface, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
@@ -132,7 +132,7 @@ struct CalibrationView: View {
             // Progress ring
             ZStack {
                 Circle()
-                    .stroke(Color.gray.opacity(0.2), lineWidth: 6)
+                    .stroke(DesignSystem.Colors.surface2, lineWidth: 6)
                 Circle()
                     .trim(from: 0, to: noiseProgress)
                     .stroke(DesignSystem.Colors.cherry, style: StrokeStyle(lineWidth: 6, lineCap: .round))
@@ -149,7 +149,7 @@ struct CalibrationView: View {
 
             Text("Stay quiet for a few seconds.\nKeep your guitar still and don't play.")
                 .font(.body)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(DesignSystem.Colors.text2)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
 
@@ -180,7 +180,7 @@ struct CalibrationView: View {
 
             Text("Play each open string when prompted.\nHold until the checkmark appears.")
                 .font(.body)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(DesignSystem.Colors.text2)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
 
@@ -190,11 +190,11 @@ struct CalibrationView: View {
                 VStack(spacing: 8) {
                     Text("Play:")
                         .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(DesignSystem.Colors.text2)
                     Text(name)
-                        .font(.system(size: 28, weight: .bold, design: .rounded))
+                        .font(DesignSystem.Typography.subDisplay)
                     Text(note.sharpName)
-                        .font(.system(size: 48, weight: .black, design: .rounded))
+                        .font(DesignSystem.Typography.quizNote)
                         .foregroundStyle(DesignSystem.Colors.cherry)
                 }
                 .padding()
@@ -204,17 +204,17 @@ struct CalibrationView: View {
             if let detected = engine.detector.detectedNote {
                 HStack(spacing: 8) {
                     Image(systemName: "mic.fill")
-                        .foregroundStyle(.green)
+                        .foregroundStyle(DesignSystem.Colors.correct)
                     Text("Hearing: \(detected.sharpName)")
                         .font(.subheadline.weight(.semibold))
                 }
             } else {
                 HStack(spacing: 8) {
                     Image(systemName: "mic.fill")
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(DesignSystem.Colors.text2)
                     Text("Listening...")
                         .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(DesignSystem.Colors.text2)
                 }
             }
 
@@ -260,17 +260,17 @@ struct CalibrationView: View {
             // Quality score ring
             ZStack {
                 Circle()
-                    .stroke(Color.gray.opacity(0.2), lineWidth: 8)
+                    .stroke(DesignSystem.Colors.surface2, lineWidth: 8)
                 Circle()
                     .trim(from: 0, to: Double(engine.signalQualityScore))
                     .stroke(qualityColor, style: StrokeStyle(lineWidth: 8, lineCap: .round))
                     .rotationEffect(.degrees(-90))
                 VStack(spacing: 2) {
                     Text("\(Int(engine.signalQualityScore * 100))%")
-                        .font(.system(size: 28, weight: .bold))
+                        .font(DesignSystem.Typography.subDisplay)
                     Text("Quality")
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(DesignSystem.Colors.text2)
                 }
             }
             .frame(width: 120, height: 120)
@@ -280,14 +280,14 @@ struct CalibrationView: View {
 
             Text("Input: \(engine.detectedInputSource.displayName)")
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(DesignSystem.Colors.text2)
 
             // Per-string results
             VStack(spacing: 8) {
                 ForEach(CalibrationEngine.openStringNotes, id: \.string) { entry in
                     HStack {
                         Image(systemName: engine.stringResults[entry.string] == true ? "checkmark.circle.fill" : "xmark.circle.fill")
-                            .foregroundStyle(engine.stringResults[entry.string] == true ? .green : .red)
+                            .foregroundStyle(engine.stringResults[entry.string] == true ? DesignSystem.Colors.correct : DesignSystem.Colors.wrong)
                         Text(CalibrationEngine.stringNames[entry.string] ?? "String \(entry.string)")
                             .font(.subheadline)
                         Spacer()
@@ -317,9 +317,9 @@ struct CalibrationView: View {
     }
 
     private var qualityColor: Color {
-        if engine.signalQualityScore >= 0.8 { return .green }
-        if engine.signalQualityScore >= 0.5 { return .orange }
-        return .red
+        if engine.signalQualityScore >= 0.8 { return DesignSystem.Colors.correct }
+        if engine.signalQualityScore >= 0.5 { return DesignSystem.Colors.amber }
+        return DesignSystem.Colors.wrong
     }
 
     // MARK: - Save

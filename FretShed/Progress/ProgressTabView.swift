@@ -166,7 +166,7 @@ public struct ProgressTabView: View {
                                     } label: {
                                         Text("Delete All Sessions")
                                             .font(.caption.weight(.semibold))
-                                            .foregroundStyle(.red)
+                                            .foregroundStyle(DesignSystem.Colors.wrong)
                                     }
                                     .frame(maxWidth: .infinity, alignment: .center)
                                     .padding(.top, 8)
@@ -273,13 +273,13 @@ public struct ProgressTabView: View {
         VStack(spacing: DesignSystem.Spacing.lg) {
             Image(systemName: "exclamationmark.triangle")
                 .font(.system(size: 52))
-                .foregroundStyle(.orange.opacity(0.7))
+                .foregroundStyle(DesignSystem.Colors.amber.opacity(0.7))
             VStack(spacing: DesignSystem.Spacing.sm) {
                 Text("Could not load progress")
                     .font(DesignSystem.Typography.screenTitle)
                 Text("Something went wrong loading your data. Pull down to try again.")
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(DesignSystem.Colors.text2)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 32)
             }
@@ -299,7 +299,7 @@ public struct ProgressTabView: View {
                     .font(DesignSystem.Typography.screenTitle)
                 Text("Complete your first session to start tracking your fretboard mastery.")
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(DesignSystem.Colors.text2)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 32)
             }
@@ -325,12 +325,12 @@ public struct ProgressTabView: View {
         HStack {
             HStack(spacing: 6) {
                 Image(systemName: "flame.fill")
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(DesignSystem.Colors.amber)
                 Text("\(vm.currentStreak)")
                     .font(.headline.weight(.bold).monospacedDigit())
                 Text(vm.currentStreak == 1 ? "day" : "day streak")
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(DesignSystem.Colors.text2)
             }
             Spacer()
             filterMenu
@@ -378,10 +378,10 @@ public struct ProgressTabView: View {
     private var filteredEmptyState: some View {
         HStack(spacing: DesignSystem.Spacing.sm) {
             Image(systemName: "line.3.horizontal.decrease.circle")
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(DesignSystem.Colors.muted)
             Text("No \(vm.focusModeFilter?.localizedLabel ?? vm.gameModeFilter?.localizedLabel ?? "") sessions recorded")
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(DesignSystem.Colors.text2)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.vertical, DesignSystem.Spacing.md)
@@ -394,10 +394,10 @@ public struct ProgressTabView: View {
     private var sessionEmptyState: some View {
         HStack(spacing: DesignSystem.Spacing.sm) {
             Image(systemName: "calendar.badge.clock")
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(DesignSystem.Colors.muted)
             Text("No sessions recorded yet")
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(DesignSystem.Colors.text2)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.vertical, DesignSystem.Spacing.md)
@@ -484,7 +484,7 @@ public struct ProgressTabView: View {
                     x: .value("Date", point.date, unit: .day),
                     y: .value("Time", point.avgTimeMs / 1000.0)
                 )
-                .foregroundStyle(.cyan)
+                .foregroundStyle(DesignSystem.Colors.amber)
                 .interpolationMethod(.catmullRom)
 
                 AreaMark(
@@ -493,7 +493,7 @@ public struct ProgressTabView: View {
                 )
                 .foregroundStyle(
                     LinearGradient(
-                        colors: [Color.cyan.opacity(0.3), Color.cyan.opacity(0.0)],
+                        colors: [DesignSystem.Colors.amber.opacity(0.3), DesignSystem.Colors.amber.opacity(0.0)],
                         startPoint: .top,
                         endPoint: .bottom
                     )
@@ -504,7 +504,7 @@ public struct ProgressTabView: View {
                     x: .value("Date", point.date, unit: .day),
                     y: .value("Time", point.avgTimeMs / 1000.0)
                 )
-                .foregroundStyle(.cyan)
+                .foregroundStyle(DesignSystem.Colors.amber)
                 .symbolSize(30)
             }
             .chartYAxis {
@@ -576,7 +576,7 @@ public struct ProgressTabView: View {
                 .frame(width: 16)
             Text(label)
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(DesignSystem.Colors.text2)
             Spacer()
             Text(value)
                 .font(.caption.weight(.semibold))
@@ -586,14 +586,14 @@ public struct ProgressTabView: View {
     private func sectionHeader(_ text: String) -> some View {
         Text(text)
             .font(DesignSystem.Typography.smallLabel)
-            .foregroundStyle(.secondary)
+            .foregroundStyle(DesignSystem.Colors.text2)
     }
 
     private func infoButton(action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: "info.circle")
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(DesignSystem.Colors.text2)
         }
     }
 
@@ -605,7 +605,7 @@ public struct ProgressTabView: View {
             } label: {
                 Image(systemName: "questionmark.circle")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(DesignSystem.Colors.text2)
             }
         }
     }
@@ -638,7 +638,7 @@ private struct OverallMasteryRing: View {
                     .monospacedDigit()
                 Text("%")
                     .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(DesignSystem.Colors.text2)
             }
         }
     }
@@ -665,12 +665,12 @@ private struct SessionRow: View {
                     if session.gameMode == .timed {
                         Image(systemName: "clock.fill")
                             .font(.caption)
-                            .foregroundStyle(.cyan)
+                            .foregroundStyle(DesignSystem.Colors.amber)
                     }
                     if session.isAdaptive {
                         Image(systemName: "brain")
                             .font(.caption)
-                            .foregroundStyle(.purple)
+                            .foregroundStyle(DesignSystem.Colors.gold)
                     }
                 }
                 HStack(spacing: 6) {
@@ -679,7 +679,7 @@ private struct SessionRow: View {
                     Text(durationLabel(session.duration))
                 }
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(DesignSystem.Colors.text2)
             }
 
             Spacer()
@@ -690,13 +690,13 @@ private struct SessionRow: View {
                     .foregroundStyle(accuracyColor(session.accuracyPercent))
                 Text("\(session.correctCount)/\(session.attemptCount)")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(DesignSystem.Colors.text2)
                     .monospacedDigit()
             }
 
             Image(systemName: "chevron.right")
                 .font(.caption.weight(.semibold))
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(DesignSystem.Colors.muted)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
@@ -723,20 +723,20 @@ private struct SessionRow: View {
 
     private func modeColor(_ mode: FocusMode) -> Color {
         switch mode {
-        case .fullFretboard:      return .indigo
-        case .singleNote:         return .blue
-        case .circleOfFifths:     return .orange
-        case .fretboardPosition:  return .cyan
+        case .fullFretboard:      return DesignSystem.Colors.cherry
+        case .singleNote:         return DesignSystem.Colors.amber
+        case .circleOfFifths:     return DesignSystem.Colors.honey
+        case .fretboardPosition:  return DesignSystem.Colors.gold
         case .circleOfFourths,
              .singleString,
-             .chordProgression:   return .teal
+             .chordProgression:   return DesignSystem.Colors.amber
         }
     }
 
     private func accuracyColor(_ pct: Double) -> Color {
-        if pct >= 80 { return .green }
-        if pct >= 60 { return .orange }
-        return .red
+        if pct >= 80 { return DesignSystem.Colors.correct }
+        if pct >= 60 { return DesignSystem.Colors.amber }
+        return DesignSystem.Colors.wrong
     }
 }
 
@@ -759,7 +759,7 @@ private struct MasteryInfoSheet: View {
                 VStack(alignment: .leading, spacing: 20) {
                     Text("Each cell on the heatmap represents a specific note on a specific string. Your mastery score is calculated from your accuracy history, weighted so recent attempts matter more.")
                         .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(DesignSystem.Colors.text2)
 
                     ForEach(levels, id: \.0) { name, color, range, desc in
                         HStack(alignment: .top, spacing: 12) {
@@ -772,18 +772,18 @@ private struct MasteryInfoSheet: View {
                                     Spacer()
                                     Text(range)
                                         .font(.caption)
-                                        .foregroundStyle(.secondary)
+                                        .foregroundStyle(DesignSystem.Colors.text2)
                                 }
                                 Text(desc)
                                     .font(.caption)
-                                    .foregroundStyle(.secondary)
+                                    .foregroundStyle(DesignSystem.Colors.text2)
                             }
                         }
                     }
 
                     Text("Tap any cell on the heatmap to see detailed stats and recent attempts for that note.")
                         .font(.caption)
-                        .foregroundStyle(.tertiary)
+                        .foregroundStyle(DesignSystem.Colors.muted)
                         .padding(.top, 4)
                 }
                 .padding(20)
@@ -820,7 +820,7 @@ private struct ProgressInfoSheet: View {
                                 .font(.subheadline.weight(.semibold))
                             Text(description)
                                 .font(.caption)
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(DesignSystem.Colors.text2)
                         }
                     }
                 }

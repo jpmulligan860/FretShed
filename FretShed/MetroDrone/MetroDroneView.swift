@@ -105,7 +105,7 @@ struct MetroDroneView: View {
 
             Text("BPM")
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(DesignSystem.Colors.text2)
 
             // Slider
             Slider(value: $vm.bpm, in: 20...300, step: 1)
@@ -266,12 +266,12 @@ struct MetroDroneView: View {
             HStack(spacing: 8) {
                 Image(systemName: "speaker.fill")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(DesignSystem.Colors.text2)
                 Slider(value: $vm.metronomeVolume, in: 0...1)
                     .tint(DesignSystem.Colors.cherry)
                 Image(systemName: "speaker.wave.3.fill")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(DesignSystem.Colors.text2)
             }
         }
         .padding()
@@ -292,7 +292,7 @@ struct MetroDroneView: View {
         case .muted:
             Text("-")
                 .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(DesignSystem.Colors.text2)
         }
     }
 
@@ -330,7 +330,7 @@ struct MetroDroneView: View {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Start BPM")
                             .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(DesignSystem.Colors.text2)
                         Stepper(
                             "\(Int(vm.speedTrainerStartBPM))",
                             value: $vm.speedTrainerStartBPM,
@@ -341,7 +341,7 @@ struct MetroDroneView: View {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("End BPM")
                             .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(DesignSystem.Colors.text2)
                         Stepper(
                             "\(Int(vm.speedTrainerEndBPM))",
                             value: $vm.speedTrainerEndBPM,
@@ -356,7 +356,7 @@ struct MetroDroneView: View {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Increment")
                             .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(DesignSystem.Colors.text2)
                         Stepper(
                             "+\(Int(vm.speedTrainerIncrement)) BPM",
                             value: $vm.speedTrainerIncrement,
@@ -367,7 +367,7 @@ struct MetroDroneView: View {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Bars per Step")
                             .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(DesignSystem.Colors.text2)
                         Stepper(
                             "\(vm.speedTrainerBarsPerStep)",
                             value: $vm.speedTrainerBarsPerStep,
@@ -518,12 +518,12 @@ struct MetroDroneView: View {
             HStack(spacing: 8) {
                 Image(systemName: "speaker.fill")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(DesignSystem.Colors.text2)
                 Slider(value: $vm.droneVolume, in: 0...1)
                     .tint(DesignSystem.Colors.amber)
                 Image(systemName: "speaker.wave.3.fill")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(DesignSystem.Colors.text2)
             }
 
             // Drone play button
@@ -550,7 +550,7 @@ struct MetroDroneView: View {
         Button(action: action) {
             Image(systemName: "info.circle")
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(DesignSystem.Colors.text2)
         }
     }
 }
@@ -573,7 +573,7 @@ private struct MetroDroneInfoSheet: View {
                                 .font(.subheadline.weight(.semibold))
                             Text(description)
                                 .font(.caption)
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(DesignSystem.Colors.text2)
                         }
                     }
                 }

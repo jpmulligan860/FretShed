@@ -143,7 +143,22 @@ Estimated: 6–8 hours
 **StoreKit 2 paywall — your revenue engine.**
 Estimated: 10–13 hours
 
-> **Decide your product name before this phase.** The bundle ID (`com.yourname.fretshed`) is permanent once set in App Store Connect.
+> **Bundle ID locked**: `com.jpm.fretshed` (App Store Connect)
+> **Subtitle**: "Learn Every Fretboard Note"
+
+### Finalized Business Decisions
+
+| Decision | Value |
+|---|---|
+| **Free tier modes** | Full Fretboard + Single String only |
+| **Free tier fretboard** | Strings 4–6, frets 0–7 |
+| **Free tier features** | Audio detection ON, adaptive ON, full stats, built-in mic calibration |
+| **Premium modes** | All 7 focus modes (adds Single Note, Fretboard Position, Circle of 4ths/5ths, Chord Progression) |
+| **Premium fretboard** | All 6 strings, all frets |
+| **Premium extras** | USB/BT calibration profiles, unlimited history |
+| **Pricing** | $4.99/mo · $29.99/yr · $49.99 lifetime |
+| **Trial** | 14-day free trial on monthly and annual |
+| **Analytics** | TelemetryDeck (privacy-focused, no PII) |
 
 ### 4A — Business Setup (No Coding Required)
 
@@ -151,7 +166,7 @@ Estimated: 10–13 hours
 |---|---|---|---|
 | 4.1 | Create Apple Developer account — developer.apple.com, $99/year, allow 24–48 hrs for approval | 30 min + wait | ✅ |
 | 4.2 | Create app in App Store Connect — choose and lock in Bundle ID | 30 min | 🔲 |
-| 4.3 | Create subscription products — monthly ($4.99/mo) and annual ($29.99/yr), both with 7-day free trials | 1 hr | 🔲 |
+| 4.3 | Create subscription products — monthly ($4.99/mo), annual ($29.99/yr), lifetime ($49.99), with 14-day free trials on monthly/annual | 1 hr | 🔲 |
 | 4.4 | Set up sandbox test account — App Store Connect > Users and Access > Sandbox Testers | 30 min | 🔲 |
 
 ### 4B — EntitlementManager
@@ -160,16 +175,23 @@ Estimated: 10–13 hours
 |---|---|---|---|
 | 4.5 | Build `EntitlementManager.swift` — `@Observable` class, check StoreKit 2 subscription status, expose `isPremium: Bool` | 2–3 hrs | 🔲 |
 | 4.6 | Inject `EntitlementManager` into `AppContainer` via `@Environment` | 30 min | 🔲 |
-| 4.7 | Define free vs premium gates — Free: Single Note mode, strings 4–6, frets 0–7, tap input, 7-day history. Premium: everything else. | 1 hr | 🔲 |
+| 4.7 | Define free vs premium gates — Free: Full Fretboard + Single String modes, strings 4–6, frets 0–7, audio detection, adaptive, full stats. Premium: all 7 focus modes, all strings/frets, USB/BT calibration profiles, unlimited history. | 1 hr | 🔲 |
 
 ### 4C — PaywallView
 
 | # | Task | Est. | Status |
 |---|---|---|---|
-| 4.8 | Build `PaywallView.swift` — 3 value prop bullets, monthly vs annual toggle, 7-day trial callout, Subscribe + Restore buttons, legal text | 2–3 hrs | 🔲 |
-| 4.9 | Add required legal text — trial length, price after trial, cancellation instructions (required to avoid App Store rejection) | 30 min | 🔲 |
-| 4.10 | Add paywall triggers — show when user taps a locked mode, after 5th free session, or tries audio mode on free tier | 1 hr | 🔲 |
+| 4.8 | Build `PaywallView.swift` — 3 value prop bullets, monthly/annual/lifetime toggle, 14-day trial callout, Subscribe + Restore buttons, legal text | 2–3 hrs | 🔲 |
+| 4.9 | Add required legal text — trial length, price after trial, auto-renewal terms, cancellation instructions (required to avoid App Store rejection) | 30 min | 🔲 |
+| 4.10 | Add paywall triggers — show when user taps a locked mode or a locked fret/string range | 1 hr | 🔲 |
 | 4.11 | Test purchases with sandbox account — complete test purchase, confirm `isPremium` flips, test restore | 1 hr | 🔲 |
+
+### 4D — Analytics
+
+| # | Task | Est. | Status |
+|---|---|---|---|
+| 4.12 | Add TelemetryDeck SDK via SPM — privacy-focused analytics, no PII collection | 30 min | 🔲 |
+| 4.13 | Define key events — session_started, session_completed, paywall_shown, subscription_started, calibration_completed | 30 min | 🔲 |
 
 ---
 
@@ -228,6 +250,17 @@ Estimated: 18–25 hours
 
 ---
 
+## Phase 6 — Post-Launch
+
+| # | Task | Est. | Status |
+|---|---|---|---|
+| 6.1 | Pre-launch email sequence — 4-week drip (teaser, feature deep-dive, early access, launch day) | 2–3 hrs | 🔲 |
+| 6.2 | Reddit/YouTube community outreach — r/guitarlessons, r/learnguitar, relevant YouTube channels | 2–3 hrs | 🔲 |
+| 6.3 | "Suggested Next Session" on quiz results screen — recommend next focus based on weak spots | 2–3 hrs | 🔲 |
+| 6.4 | Full accessibility audit — VoiceOver, Dynamic Type, color contrast across all screens | 4–6 hrs | 🔲 |
+
+---
+
 ## Time Summary
 
 | Phase | Description | Est. Hours |
@@ -237,7 +270,8 @@ Estimated: 18–25 hours
 | Phase 3 | Onboarding | 6–8 hrs |
 | Phase 4 | Monetization | 10–13 hrs |
 | Phase 5 | App Store Submission | 18–25 hrs |
-| **Total** | | **58–80 hrs** |
+| Phase 6 | Post-Launch | 10–15 hrs |
+| **Total** | | **68–95 hrs** |
 
 ---
 

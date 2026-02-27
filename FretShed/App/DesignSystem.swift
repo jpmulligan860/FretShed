@@ -103,10 +103,10 @@ enum DesignSystem {
             : UIColor(red: 0.980, green: 0.910, blue: 0.910, alpha: 1)  // #FAE8E8
         })
 
-        // Info / caution (keep from before)
-        static let warning = Color.orange
-        static let caution = Color.yellow
-        static let info    = Color.blue
+        // Info / caution — mapped to Woodshop palette
+        static let warning = amber
+        static let caution = honey
+        static let info    = Color(red: 0.35, green: 0.55, blue: 0.75) // warm steel-blue
 
         // Mastery level palette — sunburst progression
         static let masteryMastered   = correct
@@ -148,9 +148,21 @@ enum DesignSystem {
         static let dataSmall:    Font = .custom("JetBrainsMono-Medium", size: 11)
         static let sectionLabel: Font = .custom("JetBrainsMono-SemiBold", size: 9.5)
 
+        // --- Additional sizes ---
+        static let microLabel:   Font = .custom("Montserrat-SemiBold", size: 10)
+        static let tinyLabel:    Font = .custom("Montserrat-SemiBold", size: 8)
+        static let heatmapLabel: Font = .custom("Montserrat-Bold", size: 7)
+        static let dataLarge:    Font = .custom("JetBrainsMono-Bold", size: 20)
+        static let quizStatValue: Font = .custom("JetBrainsMono-Bold", size: 14)
+
         // --- App-specific display sizes (Montserrat) ---
         static let noteDisplay:  Font = .custom("Montserrat-Black", size: 80)
+        static let heroNote:     Font = .custom("Montserrat-Black", size: 72)
         static let bpmDisplay:   Font = .custom("Montserrat-Bold", size: 64)
+        static let quizNote:     Font = .custom("Montserrat-Black", size: 52)
+        static let largeNumber:  Font = .custom("Montserrat-Black", size: 40)
+        static let subDisplay:   Font = .custom("Montserrat-ExtraBold", size: 28)
+        static let mediumTitle:  Font = .custom("Montserrat-ExtraBold", size: 26)
         static let centsDisplay: Font = .custom("JetBrainsMono-SemiBold", size: 18)
 
         /// Helper for CAPS section labels with letter spacing

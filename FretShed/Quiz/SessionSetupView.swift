@@ -236,13 +236,13 @@ public struct SessionSetupView: View {
             HStack {
                 Label("Focus Mode", systemImage: "scope")
                     .font(DesignSystem.Typography.smallLabel)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(DesignSystem.Colors.text2)
                 Button {
                     showFocusModeInfo = true
                 } label: {
                     Image(systemName: "questionmark.circle")
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(DesignSystem.Colors.text2)
                 }
             }
             .padding(.horizontal, 20)
@@ -269,13 +269,13 @@ public struct SessionSetupView: View {
             HStack {
                 Label("Practice Mode", systemImage: "metronome")
                     .font(DesignSystem.Typography.smallLabel)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(DesignSystem.Colors.text2)
                 Button {
                     showPracticeModeInfo = true
                 } label: {
                     Image(systemName: "questionmark.circle")
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(DesignSystem.Colors.text2)
                 }
             }
             .padding(.horizontal, 20)
@@ -306,7 +306,7 @@ public struct SessionSetupView: View {
                     .font(.subheadline.weight(.semibold))
                 Text(focusModeDescription(selectedFocusMode))
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(DesignSystem.Colors.text2)
             }
             Spacer()
         }
@@ -325,7 +325,7 @@ public struct SessionSetupView: View {
         VStack(alignment: .leading, spacing: 8) {
             Label("Circle Constraint", systemImage: "scope")
                 .font(DesignSystem.Typography.smallLabel)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(DesignSystem.Colors.text2)
                 .padding(.horizontal, 20)
 
             Picker("Constraint", selection: $circleConstraint) {
@@ -374,7 +374,7 @@ public struct SessionSetupView: View {
             HStack {
                 Label("Strings", systemImage: "minus")
                     .font(DesignSystem.Typography.smallLabel)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(DesignSystem.Colors.text2)
                 Spacer()
                 // "All" shortcut
                 Button("All") {
@@ -422,7 +422,7 @@ public struct SessionSetupView: View {
             // Summary label showing which strings are active
             Text(selectedStringsSummary)
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(DesignSystem.Colors.text2)
                 .padding(.horizontal, 20)
                 .animation(.easeInOut(duration: 0.2), value: selectedStrings)
         }
@@ -452,7 +452,7 @@ public struct SessionSetupView: View {
         VStack(alignment: .leading, spacing: 8) {
             Label("Note", systemImage: "music.note")
                 .font(DesignSystem.Typography.smallLabel)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(DesignSystem.Colors.text2)
                 .padding(.horizontal, 20)
 
             ScrollView(.horizontal, showsIndicators: false) {
@@ -485,7 +485,7 @@ public struct SessionSetupView: View {
         VStack(alignment: .leading, spacing: 8) {
             Label("Session Length", systemImage: "number.circle")
                 .font(DesignSystem.Typography.smallLabel)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(DesignSystem.Colors.text2)
                 .padding(.horizontal, 20)
 
             HStack(spacing: 16) {
@@ -517,7 +517,19 @@ public struct SessionSetupView: View {
             }
             .padding(.horizontal, 20)
             .animation(.easeInOut(duration: 0.15), value: sessionLength)
+
+            Text(sessionLengthHint)
+                .font(.caption)
+                .foregroundStyle(DesignSystem.Colors.muted)
+                .padding(.horizontal, 20)
         }
+    }
+
+    private var sessionLengthHint: String {
+        if sessionLength <= 10 { return "Quick session — great for a warm-up" }
+        if sessionLength <= 25 { return "Standard session — solid practice" }
+        if sessionLength <= 50 { return "Extended session — deep focus work" }
+        return "Marathon session — maximum repetition"
     }
 
     private var fretPickerSection: some View {
@@ -525,7 +537,7 @@ public struct SessionSetupView: View {
             HStack {
                 Label("Frets", systemImage: "rectangle.grid.1x2")
                     .font(DesignSystem.Typography.smallLabel)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(DesignSystem.Colors.text2)
                 Spacer()
                 Button("Open") { selectedFrets = Set(0...4) }
                     .font(.caption.weight(.semibold))
@@ -582,7 +594,7 @@ public struct SessionSetupView: View {
 
             Text(selectedFretsSummary)
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(DesignSystem.Colors.text2)
                 .padding(.horizontal, 20)
                 .animation(.easeInOut(duration: 0.2), value: selectedFrets)
         }
@@ -618,13 +630,13 @@ public struct SessionSetupView: View {
             HStack {
                 Label("Chord Progression", systemImage: "pianokeys")
                     .font(DesignSystem.Typography.smallLabel)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(DesignSystem.Colors.text2)
                 Button {
                     showChordProgressionInfo = true
                 } label: {
                     Image(systemName: "questionmark.circle")
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(DesignSystem.Colors.text2)
                 }
             }
             .padding(.horizontal, 20)
@@ -633,7 +645,7 @@ public struct SessionSetupView: View {
             VStack(alignment: .leading, spacing: 6) {
                 Text("Key")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(DesignSystem.Colors.text2)
                     .padding(.horizontal, 20)
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
@@ -663,7 +675,7 @@ public struct SessionSetupView: View {
             VStack(alignment: .leading, spacing: 6) {
                 Text("Chord Tones")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(DesignSystem.Colors.text2)
                     .padding(.horizontal, 20)
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
@@ -694,7 +706,7 @@ public struct SessionSetupView: View {
                 HStack {
                     Text("Position")
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(DesignSystem.Colors.text2)
                     Spacer()
                     Toggle("", isOn: $chordPositionEnabled)
                         .labelsHidden()
@@ -710,7 +722,7 @@ public struct SessionSetupView: View {
             VStack(alignment: .leading, spacing: 6) {
                 Text("String Group")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(DesignSystem.Colors.text2)
                     .padding(.horizontal, 20)
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
@@ -806,7 +818,7 @@ public struct SessionSetupView: View {
             HStack {
                 Text("Custom Chords")
                     .font(DesignSystem.Typography.smallLabel)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(DesignSystem.Colors.text2)
                 Spacer()
                 // Add / remove chord buttons
                 if customProgression.chords.count < 4 {
@@ -990,13 +1002,13 @@ private struct PracticeModeInfoSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     private let modes: [(String, String, Color, String)] = [
-        ("Relaxed",  "metronome",           .green,
+        ("Relaxed",  "metronome",           DesignSystem.Colors.correct,
          "No time pressure. Take as long as you need to identify each note. Great for beginners or focused learning."),
-        ("Timed",    "timer",               .orange,
+        ("Timed",    "timer",               DesignSystem.Colors.amber,
          "A countdown timer runs for each question. Answer before time runs out or it counts as wrong. Good for building speed."),
-        ("Streak",   "flame.fill",          .red,
+        ("Streak",   "flame.fill",          DesignSystem.Colors.cherry,
          "See how many correct answers you can get in a row. One wrong answer ends your streak. Perfect for testing consistency."),
-        ("Tempo",    "metronome.fill",      .purple,
+        ("Tempo",    "metronome.fill",      DesignSystem.Colors.gold,
          "The time limit gets shorter with each correct answer, gradually increasing the pace. Resets when you get one wrong. A progressive challenge.")
     ]
 
@@ -1006,7 +1018,7 @@ private struct PracticeModeInfoSheet: View {
                 VStack(alignment: .leading, spacing: 20) {
                     Text("Choose how you want to be challenged during your practice session.")
                         .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(DesignSystem.Colors.text2)
 
                     ForEach(modes, id: \.0) { name, icon, color, desc in
                         HStack(alignment: .top, spacing: 12) {
@@ -1019,7 +1031,7 @@ private struct PracticeModeInfoSheet: View {
                                     .font(.subheadline.weight(.semibold))
                                 Text(desc)
                                     .font(.caption)
-                                    .foregroundStyle(.secondary)
+                                    .foregroundStyle(DesignSystem.Colors.text2)
                             }
                         }
                     }
@@ -1052,46 +1064,46 @@ private struct ChordProgressionInfoSheet: View {
                 VStack(alignment: .leading, spacing: 20) {
                     Text("Chord Progression mode trains you to find chord tones on the fretboard by drilling through each chord in your chosen progression.")
                         .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(DesignSystem.Colors.text2)
 
                     infoBlock(
                         title: "How It Works",
                         icon: "music.note.list",
-                        color: .indigo,
+                        color: DesignSystem.Colors.cherry,
                         text: "For each chord in the progression, you'll play the selected chord tones in sequence. Once all tones are played correctly, the quiz moves to the next chord."
                     )
 
                     infoBlock(
                         title: "Chord Tones",
                         icon: "music.note.list",
-                        color: .blue,
+                        color: DesignSystem.Colors.amber,
                         text: "Choose which tones to drill. \"Root Only\" finds just the root — great for beginners. \"Root + 3rd\" trains major vs minor quality. \"Root + 5th\" drills power chord shapes. \"Close Triad\" covers all three tones in a playable voicing."
                     )
 
                     infoBlock(
                         title: "Close Voicing",
                         icon: "hand.fingers.spread",
-                        color: .teal,
+                        color: DesignSystem.Colors.honey,
                         text: "The 3rd and 5th are chosen near the root on the fretboard, forming a close triad — just like you'd play them in a real chord shape. This builds practical muscle memory for chord positions."
                     )
 
                     infoBlock(
                         title: "Key Selection",
                         icon: "key",
-                        color: .orange,
+                        color: DesignSystem.Colors.amber,
                         text: "Pick a key to transpose the progression. For example, a I–V–vi–IV in C becomes C–G–Am–F, while in G it becomes G–D–Em–C."
                     )
 
                     infoBlock(
                         title: "Presets & Custom",
                         icon: "slider.horizontal.3",
-                        color: .purple,
+                        color: DesignSystem.Colors.gold,
                         text: "Choose from common progressions like I–V–vi–IV or I–IV–V, or build your own custom progression with up to 4 chords. Each chord can be major, minor, or dominant 7th."
                     )
 
                     Text("Tip: Try different keys to practice the same shapes in new positions on the neck.")
                         .font(.caption)
-                        .foregroundStyle(.tertiary)
+                        .foregroundStyle(DesignSystem.Colors.muted)
                         .padding(.top, 4)
                 }
                 .padding(20)
@@ -1120,7 +1132,7 @@ private struct ChordProgressionInfoSheet: View {
                     .font(.subheadline.weight(.semibold))
                 Text(text)
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(DesignSystem.Colors.text2)
             }
         }
     }
@@ -1133,21 +1145,21 @@ private struct FocusModeInfoSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     private let modes: [(String, String, Color, String)] = [
-        ("Single Note",        "music.note",          .blue,
+        ("Single Note",        "music.note",          DesignSystem.Colors.amber,
          "Practice finding one specific note across all strings. Great for memorizing where a note appears everywhere on the fretboard."),
-        ("String Selector",    "line.3.horizontal",   .teal,
+        ("String Selector",    "line.3.horizontal",   DesignSystem.Colors.honey,
          "Focus on one or more specific strings. All notes on your selected strings will be quizzed."),
-        ("Full Fretboard",     "rectangle.grid.3x2",  .indigo,
+        ("Full Fretboard",     "rectangle.grid.3x2",  DesignSystem.Colors.cherry,
          "The full challenge — any note on any string. Tests your overall fretboard knowledge."),
-        ("Fretboard Position", "slider.horizontal.3", .cyan,
+        ("Fretboard Position", "slider.horizontal.3", DesignSystem.Colors.gold,
          "Narrow the quiz to a specific fret range. Ideal for learning one area of the neck at a time."),
-        ("Circle of Fourths",  "circle.grid.2x1",     .teal,
+        ("Circle of Fourths",  "circle.grid.2x1",     DesignSystem.Colors.honey,
          "Notes are presented in circle-of-fourths order (C, F, Bb, Eb…). Useful for learning key signatures and jazz patterns. Can be constrained to specific strings or fret positions."),
-        ("Circle of Fifths",   "circle.dashed",       .orange,
+        ("Circle of Fifths",   "circle.dashed",       DesignSystem.Colors.amber,
          "Notes follow the circle of fifths (C, G, D, A…). A classic tool for understanding key relationships. Can be constrained to specific strings or fret positions."),
-        ("Chord Progression",  "pianokeys",           .teal,
+        ("Chord Progression",  "pianokeys",           DesignSystem.Colors.honey,
          "Practice identifying chord tones within a progression. Notes are drawn from the chords you select."),
-        ("Prioritize Weak Spots", "brain",            .purple,
+        ("Prioritize Weak Spots", "brain",            DesignSystem.Colors.gold,
          "A toggle that works with any focus mode. When enabled, the app targets your weakest notes based on your mastery data.")
     ]
 
@@ -1157,7 +1169,7 @@ private struct FocusModeInfoSheet: View {
                 VStack(alignment: .leading, spacing: 20) {
                     Text("Focus modes determine which notes are presented during your practice session.")
                         .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(DesignSystem.Colors.text2)
 
                     ForEach(modes, id: \.0) { name, icon, color, desc in
                         HStack(alignment: .top, spacing: 12) {
@@ -1170,7 +1182,7 @@ private struct FocusModeInfoSheet: View {
                                     .font(.subheadline.weight(.semibold))
                                 Text(desc)
                                     .font(.caption)
-                                    .foregroundStyle(.secondary)
+                                    .foregroundStyle(DesignSystem.Colors.text2)
                             }
                         }
                     }

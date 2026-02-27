@@ -31,11 +31,11 @@ struct CellDetailSheet: View {
 
                 VStack(spacing: 4) {
                     Text(detail.note.displayName(format: noteFormat))
-                        .font(.system(size: 52, weight: .black, design: .rounded))
+                        .font(DesignSystem.Typography.quizNote)
                         .foregroundStyle(levelColor)
                     Text(Self.stringNames[detail.string] ?? "String \(detail.string)")
                         .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(DesignSystem.Colors.text2)
                 }
                 .padding(.top, 8)
 
@@ -48,15 +48,15 @@ struct CellDetailSheet: View {
                                  label: level.localizedLabel, color: levelColor)
                         if let s = score {
                             badgeRow(icon: "number",
-                                     label: "\(s.totalAttempts) attempts", color: .secondary)
+                                     label: "\(s.totalAttempts) attempts", color: DesignSystem.Colors.text2)
                             badgeRow(icon: "checkmark",
-                                     label: "\(s.correctAttempts) correct", color: .green)
+                                     label: "\(s.correctAttempts) correct", color: DesignSystem.Colors.correct)
                             badgeRow(icon: "flame.fill",
-                                     label: "Best streak: \(s.bestStreakCount)", color: .orange)
+                                     label: "Best streak: \(s.bestStreakCount)", color: DesignSystem.Colors.amber)
                         } else {
                             Text("Not attempted yet")
                                 .font(.subheadline)
-                                .foregroundStyle(.tertiary)
+                                .foregroundStyle(DesignSystem.Colors.muted)
                         }
                     }
                     Spacer()
@@ -68,7 +68,7 @@ struct CellDetailSheet: View {
                         HStack {
                             Text("Accuracy")
                                 .font(.caption)
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(DesignSystem.Colors.text2)
                             Spacer()
                             Text("\(Int(masteryValue * 100))%")
                                 .font(.caption.weight(.semibold))
@@ -91,7 +91,7 @@ struct CellDetailSheet: View {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("RECENT ATTEMPTS")
                             .font(DesignSystem.Typography.smallLabel)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(DesignSystem.Colors.text2)
                             .padding(.horizontal, 20)
 
                         VStack(spacing: 0) {
@@ -152,11 +152,11 @@ private struct MasteryRing: View {
                 .animation(.spring(duration: 0.7), value: value)
             VStack(spacing: 0) {
                 Text("\(Int(value * 100))")
-                    .font(.system(size: 22, weight: .bold, design: .rounded))
+                    .font(DesignSystem.Typography.screenTitle)
                     .monospacedDigit()
                 Text("%")
-                    .font(.system(size: 10, weight: .semibold))
-                    .foregroundStyle(.secondary)
+                    .font(DesignSystem.Typography.microLabel)
+                    .foregroundStyle(DesignSystem.Colors.text2)
             }
         }
     }
@@ -172,7 +172,7 @@ private struct AttemptRow: View {
         HStack(spacing: 12) {
             Image(systemName: attempt.wasCorrect
                   ? "checkmark.circle.fill" : "xmark.circle.fill")
-                .foregroundStyle(attempt.wasCorrect ? .green : .red)
+                .foregroundStyle(attempt.wasCorrect ? DesignSystem.Colors.correct : DesignSystem.Colors.wrong)
                 .font(.title3)
                 .frame(width: 28)
 
@@ -185,18 +185,18 @@ private struct AttemptRow: View {
                 } else {
                     Text("Timeout / miss")
                         .font(.subheadline)
-                        .foregroundStyle(.tertiary)
+                        .foregroundStyle(DesignSystem.Colors.muted)
                 }
                 Text(attempt.timestamp, style: .relative)
                     .font(.caption)
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(DesignSystem.Colors.muted)
             }
 
             Spacer()
 
             Text("\(attempt.responseTimeMs) ms")
                 .font(.caption.monospacedDigit())
-                .foregroundStyle(.secondary)
+                .foregroundStyle(DesignSystem.Colors.text2)
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 10)

@@ -14,7 +14,7 @@ FretShed is an iOS guitar fretboard training application that helps guitarists m
 > **Positioning note (Feb 2026):** Multiple competitors offer mic-based audio detection for fretboard training (Fret Pro, Solo, Guitar Blast, Fretonomy, plus broader apps like Yousician). FretShed is NOT "the only app that listens." Our defensible differentiators are: (1) environment calibration — no competitor calibrates to the user's room/guitar/input source; (2) Bayesian adaptive mastery scoring — no competitor dynamically weights quiz selection per fretboard position; (3) all-in-one practice toolkit (tuner + metronome + drone). See `FretShed_Competitive_Analysis.md` in the Claude.ai project for full details.
 
 **App Store name:** FretShed: Guitar Fretboard  
-**Subtitle:** Note Trainer & Ear Training  
+**Subtitle:** Learn Every Fretboard Note
 **Bundle ID:** com.jpm.fretshed (set in App Store Connect — do not change once submitted)
 
 ---
@@ -146,11 +146,12 @@ Full analysis: `FretShed_Competitive_Analysis.md` in Claude.ai project files.
 ---
 
 ## Monetization Model (Phase 4)
-- **Free tier:** Single Note mode, strings 4–6, frets 0–7, tap input, 7-day history, built-in mic calibration
-- **Premium ($4.99/mo or $29.99/yr):** Full fretboard, all input source calibration profiles, chord progressions, extended history, unlimited audio detection sessions
-- **Trial:** 7-day free trial on both plans
+- **Free tier:** Full experience on strings 4–6, frets 0–7. Free modes: Full Fretboard + Single String. Audio detection included. Full progress statistics and session history.
+- **Premium ($4.99/mo, $29.99/yr, or $49.99 lifetime):** Full fretboard (all strings, all frets), all focus modes (Single Note, Fretboard Position, Circle of 4ths, Circle of 5ths, Chord Progression). Premium-only calibration profiles for USB/Bluetooth interfaces.
+- **Trial:** 14-day free trial on monthly and annual plans
 - **Subscription Group:** "FretShed Premium"
-- **Product IDs:** `com.jpm.fretshed.premium.monthly`, `com.jpm.fretshed.premium.annual`
+- **Product IDs:** `com.jpm.fretshed.premium.monthly`, `com.jpm.fretshed.premium.annual`, `com.jpm.fretshed.premium.lifetime`
+- **Analytics:** TelemetryDeck (privacy-focused, no personal data collected)
 
 ---
 
@@ -221,16 +222,28 @@ Full analysis: `FretShed_Competitive_Analysis.md` in Claude.ai project files.
 
 **All BUGLOG items resolved.** All feature ideas (F1–F30) complete.
 
+**Expert Review Technical Fixes (Feb 2026) — IMPLEMENTED.** 11 code items from expert panel review:
+- Design system sweep: ~458 system colors/fonts replaced with Woodshop tokens across 18 files
+- Copy improvements: "Detection Sensitivity", "Note Hold Time", "Session saved to Journey", "Back to The Shed"
+- Onboarding grammar fixes (comma splice, subject-verb agreement)
+- QuizLaunchCoordinator extraction: 9 quiz-related @State vars + launch/repeat logic moved from ContentView to `@Observable QuizLaunchCoordinator` class. Tab enum renamed to `AppTab` (top-level).
+- Notification cleanup: removed 3 dead notification declarations (`.showProgressTab`, `.repeatLastSession`, `.dismissQuiz`)
+- Session length guidance hint in SessionSetupView
+- DSP unit tests for AccelerateYIN (10 tests: silence, harmonic signals, white noise, spectral flatness, harmonic regularity)
+- UserSettings snapshot documented as design decision (live reference safe due to fullscreen overlay)
+- Backup/restore (F30): JSON export/import of all SwiftData models via Settings > Data Management
+
+**Finalized business model:** Free tier (strings 4–6, frets 0–7, Full Fretboard + Single String modes, audio detection, adaptive, full stats). Premium ($4.99/mo, $29.99/yr, $49.99 lifetime, 14-day trial). Analytics: TelemetryDeck. Subtitle: "Learn Every Fretboard Note."
+
 **Next task:** Task 3.7 (onboarding device test), then Phase 4.
 
-**Quiz Presentation Architecture (current — ZStack overlay + direct closures):**
-- `ContentView.body` is `ZStack { TabView { ... }; if let vm = activeQuizVM { quizOverlay(vm: vm).zIndex(1) } }`
+**Quiz Presentation Architecture (current — ZStack overlay + QuizLaunchCoordinator):**
+- `QuizLaunchCoordinator` (`@MainActor @Observable`): owns `selectedTab`, `activeQuizVM`, `showSetup`, `showCalibration*`, `gatedQuizVM`, `pendingTapMode`, `tapModeWasForced`, `pendingQuizVM`
+- `ContentView` holds `@State private var quiz = QuizLaunchCoordinator()`, uses `@Bindable` for bindings
 - Quiz is a ZStack overlay ABOVE the TabView — no NavigationStack push, no navigation path
-- `launchQuiz(vm:)` simply sets `activeQuizVM = vm` + `selectedTab = .practice`; no path manipulation
-- `QuizSessionView` (private struct) accepts `onDone / onViewProgress / onRepeat` as direct closures; swaps `QuizView` → `SessionSummaryView` via `@State showResults`
-- `SessionSummaryView` has `onDone / onViewProgress / onRepeat: (() -> Void)?` properties; buttons call these closures directly — NO NotificationCenter.post in any button
+- `launchQuiz(vm:)` lives on the coordinator — sets `selectedTab = .practice` + `activeQuizVM = vm`
+- `SessionSummaryView` has `onDone / onRepeat: (() -> Void)?` properties; buttons call closures directly — NO NotificationCenter
 - ContentView `onReceive` handlers retained only for `.launchQuiz` (from PracticeHomeView) and `.showPracticeTab` (from ProgressTabView empty state)
-- Repeat logic lives in `launchRepeatSession(from:)` on ContentView, called from the `onRepeat` closure
 - **Why ZStack over NavigationStack push:** onReceive handlers did not fire reliably while a pushed destination was active on iOS 26; NavigationStack destination also had a timing window where activeQuizVM was nil, producing a blank page
 - **Why closures over notifications:** eliminates the RunLoop-scheduled Combine dispatch chain entirely; closure → state mutation is synchronous and direct
 
@@ -300,6 +313,6 @@ All device-testing bugs are resolved. All feature ideas (F1–F30) are complete.
 ---
 
 ## Action Items from Competitive Analysis
-- [ ] Update onboarding subtitle in code: change "The guitar trainer that actually listens to you play" → "The guitar trainer that actually gets your notes right" (if already implemented in OnboardingView.swift)
+- [x] Update onboarding subtitle in code: "The guitar trainer that actually gets your notes right." (done in OnboardingView.swift)
 - [ ] When writing App Store description (Task 5.12): use revised positioning from competitive analysis — lead with calibration + adaptive learning, NOT "only app that listens"
 - [ ] When creating App Store screenshots (Task 5.2): feature the calibration flow as a key differentiator

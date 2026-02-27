@@ -524,7 +524,7 @@ private enum DetectedPitch: Sendable {
 /// autocorrelation (IFFT of |FFT(x)|^2) reducing complexity from O(N^2)
 /// to O(N log N). All buffers are pre-allocated as raw pointers at init —
 /// zero heap allocation during detectPitch. Safe on the realtime thread.
-private final class AccelerateYIN: @unchecked Sendable {
+final class AccelerateYIN: @unchecked Sendable {
     private let windowSize: Int       // N (e.g. 4096)
     private let halfN: Int            // N / 2
     private let fftN: Int             // 2 * N (zero-padded for linear autocorrelation)

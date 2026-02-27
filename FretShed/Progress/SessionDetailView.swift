@@ -55,7 +55,7 @@ struct SessionDetailView: View {
                         VStack(alignment: .leading, spacing: 8) {
                             Text("FRETBOARD HEATMAP")
                                 .font(DesignSystem.Typography.smallLabel)
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(DesignSystem.Colors.text2)
                                 .padding(.horizontal, 20)
                             SessionHeatmapView(
                                 attempts: attempts,
@@ -92,7 +92,7 @@ struct SessionDetailView: View {
                 if session.isAdaptive {
                     Image(systemName: "brain")
                         .font(.subheadline)
-                        .foregroundStyle(.purple)
+                        .foregroundStyle(DesignSystem.Colors.gold)
                 }
             }
 
@@ -102,7 +102,7 @@ struct SessionDetailView: View {
                 Text(durationLabel(session.duration))
             }
             .font(.subheadline)
-            .foregroundStyle(.secondary)
+            .foregroundStyle(DesignSystem.Colors.text2)
         }
     }
 
@@ -115,24 +115,24 @@ struct SessionDetailView: View {
             if session.gameMode == .timed, avgResponseTimeMs > 0 {
                 SessionStatCard(label: "Avg Time",
                                 value: String(format: "%.1fs", Double(avgResponseTimeMs) / 1000.0),
-                                icon: "clock.fill", color: .cyan)
+                                icon: "clock.fill", color: DesignSystem.Colors.amber)
             } else {
                 SessionStatCard(label: "Questions", value: "\(session.attemptCount)",
-                                icon: "list.number", color: .blue)
+                                icon: "list.number", color: DesignSystem.Colors.cherry)
             }
             SessionStatCard(label: "Best Streak", value: "\(bestStreak)",
-                            icon: "flame.fill", color: .orange)
+                            icon: "flame.fill", color: DesignSystem.Colors.amber)
             SessionStatCard(label: "Correct", value: "\(session.correctCount)",
-                            icon: "checkmark.circle", color: .green)
+                            icon: "checkmark.circle", color: DesignSystem.Colors.correct)
         }
     }
 
     // MARK: - Helpers
 
     private var accuracyColor: Color {
-        if accuracy >= 0.8 { return .green }
-        if accuracy >= 0.6 { return .orange }
-        return .red
+        if accuracy >= 0.8 { return DesignSystem.Colors.correct }
+        if accuracy >= 0.6 { return DesignSystem.Colors.amber }
+        return DesignSystem.Colors.wrong
     }
 
     private var modeIcon: String {
@@ -150,9 +150,9 @@ struct SessionDetailView: View {
     private var modeColor: Color {
         switch session.focusMode {
         case .fullFretboard:     return DesignSystem.Colors.cherry
-        case .singleNote:        return .blue
-        case .circleOfFifths:    return .orange
-        case .fretboardPosition: return .cyan
+        case .singleNote:        return DesignSystem.Colors.amber
+        case .circleOfFifths:    return DesignSystem.Colors.honey
+        case .fretboardPosition: return DesignSystem.Colors.gold
         case .circleOfFourths,
              .singleString,
              .chordProgression:  return DesignSystem.Colors.amber
@@ -185,7 +185,7 @@ private struct SessionStatCard: View {
                 .monospacedDigit()
             Text(label)
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(DesignSystem.Colors.text2)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 14)

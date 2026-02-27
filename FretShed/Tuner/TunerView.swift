@@ -204,7 +204,7 @@ public struct TunerView: View {
             } else {
                 Text("–")
                     .font(DesignSystem.Typography.noteDisplay)
-                    .foregroundStyle(.quaternary)
+                    .foregroundStyle(DesignSystem.Colors.muted.opacity(0.5))
                 Text(detector.isRunning ? "Play a note…" : "Starting…")
                     .font(DesignSystem.Typography.accentDescription)
                     .foregroundStyle(DesignSystem.Colors.muted)
@@ -318,7 +318,7 @@ private struct DialTicks: View {
                 path.move(to: inner)
                 path.addLine(to: outer)
                 ctx.stroke(path,
-                           with: .color(Color(.secondaryLabel)),
+                           with: .color(DesignSystem.Colors.text2),
                            lineWidth: isMajor ? 2 : 1)
             }
         }
@@ -369,7 +369,7 @@ private struct StrobeDisplay: View {
                         width: bandWidth + 0.5, height: size.height
                     )
                     ctx.fill(Path(rect),
-                            with: .color(Color(.label).opacity(0.15 + 0.7 * t)))
+                            with: .color(DesignSystem.Colors.text.opacity(0.15 + 0.7 * t)))
                 }
             }
             .clipShape(RoundedRectangle(cornerRadius: 12))

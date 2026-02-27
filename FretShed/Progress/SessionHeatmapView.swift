@@ -71,7 +71,7 @@ struct SessionHeatmapView: View {
                 ForEach(Array(fretRange), id: \.self) { fret in
                     Text("\(fret)")
                         .font(.system(size: 8, weight: .semibold))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(DesignSystem.Colors.text2)
                         .frame(width: cellSize)
                 }
             }
@@ -82,7 +82,7 @@ struct SessionHeatmapView: View {
                 HStack(spacing: 2) {
                     Text(stringLabels[string] ?? "")
                         .font(.system(size: 9, weight: .bold, design: .monospaced))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(DesignSystem.Colors.text2)
                         .frame(width: 22, alignment: .center)
 
                     ForEach(Array(fretRange), id: \.self) { fret in
@@ -150,7 +150,7 @@ private struct SessionHeatCell: View {
 
     private var textColor: Color {
         guard let r = result, r.total > 0 else {
-            return .secondary.opacity(0.5)
+            return DesignSystem.Colors.muted.opacity(0.5)
         }
         return .white
     }
@@ -181,7 +181,7 @@ struct SessionHeatmapLegend: View {
             legendItem(color: DesignSystem.Colors.amber.opacity(0.65),   label: "Mixed")
         }
         .font(.system(size: 10))
-        .foregroundStyle(.secondary)
+        .foregroundStyle(DesignSystem.Colors.text2)
     }
 
     private func legendItem(color: Color, label: String) -> some View {

@@ -44,7 +44,7 @@ struct CalibrationTunerView: View {
                             .font(DesignSystem.Typography.screenTitle)
                         Text("Tune each string, then tap Calibrate to set up audio detection")
                             .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(DesignSystem.Colors.text2)
                             .multilineTextAlignment(.center)
                             .padding(.horizontal, 32)
                     }
@@ -149,7 +149,7 @@ struct CalibrationTunerView: View {
         VStack(spacing: 6) {
             if let note = detector.detectedNote {
                 Text(note.displayName(format: noteFormat))
-                    .font(.system(size: 72, weight: .black, design: .rounded))
+                    .font(DesignSystem.Typography.heroNote)
                     .foregroundStyle(tuningColor)
                     .contentTransition(.numericText())
                     .animation(.spring(duration: 0.2), value: note)
@@ -157,16 +157,16 @@ struct CalibrationTunerView: View {
                 if let freq = detector.detectedFrequency {
                     Text(String(format: "%.1f Hz", freq))
                         .font(.subheadline.monospacedDigit())
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(DesignSystem.Colors.text2)
                         .contentTransition(.numericText())
                 }
             } else {
                 Text("–")
-                    .font(.system(size: 72, weight: .black, design: .rounded))
-                    .foregroundStyle(.quaternary)
+                    .font(DesignSystem.Typography.heroNote)
+                    .foregroundStyle(DesignSystem.Colors.muted.opacity(0.5))
                 Text(detector.isRunning ? "Play a note…" : "Starting…")
                     .font(.subheadline)
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(DesignSystem.Colors.muted)
             }
         }
         .frame(height: 100)
@@ -178,7 +178,7 @@ struct CalibrationTunerView: View {
         let c = detector.centsDeviation
         let sign = c >= 0 ? "+" : ""
         return Text("\(sign)\(Int(c.rounded())) ¢")
-            .font(.system(size: 20, weight: .semibold, design: .monospaced))
+            .font(DesignSystem.Typography.dataDisplay)
             .foregroundStyle(tuningColor)
             .contentTransition(.numericText())
             .opacity(detector.detectedNote != nil ? 1 : 0)
@@ -187,11 +187,11 @@ struct CalibrationTunerView: View {
     // MARK: - Tuning Colour
 
     private var tuningColor: Color {
-        guard detector.detectedNote != nil else { return .secondary }
+        guard detector.detectedNote != nil else { return DesignSystem.Colors.muted }
         let absCents = abs(detector.centsDeviation)
-        if absCents <= 5  { return .green }
-        if absCents <= 15 { return .yellow }
-        return .red
+        if absCents <= 5  { return DesignSystem.Colors.correct }
+        if absCents <= 15 { return DesignSystem.Colors.amber }
+        return DesignSystem.Colors.wrong
     }
 
     // MARK: - Success Overlay
@@ -203,12 +203,12 @@ struct CalibrationTunerView: View {
             VStack(spacing: 20) {
                 Image(systemName: "checkmark.circle.fill")
                     .font(.system(size: 64))
-                    .foregroundStyle(.green)
+                    .foregroundStyle(DesignSystem.Colors.correct)
                 Text("Calibration Complete!")
                     .font(DesignSystem.Typography.screenTitle)
                 Text("Setting up your practice session…")
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(DesignSystem.Colors.text2)
             }
         }
     }
@@ -233,7 +233,7 @@ private struct TunerNeedleDisplay: View {
 
             TunerDialArc()
                 .trim(from: 0.44, to: 0.56)
-                .stroke(Color.green.opacity(0.35), lineWidth: 6)
+                .stroke(DesignSystem.Colors.correct.opacity(0.35), lineWidth: 6)
                 .frame(width: 240, height: 120)
 
             TunerDialTicks()
@@ -244,7 +244,7 @@ private struct TunerNeedleDisplay: View {
                 .animation(.spring(response: 0.2, dampingFraction: 0.85), value: angle)
 
             Circle()
-                .fill(Color(.label))
+                .fill(DesignSystem.Colors.text)
                 .frame(width: 10, height: 10)
                 .offset(y: 60)
         }
@@ -279,7 +279,7 @@ private struct TunerDialTicks: View {
                 var path = Path()
                 path.move(to: inner)
                 path.addLine(to: outer)
-                ctx.stroke(path, with: .color(Color(.secondaryLabel)),
+                ctx.stroke(path, with: .color(DesignSystem.Colors.text2),
                            lineWidth: isMajor ? 2 : 1)
             }
         }
@@ -300,7 +300,7 @@ private struct TunerNeedle: View {
             var path = Path()
             path.move(to: centre)
             path.addLine(to: tip)
-            ctx.stroke(path, with: .color(Color(.label)), lineWidth: 2)
+            ctx.stroke(path, with: .color(DesignSystem.Colors.text), lineWidth: 2)
         }
     }
 }
@@ -308,11 +308,11 @@ private struct TunerNeedle: View {
 private struct TunerCentsScale: View {
     var body: some View {
         HStack {
-            Text("-50¢").font(.caption).foregroundStyle(.secondary)
+            Text("-50¢").font(.caption).foregroundStyle(DesignSystem.Colors.text2)
             Spacer()
-            Text("0").font(.caption.weight(.bold)).foregroundStyle(.green)
+            Text("0").font(.caption.weight(.bold)).foregroundStyle(DesignSystem.Colors.correct)
             Spacer()
-            Text("+50¢").font(.caption).foregroundStyle(.secondary)
+            Text("+50¢").font(.caption).foregroundStyle(DesignSystem.Colors.text2)
         }
     }
 }

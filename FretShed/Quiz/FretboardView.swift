@@ -25,7 +25,7 @@ public struct CompactFretboardView: View {
     /// Optional closure invoked when the user taps a fretboard position. Parameters: (string, fret).
     public var onFretTapped: ((Int, Int) -> Void)? = nil
     /// Override color for the target dot (e.g. green during wrong feedback to show "correct answer here").
-    public var targetDotColor: Color = .orange
+    public var targetDotColor: Color = DesignSystem.Colors.amber
     /// Position of the wrong answer to display as a red dot during feedback.
     public var wrongAnswerPosition: (string: Int, fret: Int)? = nil
 
@@ -193,16 +193,16 @@ public struct CompactFretboardView: View {
 
                 if isWrongAnswer {
                     noteDot(ctx: ctx, at: CGPoint(x: x, y: y),
-                            note: note, fill: .red, format: noteFormat)
+                            note: note, fill: DesignSystem.Colors.wrong, format: noteFormat)
                 } else if isTarget {
                     noteDot(ctx: ctx, at: CGPoint(x: x, y: y),
                             note: note, fill: targetDotColor, format: noteFormat)
                 } else if isAnswered {
                     noteDot(ctx: ctx, at: CGPoint(x: x, y: y),
-                            note: note, fill: .teal, format: noteFormat)
+                            note: note, fill: DesignSystem.Colors.correct.opacity(0.85), format: noteFormat)
                 } else if isReveal {
                     noteDot(ctx: ctx, at: CGPoint(x: x, y: y),
-                            note: note, fill: .green.opacity(0.85), format: noteFormat)
+                            note: note, fill: DesignSystem.Colors.correct.opacity(0.7), format: noteFormat)
                 }
             }
         }

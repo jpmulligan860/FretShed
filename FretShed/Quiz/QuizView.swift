@@ -319,7 +319,7 @@ public struct QuizView: View {
             if vm.phase == .complete {
                 Button("Close") { onDone?() }
                     .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(DesignSystem.Colors.text2)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 6)
                     .background(Color(.tertiarySystemGroupedBackground),
@@ -350,7 +350,7 @@ public struct QuizView: View {
             }
         }
         .font(.caption)
-        .foregroundStyle(.secondary)
+        .foregroundStyle(DesignSystem.Colors.text2)
         .padding(.vertical, 6)
         .frame(maxWidth: .infinity)
         .background(DesignSystem.Colors.surface)
@@ -413,16 +413,16 @@ public struct QuizView: View {
                         .font(.subheadline.weight(.bold))
                         .foregroundStyle(DesignSystem.Colors.cherry)
                     Text("·")
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(DesignSystem.Colors.text2)
                     Text(vm.currentToneLabel)
                         .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(DesignSystem.Colors.text2)
                 }
                 .padding(.bottom, 2)
             } else {
                 Text(vm.settings.tapToAnswerEnabled ? "Find this note:" : "Play this note:")
                     .font(.system(size: 22, weight: .medium))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(DesignSystem.Colors.text2)
             }
 
             if let q = vm.currentQuestion {
@@ -440,7 +440,7 @@ public struct QuizView: View {
                 if showFretHint {
                     Text("Fret \(q.fret)")
                         .font(.system(size: 27, weight: .semibold))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(DesignSystem.Colors.text2)
                         .monospacedDigit()
                         .transition(.opacity)
                 } else {
@@ -471,12 +471,12 @@ public struct QuizView: View {
                         .foregroundStyle(DesignSystem.Colors.cherry)
                     Text(vm.currentToneLabel)
                         .font(.caption2)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(DesignSystem.Colors.text2)
                 }
             } else {
                 Text(vm.settings.tapToAnswerEnabled ? "Find:" : "Play:")
                     .font(.subheadline.weight(.medium))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(DesignSystem.Colors.text2)
             }
 
             if let q = vm.currentQuestion {
@@ -488,13 +488,13 @@ public struct QuizView: View {
 
                 Text("Str \(q.string)")
                     .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(DesignSystem.Colors.text2)
                     .monospacedDigit()
 
                 if showFretHint {
                     Text("Fret \(q.fret)")
                         .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(DesignSystem.Colors.text2)
                         .monospacedDigit()
                 } else {
                     Button {
@@ -517,7 +517,7 @@ public struct QuizView: View {
         VStack(spacing: 1) {
             Text(label)
                 .font(.system(size: 9, weight: .semibold))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(DesignSystem.Colors.text2)
             Text(value)
                 .font(.system(size: 14, weight: .bold))
                 .monospacedDigit()
@@ -677,7 +677,7 @@ public struct QuizView: View {
                 .font(DesignSystem.Typography.screenTitle)
             Text(subtitle)
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(DesignSystem.Colors.text2)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
         }
@@ -778,9 +778,9 @@ public struct QuizView: View {
             .tint(DesignSystem.Colors.correct)
             .padding(.horizontal, 20)
 
-            Label("Session saved to Progress", systemImage: "checkmark.circle")
+            Label("Session saved to Journey", systemImage: "checkmark.circle")
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(DesignSystem.Colors.text2)
         }
     }
 
@@ -819,7 +819,7 @@ public struct QuizView: View {
             }
             Text("Tap Correct if you played it right, Wrong if you didn't.")
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(DesignSystem.Colors.text2)
                 .multilineTextAlignment(.center)
         }
     }
@@ -832,7 +832,7 @@ public struct QuizView: View {
                     .foregroundStyle(DesignSystem.Colors.cherry)
                 Text("Tap the fretboard where you think this note is.")
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(DesignSystem.Colors.text2)
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 12)
@@ -862,7 +862,7 @@ public struct QuizView: View {
                     } else {
                         Text(detector.isRunning ? "Listening…" : "Microphone unavailable")
                             .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(DesignSystem.Colors.text2)
                     }
                 }
                 .frame(maxWidth: .infinity)
@@ -884,7 +884,7 @@ public struct QuizView: View {
                 .foregroundStyle(.red)
             Text("FretShed needs the microphone to hear the notes you play.")
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(DesignSystem.Colors.text2)
                 .multilineTextAlignment(.center)
             Button {
                 if let url = URL(string: UIApplication.openSettingsURLString) {
@@ -914,7 +914,7 @@ public struct QuizView: View {
                 .foregroundStyle(.orange)
             Text("Unable to start the microphone. Try restarting the app.")
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(DesignSystem.Colors.text2)
                 .multilineTextAlignment(.center)
             Button {
                 vm.advanceManually()
@@ -925,7 +925,7 @@ public struct QuizView: View {
                     .padding(.vertical, 10)
                     .background(DesignSystem.Colors.surface,
                                 in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(DesignSystem.Colors.text2)
             }
             .buttonStyle(.plain)
         }
@@ -1050,7 +1050,7 @@ private struct CompletedStatCard: View {
                 .monospacedDigit()
             Text(label)
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(DesignSystem.Colors.text2)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 14)

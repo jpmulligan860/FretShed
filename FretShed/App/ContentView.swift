@@ -2,27 +2,11 @@
 // FretShed — App Layer
 //
 // Root layout: a ZStack containing the TabView and an optional quiz overlay.
-//
-// Quiz / Results presentation strategy
-// ─────────────────────────────────────
-// The quiz is presented as a ZStack overlay ON TOP of the TabView.
-// Results are shown INLINE within QuizView itself (no separate view swap).
-//
-// Why inline results?
-//   On iOS 26 any newly-presented view (fullScreenCover, NavigationStack push,
-//   ZStack view-swap) has unreliable touch delivery for its buttons.
-//   QuizView's own buttons (Correct/Wrong, End, Show Hint) always work, so
-//   the results content renders inside QuizView when vm.phase == .complete.
-//
-// Session Setup cover
-// ───────────────────
-// SessionSetupView is still presented with fullScreenCover on the TabView.
-// After it dismisses, onDismiss calls launchQuiz(vm:) which sets
-// activeQuizVM and lets the ZStack overlay appear.
+// Quiz state management is delegated to QuizLaunchCoordinator.
 //
 // Notifications that remain
 // ─────────────────────────
-// .launchQuiz   — posted by PracticeHomeView (quick-launch & repeat-last cards)
+// .launchQuiz      — posted by PracticeHomeView (quick-launch & repeat-last cards)
 // .showPracticeTab — posted by ProgressTabView's empty-state "Start Practicing"
 
 import SwiftUI
@@ -33,89 +17,53 @@ import Combine
 struct ContentView: View {
 
     @Environment(\.appContainer) private var container
-    @State private var selectedTab: Tab = .practice
-    @State private var showSetup = false
-    @State private var pendingQuizVM: QuizViewModel?
-    @State private var activeQuizVM: QuizViewModel?
-    @State private var showCalibration = false
-    @State private var showCalibrationTuner = false
-    @State private var showCalibrationGate = false
+    @State private var quiz = QuizLaunchCoordinator()
     @State private var progressVM: ProgressViewModel?
-    @State private var pendingTapMode = false
-    @State private var tapModeWasForced = false
-    @State private var gatedQuizVM: QuizViewModel?
-
-    @AppStorage(LocalUserPreferences.Key.hasCompletedCalibration)
-    private var hasCompletedCalibration = false
-
-    // MARK: - Tab Enum
-
-    enum Tab: String, CaseIterable {
-        case practice   = "Shed"
-        case progress   = "Journey"
-        case tuner      = "Tuner"
-        case metroDrone = "Tempo"
-        case settings   = "Setup"
-
-        var icon: String {
-            switch self {
-            case .practice:   return "guitars"
-            case .progress:   return "chart.bar.fill"
-            case .tuner:      return "tuningfork"
-            case .metroDrone: return "metronome.fill"
-            case .settings:   return "gear"
-            }
-        }
-    }
 
     // MARK: - Body
 
     var body: some View {
+        @Bindable var quiz = quiz
         ZStack {
             // ── Tabs (always present) ────────────────────────────────────
-            TabView(selection: $selectedTab) {
+            TabView(selection: $quiz.selectedTab) {
                 practiceTab
-                    .tabItem { Label(Tab.practice.rawValue,   systemImage: Tab.practice.icon) }
-                    .tag(Tab.practice)
+                    .tabItem { Label(AppTab.practice.rawValue,   systemImage: AppTab.practice.icon) }
+                    .tag(AppTab.practice)
 
                 progressTabView
-                    .tabItem { Label(Tab.progress.rawValue,   systemImage: Tab.progress.icon) }
-                    .tag(Tab.progress)
+                    .tabItem { Label(AppTab.progress.rawValue,   systemImage: AppTab.progress.icon) }
+                    .tag(AppTab.progress)
 
                 tunerTabView
-                    .tabItem { Label(Tab.tuner.rawValue,      systemImage: Tab.tuner.icon) }
-                    .tag(Tab.tuner)
+                    .tabItem { Label(AppTab.tuner.rawValue,      systemImage: AppTab.tuner.icon) }
+                    .tag(AppTab.tuner)
 
                 MetroDroneView()
-                    .tabItem { Label(Tab.metroDrone.rawValue, systemImage: Tab.metroDrone.icon) }
-                    .tag(Tab.metroDrone)
+                    .tabItem { Label(AppTab.metroDrone.rawValue, systemImage: AppTab.metroDrone.icon) }
+                    .tag(AppTab.metroDrone)
 
                 settingsStubView
-                    .tabItem { Label(Tab.settings.rawValue,   systemImage: Tab.settings.icon) }
-                    .tag(Tab.settings)
+                    .tabItem { Label(AppTab.settings.rawValue,   systemImage: AppTab.settings.icon) }
+                    .tag(AppTab.settings)
             }
             .tint(DesignSystem.Colors.cherry)
             // Disable all TabView hit testing (including the Liquid Glass
             // tab bar's gesture recogniser) while the quiz overlay is
             // showing. Without this, the tab bar intercepts taps in the
             // bottom region of the screen on iOS 26.
-            .allowsHitTesting(activeQuizVM == nil)
+            .allowsHitTesting(quiz.activeQuizVM == nil)
 
             // ── Quiz overlay (above tabs, covers full screen) ───────────
-            if let vm = activeQuizVM {
+            if let vm = quiz.activeQuizVM {
                 quizOverlay(vm: vm)
                     .zIndex(1)
             }
         }
 
         // ── Setup cover ────────────────────────────────────────────────
-        .fullScreenCover(isPresented: $showSetup, onDismiss: {
-            guard let vm = pendingQuizVM else {
-                pendingTapMode = false
-                return
-            }
-            pendingQuizVM = nil
-            launchQuiz(vm: vm)
+        .fullScreenCover(isPresented: $quiz.showSetup, onDismiss: {
+            quiz.handleSetupDismiss()
         }) {
             SessionSetupView()
         }
@@ -124,64 +72,36 @@ struct ContentView: View {
         .onReceive(NotificationCenter.default.publisher(for: .launchQuiz)
             .receive(on: RunLoop.main)) { note in
             guard let vm = note.object as? QuizViewModel else { return }
-            if pendingTapMode {
-                vm.settings.tapToAnswerEnabled = true
-                tapModeWasForced = true
-                pendingTapMode = false
-            }
-            if showSetup {
-                pendingQuizVM = vm
-                showSetup = false
-            } else {
-                launchQuiz(vm: vm)
-            }
+            quiz.handleLaunchNotification(vm: vm)
         }
         .onReceive(NotificationCenter.default.publisher(for: .showPracticeTab)
             .receive(on: RunLoop.main)) { _ in
-            selectedTab = .practice
+            quiz.selectedTab = .practice
         }
 
         // ── Calibration cover (re-calibrate from compact card / Settings) ──
-        .fullScreenCover(isPresented: $showCalibration) {
+        .fullScreenCover(isPresented: $quiz.showCalibration) {
             CalibrationView()
         }
 
         // ── Calibration tuner cover (audio setup flow from Do This First) ──
-        .fullScreenCover(isPresented: $showCalibrationTuner, onDismiss: {
-            if hasCompletedCalibration {
-                if let vm = gatedQuizVM {
-                    // Quick-start VM was waiting for calibration — launch it
-                    gatedQuizVM = nil
-                    launchQuiz(vm: vm)
-                } else {
-                    // Came from Do This First card — open session setup
-                    Task { @MainActor in
-                        showSetup = true
-                    }
-                }
-            }
+        .fullScreenCover(isPresented: $quiz.showCalibrationTuner, onDismiss: {
+            quiz.handleCalibrationTunerDismiss()
         }) {
             CalibrationTunerView()
         }
 
         // ── Calibration gate alert ──────────────────────────────────
-        .alert("Audio Setup Required", isPresented: $showCalibrationGate) {
-            Button("Calibrate Now") { showCalibrationTuner = true }
-            Button("Use Tap Mode") {
-                if let vm = gatedQuizVM {
-                    vm.settings.tapToAnswerEnabled = true
-                    tapModeWasForced = true
-                    gatedQuizVM = nil
-                    selectedTab = .practice
-                    activeQuizVM = vm
-                } else {
-                    pendingTapMode = true
-                    showSetup = true
-                }
-            }
-            Button("Cancel", role: .cancel) { gatedQuizVM = nil }
+        .alert("Audio Setup Required", isPresented: $quiz.showCalibrationGate) {
+            Button("Calibrate Now") { quiz.handleCalibrateNow() }
+            Button("Use Tap Mode") { quiz.handleUseTapModeFromGate() }
+            Button("Cancel", role: .cancel) { quiz.handleCancelGate() }
         } message: {
             Text("Audio calibration is required for note detection. You can calibrate now or use tap mode to practice without audio.")
+        }
+
+        .task {
+            quiz.container = container
         }
     }
 
@@ -195,28 +115,8 @@ struct ContentView: View {
     private func quizOverlay(vm: QuizViewModel) -> some View {
         QuizView(
             vm: vm,
-            onDone: {
-                if tapModeWasForced {
-                    vm.settings.tapToAnswerEnabled = false
-                    tapModeWasForced = false
-                }
-                activeQuizVM = nil
-            },
-            onRepeat: {
-                if tapModeWasForced {
-                    vm.settings.tapToAnswerEnabled = false
-                    tapModeWasForced = false
-                }
-                // Capture the session before clearing the VM.
-                let session = vm.session
-                activeQuizVM = nil
-                Task { @MainActor in
-                    // Brief pause so the overlay disappears before the new one
-                    // appears — avoids a jarring same-frame swap.
-                    try? await Task.sleep(for: .milliseconds(350))
-                    await launchRepeatSession(from: session)
-                }
-            }
+            onDone: { quiz.handleQuizDone(vm: vm) },
+            onRepeat: { quiz.handleQuizRepeat(vm: vm) }
         )
         // Fill the safe-area region. Interactive content (buttons) stays
         // within the safe area so iOS 26 delivers taps normally.
@@ -226,62 +126,15 @@ struct ContentView: View {
         .background(DesignSystem.Colors.background.ignoresSafeArea())
     }
 
-    // MARK: - Quiz Launch
-
-    private func launchQuiz(vm: QuizViewModel) {
-        guard hasCompletedCalibration || vm.settings.tapToAnswerEnabled || vm.settings.tapModeEnabled else {
-            gatedQuizVM = vm
-            showCalibrationGate = true
-            return
-        }
-        selectedTab = .practice
-        activeQuizVM = vm
-    }
-
-    /// Re-creates a session using the same settings as `session` and launches it.
-    private func launchRepeatSession(from session: Session) async {
-        let targetNotes = session.notes.compactMap { MusicalNote(rawValue: $0) }
-        let newSession = Session(
-            focusMode: session.focusMode,
-            gameMode: session.gameMode,
-            fretRangeStart: session.fretRangeStart,
-            fretRangeEnd: session.fretRangeEnd,
-            targetNotes: targetNotes,
-            targetStrings: session.targetStrings,
-            chordProgression: session.chordProgression,
-            isAdaptive: session.isAdaptive
-        )
-        try? container.sessionRepository.save(newSession)
-        let settings = (try? container.settingsRepository.loadSettings()) ?? UserSettings()
-        let vm = QuizViewModel(
-            session: newSession,
-            fretboardMap: container.fretboardMap,
-            settings: settings,
-            masteryRepository: container.masteryRepository,
-            sessionRepository: container.sessionRepository,
-            attemptRepository: container.attemptRepository
-        )
-        launchQuiz(vm: vm)
-    }
-
     // MARK: - Tab Views
 
     private var practiceTab: some View {
         NavigationStack {
             PracticeHomeView(
-                onStartPractice: {
-                    guard hasCompletedCalibration else {
-                        showCalibrationGate = true
-                        return
-                    }
-                    showSetup = true
-                },
-                onSetupAudio: { showCalibrationTuner = true },
-                onUseTapMode: {
-                    pendingTapMode = true
-                    showSetup = true
-                },
-                onCalibrateAudio: { showCalibration = true }
+                onStartPractice: { quiz.handleStartPractice() },
+                onSetupAudio: { quiz.handleSetupAudio() },
+                onUseTapMode: { quiz.handleUseTapModeFromHome() },
+                onCalibrateAudio: { quiz.handleCalibrateAudio() }
             )
             .toolbar(.hidden, for: .navigationBar)
         }
@@ -624,13 +477,13 @@ struct StubView: View {
             Spacer()
             Image(systemName: icon)
                 .font(.system(size: 56))
-                .foregroundStyle(.quaternary)
+                .foregroundStyle(DesignSystem.Colors.muted.opacity(0.5))
             Text(title)
                 .font(.title2.bold())
-                .foregroundStyle(.secondary)
+                .foregroundStyle(DesignSystem.Colors.text2)
             Text(subtitle)
                 .font(.subheadline)
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(DesignSystem.Colors.muted)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 40)
             Spacer()

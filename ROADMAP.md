@@ -203,7 +203,7 @@ Estimated: 18–25 hours
 |---|---|---|---|
 | 5.10 | App Name (30 chars) and Subtitle (30 chars) | 15 min | 🔲 |
 | 5.11 | Keywords (100 chars): guitar, fretboard, notes, learn, trainer, ear, strings, frets, practice, quiz, memorize, tuner, mastery | 15 min | 🔲 |
-| 5.12 | App Description — lead with audio detection hook: Problem → Solution → Features → Social proof | 1–2 hrs | 🔲 |
+| 5.12 | App Description — lead with calibration + adaptive learning hook (NOT "only app that listens" — competitors have audio detection too). Use revised positioning from `FretShed_Competitive_Analysis.md`: Problem (detection unreliability) → Solution (calibration + adaptive mastery) → Features → Social proof | 1–2 hrs | 🔲 |
 | 5.13 | Age rating questionnaire — should be 4+ | 15 min | 🔲 |
 | 5.14 | App Review Notes — explain mic usage to reviewers, mention tap mode fallback | 15 min | 🔲 |
 

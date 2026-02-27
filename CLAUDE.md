@@ -9,7 +9,9 @@
 ---
 
 ## Project Overview
-FretShed is an iOS guitar fretboard training application that helps guitarists memorize notes across the fretboard. Core differentiator: **reliable pitch detection + adaptive learning** — "the only fretboard trainer that listens to you play."
+FretShed is an iOS guitar fretboard training application that helps guitarists memorize notes across the fretboard. Core differentiator: **calibrated pitch detection + Bayesian adaptive learning** — "the fretboard trainer that actually gets your notes right."
+
+> **Positioning note (Feb 2026):** Multiple competitors offer mic-based audio detection for fretboard training (Fret Pro, Solo, Guitar Blast, Fretonomy, plus broader apps like Yousician). FretShed is NOT "the only app that listens." Our defensible differentiators are: (1) environment calibration — no competitor calibrates to the user's room/guitar/input source; (2) Bayesian adaptive mastery scoring — no competitor dynamically weights quiz selection per fretboard position; (3) all-in-one practice toolkit (tuner + metronome + drone). See `FretShed_Competitive_Analysis.md` in the Claude.ai project for full details.
 
 **App Store name:** FretShed: Guitar Fretboard  
 **Subtitle:** Note Trainer & Ear Training  
@@ -114,6 +116,35 @@ QuizView `.task` loads `calibrationRepository.activeProfile()` and pre-seeds:
 
 ---
 
+## Competitive Landscape (Updated Feb 2026)
+
+**DO NOT claim FretShed is "the only app that listens to you play."** This is false.
+
+### Direct Competitors (Fretboard-Focused + Audio Detection)
+| App | Audio Detection | Calibration | Adaptive Learning | Heatmap | Tuner/Metro/Drone |
+|---|---|---|---|---|---|
+| **Fret Pro** | ✅ (mic/interface) | ❌ | Spaced repetition | ❌ | ❌ |
+| **Solo** (Tom Quayle) | ✅ (mic/interface) | ❌ | ❌ | ❌ | ❌ |
+| **Guitar Blast** | ✅ (mic) | ❌ | ❌ | ❌ | ❌ |
+| **Fretonomy** | ✅ (mic) | ❌ | ❌ | ✅ | Basic |
+| **FretShed** | ✅ (mic/interface) | ✅ | ✅ (Bayesian) | ✅ | ✅ |
+
+### FretShed's Defensible Differentiators
+1. **Environment calibration** — No competitor calibrates to the user's room noise, guitar signal, and input source
+2. **Bayesian adaptive mastery** — Per-position scoring dynamically weights quiz selection toward weak spots
+3. **All-in-one practice toolkit** — Tuner + metronome + drone in the same app
+4. **Detection reliability** — Competitor reviews consistently cite missed notes, false triggers, and stuck detection
+
+### Approved Positioning Language
+- ✅ "The fretboard trainer that actually gets your notes right"
+- ✅ "Calibrated to your guitar. Adaptive to your progress."
+- ✅ "The smartest way to master your fretboard"
+- ❌ NEVER: "The only app that listens to you play" or any "only" claim about audio detection
+
+Full analysis: `FretShed_Competitive_Analysis.md` in Claude.ai project files.
+
+---
+
 ## Monetization Model (Phase 4)
 - **Free tier:** Single Note mode, strings 4–6, frets 0–7, tap input, 7-day history, built-in mic calibration
 - **Premium ($4.99/mo or $29.99/yr):** Full fretboard, all input source calibration profiles, chord progressions, extended history, unlimited audio detection sessions
@@ -184,7 +215,11 @@ QuizView `.task` loads `calibrationRepository.activeProfile()` and pre-seeds:
 
 **Tuner Sustain Hysteresis (F29) — IMPLEMENTED.** Fixes 12th-fret sustain dropout where the tuner needle drops while the note is still ringing. Three-layer approach: (1) `sustainMode` flag on PitchDetector — TunerView sets true, QuizView leaves false (default); (2) Tap floor lowered to 60% of confidenceThreshold in sustain mode (0.51 vs 0.85) to pass decay-phase frames; (3) Consumer-side confidence hysteresis — once a note is established (consecutive gate met), accepts confidence >= 0.65 to extend sustain; hold window doubled to 500ms. TunerView onChange split into two handlers: detectedNote (resets displayCents on nil→some) and centsDeviation (amplitude-aware EMA only while note active). Quiz behavior is byte-for-byte identical — sustainMode defaults to false, tap floor and hysteresis are both gated.
 
-**All BUGLOG items resolved.** All feature ideas (F1–F29) complete.
+**Session Data Backup & Restore (F30) — IMPLEMENTED.** JSON export/import in Settings > Data Management. BackupPayload Codable structs decoupled from SwiftData models. BackupManager handles export to Documents directory and import with security-scoped resource access. Files visible in iOS Files app via UIFileSharingEnabled.
+
+**Crash Fix (C1) — FIXED.** PitchDetector crash on infinite/NaN Double→Int conversion. Root cause: YIN parabolic interpolation produces `interpolatedTau ≤ 0` when `bestTau=1`, making `sampleRate / interpolatedTau` infinite. Two-layer fix: guard in `detectPitch()` + defense in `pitchDetectorNoteAndCents()`.
+
+**All BUGLOG items resolved.** All feature ideas (F1–F30) complete.
 
 **Next task:** Task 3.7 (onboarding device test), then Phase 4.
 
@@ -201,11 +236,70 @@ QuizView `.task` loads `calibrationRepository.activeProfile()` and pre-seeds:
 
 ---
 
+## Session End Protocol
+
+**Every Claude Code session must end with this checklist. Do not consider a session complete until all steps are done.**
+
+**Trigger phrases:** "wrap up", "end session", "that's it for today", "commit and push", "good night", "goodnight", "gn", or similar.
+
+1. **Run the test suite**
+   ```bash
+   xcodebuild test -scheme FretShed -destination 'platform=iOS Simulator,id=AD41361D-9AAA-48E6-A848-07CE3E23C663' 2>&1 | tail -20
+   ```
+   Report pass/fail count. Do not proceed if new failures were introduced.
+
+2. **Update FILE_MANIFEST.txt**
+   ```bash
+   find . -name "*.swift" | sort > FILE_MANIFEST.txt
+   ```
+
+3. **Update ROADMAP.md** — Mark any completed tasks as ✅ and any in-progress tasks as 🚧.
+
+4. **Update CLAUDE.md** — If any architectural decisions were made, features implemented, or bugs fixed, update the Current Status section and any relevant sections.
+
+5. **Stage and review changes**
+   ```bash
+   git status
+   git diff --stat
+   ```
+   Show the user what will be committed. Stage specific files by name (avoid `git add -A` which can accidentally include sensitive files like .env or credentials). Wait for confirmation if the diff is large.
+
+6. **Commit with a descriptive message**
+   ```bash
+   git commit -m "[Task X.Y] Brief description of what was done"
+   ```
+   Use the task number from ROADMAP.md if applicable. For multi-task sessions, use multiple commits or a summary message.
+
+7. **Push to remote**
+   ```bash
+   git push
+   ```
+
+8. **Print a session summary** — A brief recap of:
+   - What was accomplished
+   - What tasks are now complete
+   - What the next task is (per ROADMAP.md)
+   - Whether any project docs were changed that need to be re-uploaded to Claude.ai Project Knowledge (flag this explicitly so the user knows)
+
+**If project docs (CLAUDE.md, ROADMAP.md, etc.) were modified, remind the user:**
+> "CLAUDE.md / ROADMAP.md was updated this session. Remember to re-upload the updated version(s) to your Claude.ai Project Knowledge so both interfaces stay in sync."
+
+---
+
 ## Known Issues (from BUGLOG.md)
-All device-testing bugs are resolved. All feature ideas (F1–F29) are complete.
+All device-testing bugs are resolved. All feature ideas (F1–F30) are complete.
 
 ---
 
 ## Reference Documents (in Claude.ai Project)
 - `FretShed_MVP_Checklist_v2.docx` — Full task list with all calibration tasks integrated
 - `FretShed_AudioCalibration_Plan.docx` — Detailed implementation spec for calibration system
+- `FretShed_Competitive_Analysis.md` — Full competitive landscape analysis with feature matrix and revised positioning (Feb 2026)
+- `TEAM_OF_EXPERTS.md` — Prompt engineering personas for domain-specific guidance (invoke by name: Shred McStackview, Droptuned Doug, Chromatic Chris, Fretwise Freddie, Paywall Pete, Feedback Fiona, Lyric Lisa, Compliance Cliff, Encore Eddie, A11y Axel)
+
+---
+
+## Action Items from Competitive Analysis
+- [ ] Update onboarding subtitle in code: change "The guitar trainer that actually listens to you play" → "The guitar trainer that actually gets your notes right" (if already implemented in OnboardingView.swift)
+- [ ] When writing App Store description (Task 5.12): use revised positioning from competitive analysis — lead with calibration + adaptive learning, NOT "only app that listens"
+- [ ] When creating App Store screenshots (Task 5.2): feature the calibration flow as a key differentiator

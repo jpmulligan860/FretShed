@@ -93,7 +93,7 @@ struct OnboardingView: View {
                 .multilineTextAlignment(.center)
                 .padding(.bottom, DesignSystem.Spacing.sm)
 
-            Text("The guitar trainer that actually\nlistens to you play.")
+            Text("The guitar trainer that actually\ngets your notes right.")
                 .font(.title3)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)

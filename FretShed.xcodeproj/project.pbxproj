@@ -70,6 +70,7 @@
 		BB10C4D5E6F70802349BC010 /* JetBrainsMono-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = AA10B3C4D5E6F7080234AB10 /* JetBrainsMono-Medium.ttf */; };
 		BKUP01A1B2C3D4E5F6A7B8C9 /* BackupPayload.swift in Sources */ = {isa = PBXBuildFile; fileRef = BKUP02A1B2C3D4E5F6A7B8C9 /* BackupPayload.swift */; };
 		BKUP03A1B2C3D4E5F6A7B8C9 /* BackupManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BKUP04A1B2C3D4E5F6A7B8C9 /* BackupManager.swift */; };
+		PRIV020000000000000000002 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = PRIV010000000000000000001 /* PrivacyInfo.xcprivacy */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -150,6 +151,7 @@
 		AA08B3C4D5E6F7088234AB08 /* JetBrainsMono-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "JetBrainsMono-Bold.ttf"; sourceTree = "<group>"; };
 		AA09B3C4D5E6F7089234AB09 /* JetBrainsMono-SemiBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "JetBrainsMono-SemiBold.ttf"; sourceTree = "<group>"; };
 		AA10B3C4D5E6F7080234AB10 /* JetBrainsMono-Medium.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "JetBrainsMono-Medium.ttf"; sourceTree = "<group>"; };
+		PRIV010000000000000000001 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -236,6 +238,7 @@
 				081E770ECD554FF54BE510C6 /* Data */,
 				4C5302DBE0C5AF52DA8E2B7A /* Domain */,
 				BA13665D8F3F06590859F52E /* MetroDrone */,
+				PRIV010000000000000000001 /* PrivacyInfo.xcprivacy */,
 				71D388ABC05CF10ACBDE9C19 /* Progress */,
 				89BC6702E62D7C0D2F409682 /* Quiz */,
 				B07972DF07A9BB93F6C04F24 /* Resources */,
@@ -484,6 +487,7 @@
 				BB02C4D5E6F70822349BC012 /* Montserrat-ExtraBold.ttf in Resources */,
 				BB05C4D5E6F70852349BC015 /* Montserrat-Medium.ttf in Resources */,
 				BB04C4D5E6F70842349BC014 /* Montserrat-SemiBold.ttf in Resources */,
+				PRIV020000000000000000002 /* PrivacyInfo.xcprivacy in Resources */,
 				41A8D1A0AB8A3E4CE8AA2D9B /* settings.local.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

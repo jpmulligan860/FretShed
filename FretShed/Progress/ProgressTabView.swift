@@ -328,7 +328,7 @@ public struct ProgressTabView: View {
                     .foregroundStyle(.orange)
                 Text("\(vm.currentStreak)")
                     .font(.headline.weight(.bold).monospacedDigit())
-                Text(vm.currentStreak == 1 ? "day streak" : "day streak")
+                Text(vm.currentStreak == 1 ? "day" : "day streak")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
@@ -553,7 +553,7 @@ public struct ProgressTabView: View {
                     summaryRow(icon: "checkmark.seal.fill",
                                label: "Cells Mastered",
                                value: "\(vm.masteredCells)",
-                               color: .green)
+                               color: DesignSystem.Colors.masteryMastered)
                     summaryRow(icon: "chart.line.uptrend.xyaxis",
                                label: "Overall Mastery",
                                value: "\(Int(vm.overallMastery * 100))%",
@@ -611,12 +611,7 @@ public struct ProgressTabView: View {
     }
 
     private func masteryColor(_ score: Double) -> Color {
-        switch MasteryLevel.from(score: score) {
-        case .mastered:   return .green
-        case .proficient: return .blue
-        case .developing: return .orange
-        case .beginner:   return .red
-        }
+        DesignSystem.Colors.masteryColor(for: score)
     }
 }
 
@@ -626,12 +621,7 @@ private struct OverallMasteryRing: View {
     let value: Double
 
     private var ringColor: Color {
-        switch MasteryLevel.from(score: value) {
-        case .mastered:   return .green
-        case .proficient: return .blue
-        case .developing: return .orange
-        case .beginner:   return .red
-        }
+        DesignSystem.Colors.masteryColor(for: value)
     }
 
     var body: some View {
@@ -757,10 +747,10 @@ private struct MasteryInfoSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     private let levels: [(String, Color, String, String)] = [
-        ("Beginner",   .red,    "0 – 39%",   "You're just getting started with this note. Keep practicing to build recognition."),
-        ("Developing", .orange, "40 – 69%",  "You're building familiarity. With more repetition, this note will become second nature."),
-        ("Proficient", .blue,   "70 – 89%",  "You know this note well. A few more correct answers and you'll reach mastery."),
-        ("Mastered",   .green,  "90 – 100%", "You consistently identify this note correctly. Great work!")
+        ("Beginner",   DesignSystem.Colors.masteryBeginner,   "0 – 39%",   "You're just getting started with this note. Keep practicing to build recognition."),
+        ("Developing", DesignSystem.Colors.masteryDeveloping, "40 – 69%",  "You're building familiarity. With more repetition, this note will become second nature."),
+        ("Proficient", DesignSystem.Colors.masteryProficient, "70 – 89%",  "You know this note well. A few more correct answers and you'll reach mastery."),
+        ("Mastered",   DesignSystem.Colors.masteryMastered,   "90 – 100%", "You consistently identify this note correctly. Great work!")
     ]
 
     var body: some View {

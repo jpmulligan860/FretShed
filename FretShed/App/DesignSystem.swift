@@ -60,11 +60,11 @@ enum DesignSystem {
         })
         static let surface = Color(UIColor { $0.userInterfaceStyle == .dark
             ? UIColor(red: 0.118, green: 0.106, blue: 0.094, alpha: 1)  // #1E1B18
-            : UIColor(red: 1.000, green: 1.000, blue: 1.000, alpha: 1)  // #FFFFFF
+            : UIColor(red: 0.941, green: 0.922, blue: 0.890, alpha: 1)  // #F0EBE3
         })
         static let surface2 = Color(UIColor { $0.userInterfaceStyle == .dark
             ? UIColor(red: 0.165, green: 0.149, blue: 0.133, alpha: 1)  // #2A2622
-            : UIColor(red: 0.960, green: 0.945, blue: 0.925, alpha: 1)  // #F5F1EC
+            : UIColor(red: 0.910, green: 0.878, blue: 0.831, alpha: 1)  // #E8E0D4
         })
         static let border = Color(UIColor { $0.userInterfaceStyle == .dark
             ? UIColor(red: 0.220, green: 0.200, blue: 0.180, alpha: 1)  // #38332E
@@ -113,6 +113,16 @@ enum DesignSystem {
         static let masteryProficient = gold
         static let masteryDeveloping = amber
         static let masteryBeginner   = cherry
+
+        /// Returns the design-system mastery color for a 0–1 score.
+        static func masteryColor(for score: Double) -> Color {
+            switch score {
+            case ..<0.4:     return masteryBeginner    // cherry
+            case 0.4..<0.7:  return masteryDeveloping  // amber
+            case 0.7..<0.9:  return masteryProficient  // gold
+            default:         return masteryMastered     // green/correct
+            }
+        }
 
         // Fretboard
         static let fretboardWood    = rosewood

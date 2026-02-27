@@ -26,7 +26,7 @@ public struct SessionSetupView: View {
     @State private var chordToneSelection: ChordToneSelection = .closeTriad
     @State private var chordPositionEnabled = false
     @State private var chordStringGroup: [Int] = []    // empty = all strings
-    @State private var isAdaptive = false
+    @State private var isAdaptive = true
     @State private var circleConstraint: CircleConstraint = .fullFretboard
     @State private var showPracticeModeInfo = false
     @State private var showFocusModeInfo = false

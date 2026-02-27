@@ -40,6 +40,7 @@ struct ContentView: View {
     @State private var showCalibration = false
     @State private var showCalibrationTuner = false
     @State private var showCalibrationGate = false
+    @State private var progressVM: ProgressViewModel?
     @State private var pendingTapMode = false
     @State private var tapModeWasForced = false
     @State private var gatedQuizVM: QuizViewModel?
@@ -288,13 +289,18 @@ struct ContentView: View {
 
     private var progressTabView: some View {
         NavigationStack {
-            ProgressTabView(
-                vm: ProgressViewModel(
+            if let vm = progressVM {
+                ProgressTabView(vm: vm)
+            }
+        }
+        .task {
+            if progressVM == nil {
+                progressVM = ProgressViewModel(
                     masteryRepository: container.masteryRepository,
                     sessionRepository: container.sessionRepository,
                     attemptRepository: container.attemptRepository
                 )
-            )
+            }
         }
     }
 

@@ -161,11 +161,11 @@ private struct SessionHeatCell: View {
         }
         let opacity = 0.35 + 0.65 * (Double(r.total) / Double(max(maxCount, 1)))
         if r.wrong == 0 {
-            return Color.green.opacity(opacity)
+            return DesignSystem.Colors.correct.opacity(opacity)
         } else if r.correct == 0 {
-            return Color.red.opacity(opacity)
+            return DesignSystem.Colors.wrong.opacity(opacity)
         } else {
-            return Color.orange.opacity(opacity)
+            return DesignSystem.Colors.amber.opacity(opacity)
         }
     }
 }
@@ -176,9 +176,9 @@ struct SessionHeatmapLegend: View {
     var body: some View {
         HStack(spacing: 12) {
             legendItem(color: DesignSystem.Colors.surface2, label: "Not asked")
-            legendItem(color: .green.opacity(0.65), label: "Correct")
-            legendItem(color: .red.opacity(0.65),   label: "Wrong")
-            legendItem(color: .orange.opacity(0.65), label: "Mixed")
+            legendItem(color: DesignSystem.Colors.correct.opacity(0.65), label: "Correct")
+            legendItem(color: DesignSystem.Colors.wrong.opacity(0.65),   label: "Wrong")
+            legendItem(color: DesignSystem.Colors.amber.opacity(0.65),   label: "Mixed")
         }
         .font(.system(size: 10))
         .foregroundStyle(.secondary)

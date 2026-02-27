@@ -308,10 +308,10 @@ public struct SessionSummaryView: View {
 
     private var masteryColor: Color {
         switch vm.session.masteryLevel {
-        case .mastered:   return .green
-        case .proficient: return .blue
-        case .developing: return .orange
-        case .beginner:   return .red
+        case .mastered:   return DesignSystem.Colors.masteryMastered
+        case .proficient: return DesignSystem.Colors.masteryProficient
+        case .developing: return DesignSystem.Colors.masteryDeveloping
+        case .beginner:   return DesignSystem.Colors.masteryBeginner
         }
     }
 }

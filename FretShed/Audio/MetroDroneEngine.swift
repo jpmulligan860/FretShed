@@ -224,9 +224,20 @@ private func droneRenderBlock(
 /// window, preventing speaker-to-mic feedback from being detected as notes.
 /// CFAbsoluteTime (Double) is naturally atomic on ARM64 (8-byte aligned).
 final class PlaybackTimestamp: @unchecked Sendable {
+    private var _lock = os_unfair_lock()
     private var _value: CFAbsoluteTime = 0
-    func set(_ time: CFAbsoluteTime) { _value = time }
-    func get() -> CFAbsoluteTime { _value }
+
+    func set(_ time: CFAbsoluteTime) {
+        os_unfair_lock_lock(&_lock)
+        _value = time
+        os_unfair_lock_unlock(&_lock)
+    }
+
+    func get() -> CFAbsoluteTime {
+        os_unfair_lock_lock(&_lock)
+        defer { os_unfair_lock_unlock(&_lock) }
+        return _value
+    }
 }
 
 // MARK: - MetroDroneEngine

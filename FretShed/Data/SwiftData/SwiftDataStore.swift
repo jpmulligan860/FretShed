@@ -25,6 +25,37 @@ let fretMasterSchema = Schema([
     AudioCalibrationProfile.self
 ])
 
+// MARK: - Versioned Schema
+
+/// Captures the initial SwiftData schema so future migrations can be applied safely.
+enum SchemaV1: VersionedSchema {
+    static let versionIdentifier = Schema.Version(1, 0, 0)
+
+    static var models: [any PersistentModel.Type] {
+        [
+            Attempt.self,
+            Session.self,
+            MasteryScore.self,
+            UserSettings.self,
+            AudioCalibrationProfile.self
+        ]
+    }
+}
+
+// MARK: - Migration Plan
+
+/// Declares the ordered list of schema versions for SwiftData migration.
+/// When a future SchemaV2 is added, insert a MigrationStage between V1 and V2 here.
+enum FretShedMigrationPlan: SchemaMigrationPlan {
+    static var schemas: [any VersionedSchema.Type] {
+        [SchemaV1.self]
+    }
+
+    static var stages: [MigrationStage] {
+        []   // No migrations yet — SchemaV1 is the initial (and only) version.
+    }
+}
+
 // MARK: - ModelContainer Factory
 
 /// Builds the app's `ModelContainer` with the correct configuration for the current build.
@@ -44,20 +75,20 @@ public func makeModelContainer(inMemory: Bool = false) throws -> ModelContainer 
     )
     logger.debug("SwiftData: using LOCAL storage (DEBUG build)")
     #else
-    // RELEASE: CloudKit sync enabled.
-    // Requires an Apple Developer account and the iCloud entitlement.
-    // TODO: Phase 7 — confirm iCloud container name matches provisioning profile.
+    // RELEASE: Local-only storage for now — no iCloud container is configured.
+    // TODO: Phase 7 — switch to .automatic once iCloud entitlement is added.
     configuration = ModelConfiguration(
         schema: fretMasterSchema,
         isStoredInMemoryOnly: inMemory,
         allowsSave: true,
-        cloudKitDatabase: .automatic
+        cloudKitDatabase: .none
     )
-    logger.info("SwiftData: using CloudKit-synced storage (RELEASE build)")
+    logger.info("SwiftData: using local storage (RELEASE build)")
     #endif
 
     return try ModelContainer(
         for: fretMasterSchema,
+        migrationPlan: FretShedMigrationPlan.self,
         configurations: [configuration]
     )
 }

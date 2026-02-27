@@ -76,6 +76,7 @@ public struct SettingsView: View {
             audioSetupSection
             quizSection(settings: settings)
             dataSection
+            licensesSection
         }
         .alert("Delete All Data?", isPresented: $showDeleteWarning1) {
             Button("Continue with Delete", role: .destructive) {
@@ -653,6 +654,38 @@ public struct SettingsView: View {
                      + (result.settingsRestored ? " Settings restored." : "")
                      + (result.calibrationRestored ? " Calibration restored." : ""))
             }
+        }
+    }
+
+    // MARK: - Licenses Section
+
+    private var licensesSection: some View {
+        Section {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Montserrat")
+                    .font(.subheadline.weight(.semibold))
+                Text("Designed by Julieta Ulanovsky. Licensed under the SIL Open Font License.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Crimson Pro")
+                    .font(.subheadline.weight(.semibold))
+                Text("Designed by Jacques Le Bailly. Licensed under the SIL Open Font License.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text("JetBrains Mono")
+                    .font(.subheadline.weight(.semibold))
+                Text("Designed by JetBrains. Licensed under the Apache License 2.0.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        } header: {
+            DesignSystem.Typography.capsLabel("Licenses")
         }
     }
 

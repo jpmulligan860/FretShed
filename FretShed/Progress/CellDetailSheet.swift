@@ -118,12 +118,7 @@ struct CellDetailSheet: View {
     }
 
     private var levelColor: Color {
-        switch level {
-        case .mastered:   return .green
-        case .proficient: return .blue
-        case .developing: return .orange
-        case .beginner:   return .red
-        }
+        DesignSystem.Colors.masteryColor(for: masteryValue)
     }
 
     private func badgeRow(icon: String, label: String, color: Color) -> some View {
@@ -144,12 +139,7 @@ private struct MasteryRing: View {
     let level: MasteryLevel
 
     private var ringColor: Color {
-        switch level {
-        case .mastered:   return .green
-        case .proficient: return .blue
-        case .developing: return .orange
-        case .beginner:   return .red
-        }
+        DesignSystem.Colors.masteryColor(for: value)
     }
 
     var body: some View {

@@ -299,10 +299,10 @@ final class ProgressViewModelTests: XCTestCase {
 
     // MARK: - masteryLevel(note:string:)
 
-    func test_masteryLevel_unplayed_isDeveloping() {
-        // Prior ≈ 0.667, which sits in the developing band (0.40 ..< 0.70)
+    func test_masteryLevel_unplayed_isLearning() {
+        // Prior ≈ 0.667, which sits in the learning band (0.50 ..< 0.90)
         let vm = makeVM(container: container)
-        XCTAssertEqual(vm.masteryLevel(note: .c, string: 1), .developing)
+        XCTAssertEqual(vm.masteryLevel(note: .c, string: 1), .learning)
     }
 
     func test_masteryLevel_masteredData_returnsMastered() async throws {
@@ -315,14 +315,14 @@ final class ProgressViewModelTests: XCTestCase {
         XCTAssertEqual(vm.masteryLevel(note: .e, string: 1), .mastered)
     }
 
-    func test_masteryLevel_beginnerData_returnsBeginner() async throws {
+    func test_masteryLevel_strugglingData_returnsStruggling() async throws {
         try seedMasteryScore(note: .g, string: 3,
                              correct: 0, total: 10,
                              masteryRepo: masteryRepo,
                              attemptRepo: attemptRepo)
         let vm = makeVM(container: container)
         await vm.load()
-        XCTAssertEqual(vm.masteryLevel(note: .g, string: 3), .beginner)
+        XCTAssertEqual(vm.masteryLevel(note: .g, string: 3), .struggling)
     }
 
     // MARK: - selectCell

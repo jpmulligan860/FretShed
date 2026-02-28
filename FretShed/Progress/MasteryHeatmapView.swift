@@ -74,11 +74,10 @@ struct MasteryHeatmapView: View {
 
                     ForEach(Array(fretRange), id: \.self) { fret in
                         let note = fretboardMap.note(string: string, fret: fret)
-                        let score = note.map { vm.masteryScore(note: $0, string: string) } ?? 0
-                        let level = note.map { vm.masteryLevel(note: $0, string: string) } ?? .beginner
-                        let attempted = note.map { vm.scoreGrid[string][$0.rawValue] != nil } ?? false
+                        let scoreObj = note.flatMap { vm.scoreGrid[string][$0.rawValue] }
+                        let level = note.map { vm.masteryLevel(note: $0, string: string) } ?? .struggling
+                        let attempted = scoreObj != nil
                         HeatCell(
-                            score: score,
                             level: level,
                             isAttempted: attempted,
                             noteName: note?.displayName(format: noteFormat)
@@ -103,7 +102,8 @@ struct MasteryHeatmapView: View {
 
 private struct HeatCell: View {
 
-    let score: Double
+    @Environment(\.colorScheme) private var colorScheme
+
     let level: MasteryLevel
     let isAttempted: Bool
     let noteName: String?
@@ -112,21 +112,15 @@ private struct HeatCell: View {
         ZStack {
             RoundedRectangle(cornerRadius: 4)
                 .fill(cellColor)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 4)
-                        .strokeBorder(
-                            level == .mastered && isAttempted ? DesignSystem.Colors.correct.opacity(0.6) : Color.clear,
-                            lineWidth: 1.5
-                        )
-                )
             if let name = noteName {
                 Text(name)
                     .font(.system(size: 7, weight: .bold))
-                    .foregroundStyle(isAttempted ? .white : DesignSystem.Colors.muted.opacity(0.5))
+                    .foregroundStyle(textColor)
                     .lineLimit(1)
                     .minimumScaleFactor(0.5)
             }
         }
+        .shadow(color: glowColor, radius: colorScheme == .dark && isAttempted ? 3 : 0)
     }
 
     private var cellColor: Color {
@@ -134,41 +128,87 @@ private struct HeatCell: View {
             return DesignSystem.Colors.surface2
         }
         switch level {
-        case .mastered:   return DesignSystem.Colors.correct.opacity(lerp(0.55, 1.0, score, in: 0.9...1.0))
-        case .proficient: return DesignSystem.Colors.gold.opacity(lerp(0.35, 0.65, score, in: 0.7...0.9))
-        case .developing: return DesignSystem.Colors.amber.opacity(lerp(0.3, 0.55, score, in: 0.4...0.7))
-        case .beginner:   return DesignSystem.Colors.cherry.opacity(lerp(0.2, 0.45, score, in: 0.0...0.4))
+        case .struggling, .beginner:
+            return DesignSystem.Colors.heatmapStruggling
+        case .learning, .developing:
+            return DesignSystem.Colors.heatmapLearning
+        case .proficient:
+            return DesignSystem.Colors.heatmapProficient
+        case .mastered:
+            return DesignSystem.Colors.heatmapMastered
         }
     }
 
-    private func lerp(_ lo: Double, _ hi: Double, _ value: Double,
-                      in range: ClosedRange<Double>) -> Double {
-        let t = (value - range.lowerBound) / (range.upperBound - range.lowerBound)
-        return lo + (hi - lo) * min(max(t, 0), 1)
+    private var textColor: Color {
+        guard isAttempted else {
+            return DesignSystem.Colors.muted.opacity(0.5)
+        }
+        // Dark text on bright gold for readability
+        if level == .mastered { return Color(white: 0.15) }
+        return .white
+    }
+
+    private var glowColor: Color {
+        guard isAttempted else { return .clear }
+        switch level {
+        case .struggling, .beginner:
+            return DesignSystem.Colors.heatmapStrugglingGlow.opacity(0.5)
+        case .learning, .developing:
+            return DesignSystem.Colors.heatmapLearningGlow.opacity(0.5)
+        case .proficient:
+            return DesignSystem.Colors.heatmapProficientGlow.opacity(0.5)
+        case .mastered:
+            return DesignSystem.Colors.heatmapMasteredGlow.opacity(0.7)
+        }
     }
 }
 
 // MARK: - HeatmapLegend
 
 struct HeatmapLegend: View {
-    var body: some View {
-        HStack(spacing: 6) {
-            legendItem(color: DesignSystem.Colors.surface2, label: "Untried")
-            legendItem(color: DesignSystem.Colors.cherry.opacity(0.35),  label: "Beginner")
-            legendItem(color: DesignSystem.Colors.amber.opacity(0.45),   label: "Developing")
-            legendItem(color: DesignSystem.Colors.gold.opacity(0.55),    label: "Proficient")
-            legendItem(color: DesignSystem.Colors.correct.opacity(0.85), label: "Mastered")
+
+    let vm: ProgressViewModel
+    let fretboardMap: FretboardMap
+    let fretCount: Int
+
+    private var tierCounts: (untried: Int, struggling: Int, learning: Int, proficient: Int, mastered: Int) {
+        var untried = 0, struggling = 0, learning = 0, proficient = 0, mastered = 0
+        for string in 1...6 {
+            for fret in 0...fretCount {
+                guard let note = fretboardMap.note(string: string, fret: fret) else { continue }
+                let score = vm.scoreGrid[string][note.rawValue]
+                guard score != nil else { untried += 1; continue }
+                let level = vm.masteryLevel(note: note, string: string)
+                switch level {
+                case .struggling, .beginner:   struggling += 1
+                case .learning, .developing:   learning += 1
+                case .proficient:              proficient += 1
+                case .mastered:                mastered += 1
+                }
+            }
         }
-        .font(.system(size: 10))
+        return (untried, struggling, learning, proficient, mastered)
+    }
+
+    var body: some View {
+        let counts = tierCounts
+        HStack(spacing: 5) {
+            legendItem(color: DesignSystem.Colors.surface2,           label: "Untried", count: counts.untried)
+            legendItem(color: DesignSystem.Colors.heatmapStruggling,  label: "Struggling", count: counts.struggling)
+            legendItem(color: DesignSystem.Colors.heatmapLearning,    label: "Learning", count: counts.learning)
+            legendItem(color: DesignSystem.Colors.heatmapProficient,  label: "Proficient", count: counts.proficient)
+            legendItem(color: DesignSystem.Colors.heatmapMastered,    label: "Mastered", count: counts.mastered)
+        }
+        .font(.system(size: 9))
         .foregroundStyle(DesignSystem.Colors.text2)
     }
 
-    private func legendItem(color: Color, label: String) -> some View {
+    private func legendItem(color: Color, label: String, count: Int) -> some View {
         HStack(spacing: 3) {
             RoundedRectangle(cornerRadius: 2)
                 .fill(color)
                 .frame(width: 10, height: 10)
-            Text(label)
+            Text("\(label) (\(count))")
         }
     }
 }

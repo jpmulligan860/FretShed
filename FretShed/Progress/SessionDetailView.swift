@@ -8,7 +8,10 @@ import SwiftUI
 struct SessionDetailView: View {
 
     let detail: SessionDetail
+    var onDelete: (() -> Void)? = nil
     @Environment(\.appContainer) private var container
+    @Environment(\.dismiss) private var dismiss
+    @State private var showDeleteConfirmation = false
 
     private var session: Session { detail.session }
     private var attempts: [Attempt] { detail.attempts }
@@ -66,6 +69,19 @@ struct SessionDetailView: View {
                         }
                     }
 
+                    // Delete
+                    if onDelete != nil {
+                        Button(role: .destructive) {
+                            showDeleteConfirmation = true
+                        } label: {
+                            Label("Delete Session", systemImage: "trash")
+                                .font(DesignSystem.Typography.bodyLabel)
+                                .frame(maxWidth: .infinity)
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.top, 8)
+                    }
+
                     Spacer(minLength: 20)
                 }
             }
@@ -73,6 +89,15 @@ struct SessionDetailView: View {
         .background(DesignSystem.Colors.background)
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
+        .alert("Delete Session?", isPresented: $showDeleteConfirmation) {
+            Button("Delete", role: .destructive) {
+                onDelete?()
+                dismiss()
+            }
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            Text("This session and its data will be permanently removed. Mastery scores will be recalculated.")
+        }
     }
 
     // MARK: - Header

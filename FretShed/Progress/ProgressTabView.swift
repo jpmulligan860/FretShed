@@ -34,7 +34,20 @@ public struct ProgressTabView: View {
         container.fretboardMap.uniqueCellCount(fretCount: defaultFretCount)
     }
 
+    private var totalTimePracticedLabel: String {
+        let total = vm.filteredSessions.reduce(0.0) { $0 + $1.duration }
+        let hours = Int(total) / 3600
+        let mins  = (Int(total) % 3600) / 60
+        let secs  = Int(total) % 60
+        if hours > 0 { return "\(hours)h \(mins)m" }
+        if mins > 0 { return "\(mins)m \(secs)s" }
+        return "\(secs)s"
+    }
+
     private var activeFilterLabel: String {
+        if vm.todayFilter {
+            return "Filtered: Today"
+        }
         if let focus = vm.focusModeFilter {
             return "Filtered: \(focus.localizedLabel)"
         }
@@ -76,7 +89,7 @@ public struct ProgressTabView: View {
                                             fretboardMap: container.fretboardMap,
                                             availableWidth: (geo.size.width - 48) / 2
                                         )
-                                        HeatmapLegend()
+                                        HeatmapLegend(vm: vm, fretboardMap: container.fretboardMap, fretCount: defaultFretCount)
                                             .padding(.horizontal, 4)
                                     }
                                     .frame(maxWidth: .infinity)
@@ -110,7 +123,7 @@ public struct ProgressTabView: View {
                                         availableWidth: geo.size.width - 32
                                     )
                                     .padding(.horizontal, 16)
-                                    HeatmapLegend()
+                                    HeatmapLegend(vm: vm, fretboardMap: container.fretboardMap, fretCount: defaultFretCount)
                                         .padding(.horizontal, 20)
                                 }
 
@@ -191,11 +204,14 @@ public struct ProgressTabView: View {
         .navigationTitle("Journey")
         .navigationBarTitleDisplayMode(.large)
         .task { await vm.load() }
+        .onAppear { Task { await vm.load() } }
         .sheet(item: $vm.selectedCell) { detail in
             CellDetailSheet(detail: detail)
         }
         .sheet(item: $vm.selectedSession) { detail in
-            SessionDetailView(detail: detail)
+            SessionDetailView(detail: detail) {
+                Task { await vm.deleteSession(detail.session) }
+            }
         }
         .sheet(isPresented: $showMasteryInfo) {
             MasteryInfoSheet()
@@ -205,6 +221,7 @@ public struct ProgressTabView: View {
                 title: "Overall Results",
                 items: [
                     ("Cells Attempted", "The number of unique note+string positions you have practiced out of \(totalCells) total cells on your \(defaultFretCount)-fret fretboard."),
+                    ("Time Practiced", "The total time spent across all sessions. When a filter is active, this reflects only the filtered sessions."),
                     ("Cells Mastered", "Cells where your accuracy is 90% or higher with at least 15 attempts. These are notes you consistently identify correctly."),
                     ("Overall Mastery", "A weighted average of your mastery across all cells. Cells with more attempts carry more weight in the calculation.")
                 ]
@@ -342,14 +359,23 @@ public struct ProgressTabView: View {
     private var filterMenu: some View {
         Menu {
             Button {
+                vm.todayFilter = false
                 vm.focusModeFilter = nil
                 vm.gameModeFilter = nil
             } label: {
                 Label("All Sessions", systemImage: !vm.isAnyFilterActive ? "checkmark" : "")
             }
+            Button {
+                vm.focusModeFilter = nil
+                vm.gameModeFilter = nil
+                vm.todayFilter = true
+            } label: {
+                Label("Today's Sessions", systemImage: vm.todayFilter ? "checkmark" : "")
+            }
             Divider()
             ForEach(FocusMode.allCases, id: \.self) { mode in
                 Button {
+                    vm.todayFilter = false
                     vm.gameModeFilter = nil
                     vm.focusModeFilter = mode
                 } label: {
@@ -358,6 +384,7 @@ public struct ProgressTabView: View {
             }
             Divider()
             Button {
+                vm.todayFilter = false
                 vm.focusModeFilter = nil
                 vm.gameModeFilter = .timed
             } label: {
@@ -379,7 +406,9 @@ public struct ProgressTabView: View {
         HStack(spacing: DesignSystem.Spacing.sm) {
             Image(systemName: "line.3.horizontal.decrease.circle")
                 .foregroundStyle(DesignSystem.Colors.muted)
-            Text("No \(vm.focusModeFilter?.localizedLabel ?? vm.gameModeFilter?.localizedLabel ?? "") sessions recorded")
+            Text(vm.todayFilter
+                 ? "No sessions recorded today"
+                 : "No \(vm.focusModeFilter?.localizedLabel ?? vm.gameModeFilter?.localizedLabel ?? "") sessions recorded")
                 .font(.subheadline)
                 .foregroundStyle(DesignSystem.Colors.text2)
         }
@@ -550,9 +579,13 @@ public struct ProgressTabView: View {
                                label: "Cells Attempted",
                                value: "\(vm.attemptedCells) / \(totalCells)",
                                color: DesignSystem.Colors.cherry)
+                    summaryRow(icon: "clock.fill",
+                               label: "Time Practiced",
+                               value: totalTimePracticedLabel,
+                               color: DesignSystem.Colors.amber)
                     summaryRow(icon: "checkmark.seal.fill",
                                label: "Cells Mastered",
-                               value: "\(vm.masteredCells)",
+                               value: "\(vm.visibleMasteredCells(fretboardMap: container.fretboardMap, fretCount: defaultFretCount))",
                                color: DesignSystem.Colors.masteryMastered)
                     summaryRow(icon: "chart.line.uptrend.xyaxis",
                                label: "Overall Mastery",
@@ -747,17 +780,17 @@ private struct MasteryInfoSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     private let levels: [(String, Color, String, String)] = [
-        ("Beginner",   DesignSystem.Colors.masteryBeginner,   "0 – 39%",   "You're just getting started with this note. Keep practicing to build recognition."),
-        ("Developing", DesignSystem.Colors.masteryDeveloping, "40 – 69%",  "You're building familiarity. With more repetition, this note will become second nature."),
-        ("Proficient", DesignSystem.Colors.masteryProficient, "70 – 89%",  "You know this note well. A few more correct answers and you'll reach mastery."),
-        ("Mastered",   DesignSystem.Colors.masteryMastered,   "90 – 100%", "You consistently identify this note correctly. Great work!")
+        ("Struggling",  DesignSystem.Colors.masteryStruggling, "0 – 49%",   "You're building familiarity with this note. Keep practicing to strengthen recognition."),
+        ("Learning",    DesignSystem.Colors.masteryLearning,   "50 – 89%",  "You're making progress. With more repetition, this note will become second nature."),
+        ("Proficient",  DesignSystem.Colors.masteryProficient, "90 – 100%", "You're scoring well on this note. Keep going to lock it in as mastered."),
+        ("Mastered",    DesignSystem.Colors.masteryMastered,   "90%+ · 15+ attempts", "You consistently identify this note correctly across many attempts. Great work!")
     ]
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
-                    Text("Each cell on the heatmap represents a specific note on a specific string. Your mastery score is calculated from your accuracy history, weighted so recent attempts matter more.")
+                    Text("Each cell on the heatmap represents a specific note on a specific string. Colors show four stages: struggling (red), learning (amber), proficient (green), and mastered (gold). A cell turns gold once you reach 90% accuracy with at least 15 attempts.")
                         .font(.subheadline)
                         .foregroundStyle(DesignSystem.Colors.text2)
 

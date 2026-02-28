@@ -116,6 +116,7 @@ struct ContentView: View {
         QuizView(
             vm: vm,
             onDone: { quiz.handleQuizDone(vm: vm) },
+            onViewProgress: { quiz.handleViewProgress(vm: vm) },
             onRepeat: { quiz.handleQuizRepeat(vm: vm) }
         )
         // Fill the safe-area region. Interactive content (buttons) stays
@@ -320,8 +321,9 @@ struct PracticeHomeView: View {
                 )
 
             VStack(alignment: .leading, spacing: 12) {
-                DesignSystem.Typography.capsLabel("QUICK START")
-                    .foregroundStyle(.white.opacity(0.8))
+                Text("Quick Start")
+                    .font(DesignSystem.Typography.screenTitle)
+                    .foregroundStyle(.white)
 
                 ViewThatFits(in: .horizontal) {
                     LazyVGrid(columns: [.init(), .init(), .init(), .init()], spacing: 12) {
@@ -378,7 +380,7 @@ struct PracticeHomeView: View {
     private func quickLaunch(focusMode: FocusMode, targetStrings: [Int] = []) {
         Task { @MainActor in
             let settings = (try? container.settingsRepository.loadSettings()) ?? UserSettings()
-            let session = Session(focusMode: focusMode, gameMode: .untimed, targetStrings: targetStrings)
+            let session = Session(focusMode: focusMode, gameMode: .untimed, targetStrings: targetStrings, isAdaptive: true)
             try? container.sessionRepository.save(session)
             let vm = QuizViewModel(
                 session: session,

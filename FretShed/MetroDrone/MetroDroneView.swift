@@ -10,6 +10,8 @@ struct MetroDroneView: View {
 
     @State private var vm = MetroDroneViewModel()
     @State private var showSpeedTrainer = false
+    @State private var showTimeSignature = false
+    @State private var showDrone = false
 
     @State private var showTempoInfo = false
     @State private var showTimeSignatureInfo = false
@@ -92,7 +94,8 @@ struct MetroDroneView: View {
             // Section header
             HStack {
                 Text("Tempo")
-                    .font(.headline)
+                    .font(DesignSystem.Typography.sectionHeader)
+                    .foregroundStyle(DesignSystem.Colors.text)
                 infoButton { showTempoInfo = true }
                 Spacer()
             }
@@ -108,8 +111,7 @@ struct MetroDroneView: View {
                 .foregroundStyle(DesignSystem.Colors.text2)
 
             // Slider
-            Slider(value: $vm.bpm, in: 20...300, step: 1)
-                .tint(DesignSystem.Colors.cherry)
+            GradientSlider(value: $vm.bpm, range: 20...300, step: 1)
 
             // -1 / Tap / +1 buttons
             HStack(spacing: 16) {
@@ -191,87 +193,92 @@ struct MetroDroneView: View {
     // MARK: - Time Signature & Accents
 
     private var timeSignatureAndAccents: some View {
-        VStack(spacing: 12) {
-            // Section header
-            HStack {
-                Text("Time Signature & Accents")
-                    .font(.headline)
-                infoButton { showTimeSignatureInfo = true }
-                Spacer()
-            }
+        DisclosureGroup(isExpanded: $showTimeSignature) {
+            VStack(spacing: 12) {
+                // Time signature picker
+                HStack {
+                    Text("Time Signature")
+                        .font(.subheadline.weight(.medium))
+                    Spacer()
+                    Menu {
+                        ForEach(TimeSignature.common, id: \.self) { ts in
+                            Button(ts.label) {
+                                vm.setTimeSignature(ts)
+                            }
+                        }
+                    } label: {
+                        Text(vm.timeSignature.label)
+                            .font(.body.weight(.semibold))
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                            .background(.ultraThinMaterial, in: Capsule())
+                    }
+                }
 
-            // Time signature picker
-            HStack {
-                Text("Time Signature")
-                    .font(.subheadline.weight(.medium))
-                Spacer()
-                Menu {
-                    ForEach(TimeSignature.common, id: \.self) { ts in
-                        Button(ts.label) {
-                            vm.setTimeSignature(ts)
+                // Note Division
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Note Division")
+                        .font(.subheadline.weight(.medium))
+                    HStack(spacing: 4) {
+                        ForEach(NoteSubdivision.allCases, id: \.self) { div in
+                            Button {
+                                vm.setSubdivision(div)
+                            } label: {
+                                Text(div.label)
+                                    .font(.subheadline.weight(.semibold))
+                                    .frame(maxWidth: .infinity, minHeight: 32)
+                                    .foregroundStyle(vm.subdivision == div ? .white : .primary)
+                                    .background(
+                                        vm.subdivision == div
+                                            ? DesignSystem.Colors.cherry
+                                            : Color.gray.opacity(0.15),
+                                        in: RoundedRectangle(cornerRadius: DesignSystem.Radius.sm)
+                                    )
+                            }
+                            .buttonStyle(.plain)
                         }
                     }
-                } label: {
-                    Text(vm.timeSignature.label)
-                        .font(.body.weight(.semibold))
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
-                        .background(.ultraThinMaterial, in: Capsule())
                 }
-            }
 
-            // Note Division
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Note Division")
-                    .font(.subheadline.weight(.medium))
-                HStack(spacing: 4) {
-                    ForEach(NoteSubdivision.allCases, id: \.self) { div in
-                        Button {
-                            vm.setSubdivision(div)
-                        } label: {
-                            Text(div.label)
-                                .font(.subheadline.weight(.semibold))
-                                .frame(maxWidth: .infinity, minHeight: 32)
-                                .foregroundStyle(vm.subdivision == div ? .white : .primary)
-                                .background(
-                                    vm.subdivision == div
-                                        ? DesignSystem.Colors.cherry
-                                        : Color.gray.opacity(0.15),
-                                    in: RoundedRectangle(cornerRadius: DesignSystem.Radius.sm)
-                                )
+                // Beat accents
+                HStack {
+                    Text("Beat Accents")
+                        .font(.subheadline.weight(.medium))
+                    Spacer()
+                }
+                HStack(spacing: 8) {
+                    ForEach(Array(vm.accents.enumerated()), id: \.offset) { index, accent in
+                        Button { vm.cycleAccent(at: index) } label: {
+                            accentLabel(accent)
+                                .frame(minWidth: 36, minHeight: 36)
+                                .background(accentButtonBackground(accent), in: RoundedRectangle(cornerRadius: DesignSystem.Radius.sm))
                         }
                         .buttonStyle(.plain)
                     }
                 }
-            }
 
-            // Beat accents
-            HStack {
-                Text("Beat Accents")
-                    .font(.subheadline.weight(.medium))
-                Spacer()
-            }
-            HStack(spacing: 8) {
-                ForEach(Array(vm.accents.enumerated()), id: \.offset) { index, accent in
-                    Button { vm.cycleAccent(at: index) } label: {
-                        accentLabel(accent)
-                            .frame(minWidth: 36, minHeight: 36)
-                            .background(accentButtonBackground(accent), in: RoundedRectangle(cornerRadius: DesignSystem.Radius.sm))
-                    }
-                    .buttonStyle(.plain)
+                // Metronome volume
+                HStack(spacing: 8) {
+                    Image(systemName: "speaker.fill")
+                        .font(.caption)
+                        .foregroundStyle(DesignSystem.Colors.text2)
+                    GradientSlider(
+                        value: Binding(get: { Double(vm.metronomeVolume) },
+                                       set: { vm.metronomeVolume = Float($0) }),
+                        range: 0...1
+                    )
+                    Image(systemName: "speaker.wave.3.fill")
+                        .font(.caption)
+                        .foregroundStyle(DesignSystem.Colors.text2)
                 }
             }
-
-            // Metronome volume
-            HStack(spacing: 8) {
-                Image(systemName: "speaker.fill")
-                    .font(.caption)
-                    .foregroundStyle(DesignSystem.Colors.text2)
-                Slider(value: $vm.metronomeVolume, in: 0...1)
-                    .tint(DesignSystem.Colors.cherry)
-                Image(systemName: "speaker.wave.3.fill")
-                    .font(.caption)
-                    .foregroundStyle(DesignSystem.Colors.text2)
+            .padding(.top, 8)
+        } label: {
+            HStack {
+                Text("Time Signature & Accents")
+                    .font(DesignSystem.Typography.sectionHeader)
+                    .foregroundStyle(DesignSystem.Colors.text)
+                infoButton { showTimeSignatureInfo = true }
             }
         }
         .padding()
@@ -315,7 +322,8 @@ struct MetroDroneView: View {
             .font(.headline)
             .frame(maxWidth: .infinity, minHeight: 50)
             .foregroundStyle(.white)
-            .background(vm.isMetronomePlaying ? DesignSystem.Colors.wrong : DesignSystem.Colors.cherry, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
+            .background(in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
+            .backgroundStyle(vm.isMetronomePlaying ? AnyShapeStyle(DesignSystem.Colors.wrong) : AnyShapeStyle(DesignSystem.Gradients.primary))
         }
         .buttonStyle(.plain)
     }
@@ -423,7 +431,8 @@ struct MetroDroneView: View {
                     .font(.subheadline.weight(.semibold))
                     .frame(maxWidth: .infinity, minHeight: 40)
                     .foregroundStyle(.white)
-                    .background(vm.isSpeedTrainerActive ? DesignSystem.Colors.wrong : DesignSystem.Colors.amber, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.sm))
+                    .background(in: RoundedRectangle(cornerRadius: DesignSystem.Radius.sm))
+                    .backgroundStyle(vm.isSpeedTrainerActive ? AnyShapeStyle(DesignSystem.Colors.wrong) : AnyShapeStyle(DesignSystem.Gradients.primary))
                 }
                 .buttonStyle(.plain)
             }
@@ -431,6 +440,8 @@ struct MetroDroneView: View {
         } label: {
             HStack {
                 Text("Speed Trainer")
+                    .font(DesignSystem.Typography.sectionHeader)
+                    .foregroundStyle(DesignSystem.Colors.text)
                 infoButton { showSpeedTrainerInfo = true }
             }
         }
@@ -441,104 +452,110 @@ struct MetroDroneView: View {
     // MARK: - Drone Section
 
     private var droneSection: some View {
-        VStack(spacing: 16) {
-            HStack {
-                Text("Drone Settings")
-                    .font(.headline)
-                infoButton { showDroneInfo = true }
-                Spacer()
-            }
+        DisclosureGroup(isExpanded: $showDrone) {
+            VStack(spacing: 16) {
+                // Key picker
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Key")
+                        .font(.subheadline.weight(.medium))
 
-            // Key picker
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Key")
-                    .font(.subheadline.weight(.medium))
-
-                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 6), spacing: 6) {
-                    ForEach(MusicalNote.allCases) { note in
-                        Button {
-                            vm.droneKey = note
-                        } label: {
-                            Text(note.sharpName)
-                                .font(.subheadline.weight(.semibold))
-                                .frame(maxWidth: .infinity, minHeight: 36)
-                                .foregroundStyle(vm.droneKey == note ? .white : .primary)
-                                .background(
-                                    vm.droneKey == note ? DesignSystem.Colors.amber : DesignSystem.Colors.surface2,
-                                    in: RoundedRectangle(cornerRadius: DesignSystem.Radius.sm)
-                                )
+                    LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 6), spacing: 6) {
+                        ForEach(MusicalNote.allCases) { note in
+                            Button {
+                                vm.droneKey = note
+                            } label: {
+                                Text(note.sharpName)
+                                    .font(.subheadline.weight(.semibold))
+                                    .frame(maxWidth: .infinity, minHeight: 36)
+                                    .foregroundStyle(vm.droneKey == note ? .white : .primary)
+                                    .background(
+                                        vm.droneKey == note ? DesignSystem.Colors.amber : DesignSystem.Colors.surface2,
+                                        in: RoundedRectangle(cornerRadius: DesignSystem.Radius.sm)
+                                    )
+                            }
+                            .buttonStyle(.plain)
                         }
-                        .buttonStyle(.plain)
                     }
                 }
-            }
 
-            // Octave picker
+                // Octave picker
+                HStack {
+                    Text("Octave")
+                        .font(.subheadline.weight(.medium))
+                    Spacer()
+                    Picker("Octave", selection: $vm.droneOctave) {
+                        ForEach(2...4, id: \.self) { oct in
+                            Text("\(oct)").tag(oct)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .frame(maxWidth: 160)
+                }
+
+                // Voicing picker
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Voicing")
+                        .font(.subheadline.weight(.medium))
+
+                    Picker("Voicing", selection: $vm.droneVoicing) {
+                        ForEach(DroneVoicing.allCases, id: \.self) { voicing in
+                            Text(voicing.label).tag(voicing)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                }
+
+                // Sound picker
+                HStack {
+                    Text("Sound")
+                        .font(.subheadline.weight(.medium))
+                    Spacer()
+                    Picker("Sound", selection: $vm.droneSound) {
+                        ForEach(DroneSound.allCases, id: \.self) { sound in
+                            Text(sound.label).tag(sound)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .frame(maxWidth: 280)
+                }
+
+                // Drone volume
+                HStack(spacing: 8) {
+                    Image(systemName: "speaker.fill")
+                        .font(.caption)
+                        .foregroundStyle(DesignSystem.Colors.text2)
+                    GradientSlider(
+                        value: Binding(get: { Double(vm.droneVolume) },
+                                       set: { vm.droneVolume = Float($0) }),
+                        range: 0...1
+                    )
+                    Image(systemName: "speaker.wave.3.fill")
+                        .font(.caption)
+                        .foregroundStyle(DesignSystem.Colors.text2)
+                }
+
+                // Drone play button
+                Button(action: vm.toggleDrone) {
+                    Label(
+                        vm.isDronePlaying ? "Stop Drone" : "Start Drone",
+                        systemImage: vm.isDronePlaying ? "stop.fill" : "play.fill"
+                    )
+                    .font(.headline)
+                    .frame(maxWidth: .infinity, minHeight: 50)
+                    .foregroundStyle(.white)
+                    .background(in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
+                    .backgroundStyle(vm.isDronePlaying ? AnyShapeStyle(DesignSystem.Colors.wrong) : AnyShapeStyle(DesignSystem.Gradients.primary))
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.top, 8)
+        } label: {
             HStack {
-                Text("Octave")
-                    .font(.subheadline.weight(.medium))
-                Spacer()
-                Picker("Octave", selection: $vm.droneOctave) {
-                    ForEach(2...4, id: \.self) { oct in
-                        Text("\(oct)").tag(oct)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .frame(maxWidth: 160)
+                Text("Drone")
+                    .font(DesignSystem.Typography.sectionHeader)
+                    .foregroundStyle(DesignSystem.Colors.text)
+                infoButton { showDroneInfo = true }
             }
-
-            // Voicing picker
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Voicing")
-                    .font(.subheadline.weight(.medium))
-
-                Picker("Voicing", selection: $vm.droneVoicing) {
-                    ForEach(DroneVoicing.allCases, id: \.self) { voicing in
-                        Text(voicing.label).tag(voicing)
-                    }
-                }
-                .pickerStyle(.segmented)
-            }
-
-            // Sound picker
-            HStack {
-                Text("Sound")
-                    .font(.subheadline.weight(.medium))
-                Spacer()
-                Picker("Sound", selection: $vm.droneSound) {
-                    ForEach(DroneSound.allCases, id: \.self) { sound in
-                        Text(sound.label).tag(sound)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .frame(maxWidth: 280)
-            }
-
-            // Drone volume
-            HStack(spacing: 8) {
-                Image(systemName: "speaker.fill")
-                    .font(.caption)
-                    .foregroundStyle(DesignSystem.Colors.text2)
-                Slider(value: $vm.droneVolume, in: 0...1)
-                    .tint(DesignSystem.Colors.amber)
-                Image(systemName: "speaker.wave.3.fill")
-                    .font(.caption)
-                    .foregroundStyle(DesignSystem.Colors.text2)
-            }
-
-            // Drone play button
-            Button(action: vm.toggleDrone) {
-                Label(
-                    vm.isDronePlaying ? "Stop Drone" : "Start Drone",
-                    systemImage: vm.isDronePlaying ? "stop.fill" : "play.fill"
-                )
-                .font(.headline)
-                .frame(maxWidth: .infinity, minHeight: 50)
-                .foregroundStyle(.white)
-                .background(vm.isDronePlaying ? DesignSystem.Colors.wrong : DesignSystem.Colors.amber,
-                            in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
-            }
-            .buttonStyle(.plain)
         }
         .padding()
         .background(DesignSystem.Colors.surface, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.lg))

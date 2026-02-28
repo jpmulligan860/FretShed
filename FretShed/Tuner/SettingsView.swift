@@ -78,6 +78,7 @@ public struct SettingsView: View {
             dataSection
             licensesSection
         }
+        .tint(DesignSystem.Colors.amber)
         .alert("Delete All Data?", isPresented: $showDeleteWarning1) {
             Button("Continue with Delete", role: .destructive) {
                 showDeleteWarning2 = true
@@ -195,12 +196,12 @@ public struct SettingsView: View {
                         .foregroundStyle(DesignSystem.Colors.text2)
                         .monospacedDigit()
                 }
-                Slider(
+                GradientSlider(
                     value: Binding(
                         get: { Double(settings.confidenceThreshold) },
                         set: { settings.confidenceThreshold = Float($0); save(settings) }
                     ),
-                    in: 0.70...0.99,
+                    range: 0.70...0.99,
                     step: 0.01
                 )
             }
@@ -213,12 +214,12 @@ public struct SettingsView: View {
                         .foregroundStyle(DesignSystem.Colors.text2)
                         .monospacedDigit()
                 }
-                Slider(
+                GradientSlider(
                     value: Binding(
                         get: { Double(settings.noteHoldDurationMs) },
                         set: { settings.noteHoldDurationMs = Int($0); save(settings) }
                     ),
-                    in: 50...200,
+                    range: 50...200,
                     step: 10
                 )
             }
@@ -260,12 +261,12 @@ public struct SettingsView: View {
                             .foregroundStyle(DesignSystem.Colors.text2)
                             .monospacedDigit()
                     }
-                    Slider(
+                    GradientSlider(
                         value: Binding(
                             get: { Double(settings.correctSoundVolume) },
                             set: { settings.correctSoundVolume = Float($0); save(settings) }
                         ),
-                        in: 0...1,
+                        range: 0...1,
                         step: 0.05
                     )
                 }
@@ -286,12 +287,12 @@ public struct SettingsView: View {
                             .foregroundStyle(DesignSystem.Colors.text2)
                             .monospacedDigit()
                     }
-                    Slider(
+                    GradientSlider(
                         value: Binding(
                             get: { Double(settings.metronomeVolume) },
                             set: { settings.metronomeVolume = Float($0); save(settings) }
                         ),
-                        in: 0...1,
+                        range: 0...1,
                         step: 0.05
                     )
                 }
@@ -362,7 +363,7 @@ public struct SettingsView: View {
                             .foregroundStyle(DesignSystem.Colors.text2)
                             .monospacedDigit()
                     }
-                    Slider(
+                    GradientSlider(
                         value: Binding(
                             get: { Double(profile.userGainTrimDB) },
                             set: {
@@ -370,7 +371,7 @@ public struct SettingsView: View {
                                 try? container.calibrationRepository.save(profile)
                             }
                         ),
-                        in: -6...6,
+                        range: -6...6,
                         step: 0.5
                     )
                 }
@@ -384,7 +385,7 @@ public struct SettingsView: View {
                             .foregroundStyle(DesignSystem.Colors.text2)
                             .monospacedDigit()
                     }
-                    Slider(
+                    GradientSlider(
                         value: Binding(
                             get: { Double(profile.userGateTrimDB) },
                             set: {
@@ -392,7 +393,7 @@ public struct SettingsView: View {
                                 try? container.calibrationRepository.save(profile)
                             }
                         ),
-                        in: -6...6,
+                        range: -6...6,
                         step: 0.5
                     )
                 }
@@ -499,12 +500,12 @@ public struct SettingsView: View {
                         .foregroundStyle(DesignSystem.Colors.text2)
                         .monospacedDigit()
                 }
-                Slider(
+                GradientSlider(
                     value: Binding(
                         get: { Double(settings.defaultTimerDuration) },
                         set: { settings.defaultTimerDuration = Int($0); save(settings) }
                     ),
-                    in: 2...20,
+                    range: 2...20,
                     step: 1
                 )
             }
@@ -517,12 +518,12 @@ public struct SettingsView: View {
                         .foregroundStyle(DesignSystem.Colors.text2)
                         .monospacedDigit()
                 }
-                Slider(
+                GradientSlider(
                     value: Binding(
                         get: { Double(settings.defaultSessionLength) },
                         set: { settings.defaultSessionLength = Int($0); save(settings) }
                     ),
-                    in: 5...100,
+                    range: 5...100,
                     step: 5
                 )
             }
@@ -535,12 +536,12 @@ public struct SettingsView: View {
                         .foregroundStyle(DesignSystem.Colors.text2)
                         .monospacedDigit()
                 }
-                Slider(
+                GradientSlider(
                     value: Binding(
                         get: { Double(settings.hintTimeoutSeconds) },
                         set: { settings.hintTimeoutSeconds = Int($0); save(settings) }
                     ),
-                    in: 2...15,
+                    range: 2...15,
                     step: 1
                 )
             }
@@ -553,12 +554,12 @@ public struct SettingsView: View {
                         .foregroundStyle(DesignSystem.Colors.text2)
                         .monospacedDigit()
                 }
-                Slider(
+                GradientSlider(
                     value: Binding(
                         get: { settings.masteryThreshold },
                         set: { settings.masteryThreshold = $0; save(settings) }
                     ),
-                    in: 0.70...0.99,
+                    range: 0.70...0.99,
                     step: 0.05
                 )
             }

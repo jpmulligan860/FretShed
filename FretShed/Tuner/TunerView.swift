@@ -177,8 +177,8 @@ public struct TunerView: View {
 
                 if let freq = detector.detectedFrequency {
                     Text(String(format: "%.1f Hz", freq))
-                        .font(DesignSystem.Typography.dataSmall)
-                        .foregroundStyle(DesignSystem.Colors.muted)
+                        .font(DesignSystem.Typography.centsDisplay)
+                        .foregroundStyle(DesignSystem.Colors.text2)
                         .contentTransition(.numericText())
                 }
             } else if let err = detector.error, case .microphonePermissionDenied = err {
@@ -204,10 +204,10 @@ public struct TunerView: View {
             } else {
                 Text("–")
                     .font(DesignSystem.Typography.noteDisplay)
-                    .foregroundStyle(DesignSystem.Colors.muted.opacity(0.5))
+                    .foregroundStyle(DesignSystem.Colors.text2.opacity(0.4))
                 Text(detector.isRunning ? "Play a note…" : "Starting…")
-                    .font(DesignSystem.Typography.accentDescription)
-                    .foregroundStyle(DesignSystem.Colors.muted)
+                    .font(DesignSystem.Typography.bodyLabel)
+                    .foregroundStyle(DesignSystem.Colors.text2)
             }
         }
         .frame(height: 110)
@@ -219,7 +219,7 @@ public struct TunerView: View {
         let c = displayCents
         let sign = c >= 0 ? "+" : ""
         return Text("\(sign)\(Int(c.rounded())) ¢")
-            .font(DesignSystem.Typography.dataDisplay)
+            .font(DesignSystem.Typography.subDisplay)
             .foregroundStyle(tuningColor)
             .contentTransition(.numericText())
             .opacity(detector.detectedNote != nil ? 1 : 0)
@@ -228,13 +228,13 @@ public struct TunerView: View {
     // MARK: - Controls
 
     private var controls: some View {
-        HStack {
+        HStack(spacing: 6) {
             Image(systemName: "tuningfork")
-                .font(DesignSystem.Typography.dataSmall)
-                .foregroundStyle(DesignSystem.Colors.muted)
+                .font(.subheadline)
+                .foregroundStyle(DesignSystem.Colors.text2)
             Text("A4 = 440 Hz")
-                .font(DesignSystem.Typography.dataSmall)
-                .foregroundStyle(DesignSystem.Colors.muted)
+                .font(DesignSystem.Typography.bodyLabel)
+                .foregroundStyle(DesignSystem.Colors.text2)
         }
     }
 
@@ -263,27 +263,27 @@ private struct NeedleDisplay: View {
     var body: some View {
         ZStack {
             DialArc()
-                .stroke(DesignSystem.Colors.surface2, lineWidth: 4)
-                .frame(width: 260, height: 130)
+                .stroke(DesignSystem.Colors.surface2, lineWidth: 6)
+                .frame(width: 300, height: 150)
 
             DialArc()
                 .trim(from: 0.44, to: 0.56)
-                .stroke(DesignSystem.Colors.correct.opacity(0.35), lineWidth: 6)
-                .frame(width: 260, height: 130)
+                .stroke(DesignSystem.Colors.correct.opacity(0.45), lineWidth: 8)
+                .frame(width: 300, height: 150)
 
             DialTicks()
-                .frame(width: 260, height: 130)
+                .frame(width: 300, height: 150)
 
             Needle(angle: angle)
-                .frame(width: 260, height: 130)
+                .frame(width: 300, height: 150)
                 .animation(.spring(response: 0.2, dampingFraction: 0.85), value: angle)
 
             Circle()
                 .fill(DesignSystem.Colors.amber)
-                .frame(width: 10, height: 10)
-                .offset(y: 65)
+                .frame(width: 14, height: 14)
+                .offset(y: 75)
         }
-        .frame(height: 140)
+        .frame(height: 160)
     }
 }
 
@@ -309,7 +309,7 @@ private struct DialTicks: View {
                 let angleDeg = 180.0 + Double(i + 50) / 100.0 * 180.0
                 let rad = angleDeg * .pi / 180
                 let isMajor = i % 50 == 0 || i == 0
-                let len: CGFloat = isMajor ? 14 : 8
+                let len: CGFloat = isMajor ? 18 : 10
                 let inner = CGPoint(x: centre.x + (r - len) * cos(rad),
                                     y: centre.y + (r - len) * sin(rad))
                 let outer = CGPoint(x: centre.x + r * cos(rad),
@@ -319,7 +319,7 @@ private struct DialTicks: View {
                 path.addLine(to: outer)
                 ctx.stroke(path,
                            with: .color(DesignSystem.Colors.text2),
-                           lineWidth: isMajor ? 2 : 1)
+                           lineWidth: isMajor ? 2.5 : 1.5)
             }
         }
     }
@@ -339,7 +339,7 @@ private struct Needle: View {
             var path = Path()
             path.move(to: centre)
             path.addLine(to: tip)
-            ctx.stroke(path, with: .color(DesignSystem.Colors.amber), lineWidth: 2)
+            ctx.stroke(path, with: .color(DesignSystem.Colors.amber), lineWidth: 3)
         }
     }
 }
@@ -410,11 +410,11 @@ private final class StrobeAnimator: @unchecked Sendable {
 private struct CentsScale: View {
     var body: some View {
         HStack {
-            Text("-50¢").font(DesignSystem.Typography.dataSmall).foregroundStyle(DesignSystem.Colors.muted)
+            Text("-50¢").font(DesignSystem.Typography.bodyLabel).foregroundStyle(DesignSystem.Colors.text2)
             Spacer()
-            Text("0").font(DesignSystem.Typography.dataSmall).bold().foregroundStyle(DesignSystem.Colors.correct)
+            Text("0").font(DesignSystem.Typography.bodyLabel).bold().foregroundStyle(DesignSystem.Colors.correct)
             Spacer()
-            Text("+50¢").font(DesignSystem.Typography.dataSmall).foregroundStyle(DesignSystem.Colors.muted)
+            Text("+50¢").font(DesignSystem.Typography.bodyLabel).foregroundStyle(DesignSystem.Colors.text2)
         }
     }
 }
@@ -469,7 +469,7 @@ struct InputLevelBar: View {
                 }
             }
         }
-        .frame(height: 16)
+        .frame(height: 22)
         .animation(.spring(response: 0.15, dampingFraction: 1.0), value: level)
     }
 }

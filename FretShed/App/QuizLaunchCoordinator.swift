@@ -154,6 +154,15 @@ final class QuizLaunchCoordinator {
         activeQuizVM = nil
     }
 
+    func handleViewProgress(vm: QuizViewModel) {
+        if tapModeWasForced {
+            vm.settings.tapToAnswerEnabled = false
+            tapModeWasForced = false
+        }
+        activeQuizVM = nil
+        selectedTab = .progress
+    }
+
     func handleQuizRepeat(vm: QuizViewModel) {
         if tapModeWasForced {
             vm.settings.tapToAnswerEnabled = false

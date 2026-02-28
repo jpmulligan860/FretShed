@@ -51,7 +51,28 @@ public final class ProgressViewModel {
     public private(set) var scoreGrid: [[Int: MasteryScore]] = Array(repeating: [:], count: 7)
     public private(set) var overallMastery: Double = 0
     public private(set) var attemptedCells: Int = 0
-    public private(set) var masteredCells: Int = 0
+
+    /// Unique mastered note+string pairs from scoreGrid.
+    public var masteredCells: Int {
+        scoreGrid.reduce(0) { total, stringScores in
+            total + stringScores.values.filter { $0.isMastered }.count
+        }
+    }
+
+    /// Counts mastered cells as they appear on the visible heatmap, walking
+    /// every fret so that octave-repeat frets are counted (matches what the user sees).
+    public func visibleMasteredCells(fretboardMap: FretboardMap, fretCount: Int) -> Int {
+        var count = 0
+        for string in 1...6 {
+            for fret in 0...fretCount {
+                guard let note = fretboardMap.note(string: string, fret: fret),
+                      let score = scoreGrid[string][note.rawValue],
+                      score.isMastered else { continue }
+                count += 1
+            }
+        }
+        return count
+    }
     public private(set) var recentSessions: [Session] = []
     public private(set) var accuracyTrend: [AccuracyDataPoint] = []
     public private(set) var responseTimeTrend: [ResponseTimeDataPoint] = []
@@ -60,6 +81,9 @@ public final class ProgressViewModel {
     public private(set) var loadFailed: Bool = false
     public var selectedCell: CellDetail? = nil
     public var selectedSession: SessionDetail? = nil
+    public var todayFilter: Bool = false {
+        didSet { recalculateForFilter() }
+    }
     public var focusModeFilter: FocusMode? = nil {
         didSet { recalculateForFilter() }
     }
@@ -68,11 +92,15 @@ public final class ProgressViewModel {
     }
 
     public var isAnyFilterActive: Bool {
-        focusModeFilter != nil || gameModeFilter != nil
+        todayFilter || focusModeFilter != nil || gameModeFilter != nil
     }
 
     public var filteredSessions: [Session] {
         var result = recentSessions
+        if todayFilter {
+            let startOfToday = Calendar.current.startOfDay(for: Date())
+            result = result.filter { $0.startTime >= startOfToday }
+        }
         if let focus = focusModeFilter {
             result = result.filter { $0.focusMode == focus }
         }
@@ -86,7 +114,6 @@ public final class ProgressViewModel {
     private var baseScoreGrid: [[Int: MasteryScore]] = Array(repeating: [:], count: 7)
     private var baseOverallMastery: Double = 0
     private var baseAttemptedCells: Int = 0
-    private var baseMasteredCells: Int = 0
     private var baseAccuracyTrend: [AccuracyDataPoint] = []
     private var baseResponseTimeTrend: [ResponseTimeDataPoint] = []
     private var baseCurrentStreak: Int = 0
@@ -123,8 +150,6 @@ public final class ProgressViewModel {
             baseOverallMastery = overallMastery
             attemptedCells = allScores.filter { $0.totalAttempts > 0 }.count
             baseAttemptedCells = attemptedCells
-            masteredCells  = allScores.filter { $0.isMastered }.count
-            baseMasteredCells = masteredCells
             recentSessions = try sessionRepository.recentSessions(limit: 50)
             accuracyTrend  = Self.buildAccuracyTrend(from: recentSessions)
             baseAccuracyTrend = accuracyTrend
@@ -248,7 +273,6 @@ public final class ProgressViewModel {
             scoreGrid = baseScoreGrid
             overallMastery = baseOverallMastery
             attemptedCells = baseAttemptedCells
-            masteredCells = baseMasteredCells
             accuracyTrend = baseAccuracyTrend
             responseTimeTrend = baseResponseTimeTrend
             return
@@ -263,7 +287,6 @@ public final class ProgressViewModel {
         scoreGrid = grid
         overallMastery = MasteryCalculator.overallScore(from: scores)
         attemptedCells = scores.filter { $0.totalAttempts > 0 }.count
-        masteredCells = scores.filter { $0.isMastered }.count
     }
 
     /// Builds a transient scoreGrid from attempts in the given sessions only.
@@ -321,7 +344,9 @@ public final class ProgressViewModel {
     }
 
     public func masteryLevel(note: MusicalNote, string: Int) -> MasteryLevel {
-        MasteryLevel.from(score: masteryScore(note: note, string: string))
+        let score = scoreGrid[string][note.rawValue]
+        let value = score?.score ?? (MasteryScore.alpha / (MasteryScore.alpha + MasteryScore.beta))
+        return MasteryLevel.from(score: value, isMastered: score?.isMastered ?? false)
     }
 
     // MARK: - Deletion

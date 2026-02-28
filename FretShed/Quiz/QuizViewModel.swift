@@ -43,11 +43,29 @@ public final class QuizViewModel: Identifiable {
     public private(set) var bestStreak: Int = 0
     public private(set) var timeRemaining: Double = 0
     public private(set) var lastAnswerWasCorrect: Bool = false
+    /// True when the user chose "End & Delete" — session data was discarded.
+    public private(set) var wasDiscarded: Bool = false
     /// When true, countdown ticks are silenced (user-toggled mute button).
     public var isTimerMuted: Bool = false
     public private(set) var detectedNote: MusicalNote?
     /// Current per-question time budget for Tempo mode (shrinks with each correct answer).
     public private(set) var tempoTimeAllowance: Double = 10
+
+    // MARK: - Adaptive Tracking
+    /// Number of questions that targeted positions with mastery < 50%.
+    public private(set) var weakSpotQuestionCount: Int = 0
+    /// Per-string count of weak-spot questions (string number → count).
+    public private(set) var weakSpotsTargetedStrings: [Int: Int] = [:]
+    /// True once enough mastery data exists for the current session's candidate positions
+    /// to meaningfully differentiate weak from strong.
+    public var hasBaselineMastery: Bool {
+        let candidates = filter(candidates: buildCandidates())
+        return candidates.contains { c in
+            allScores.contains {
+                $0.noteRaw == c.note.rawValue && $0.stringNumber == c.string && $0.totalAttempts >= 5
+            }
+        }
+    }
 
     /// Average response time in milliseconds for correct answers only.
     public var averageResponseTimeMs: Int {
@@ -241,6 +259,7 @@ public final class QuizViewModel: Identifiable {
         } catch {
             logger.error("Failed to discard session: \(error)")
         }
+        wasDiscarded = true
         phase = .complete
     }
 
@@ -331,16 +350,28 @@ public final class QuizViewModel: Identifiable {
         let total = weights.reduce(0, +)
         var r = Double.random(in: 0..<total)
 
+        var selected: QuizQuestion?
         for (candidate, weight) in zip(pool, weights) {
             r -= weight
             if r <= 0 {
                 if let last = lastQuestion,
                    last.note == candidate.note && last.string == candidate.string,
                    pool.count > 1 { continue }
-                return candidate
+                selected = candidate
+                break
             }
         }
-        return pool.last ?? QuizQuestion(note: .e, string: 1, fret: 0)
+        let result = selected ?? pool.last ?? QuizQuestion(note: .e, string: 1, fret: 0)
+
+        // Track adaptive weak-spot targeting (only count positions with real data below 50%).
+        if session.isAdaptive, let score = allScores.first(where: {
+            $0.noteRaw == result.note.rawValue && $0.stringNumber == result.string
+        }), score.score < 0.50 {
+            weakSpotQuestionCount += 1
+            weakSpotsTargetedStrings[result.string, default: 0] += 1
+        }
+
+        return result
     }
 
     /// Chord Progression mode: strictly drills root → third → fifth for each chord

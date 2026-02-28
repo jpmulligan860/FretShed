@@ -15,16 +15,16 @@ enum DesignSystem {
             : UIColor(red: 0.698, green: 0.133, blue: 0.133, alpha: 1)  // #B22222
         })
         static let amber = Color(UIColor { $0.userInterfaceStyle == .dark
-            ? UIColor(red: 0.850, green: 0.550, blue: 0.100, alpha: 1)  // #D98C1A
-            : UIColor(red: 0.750, green: 0.470, blue: 0.050, alpha: 1)  // #BF780D
+            ? UIColor(red: 0.900, green: 0.420, blue: 0.050, alpha: 1)  // #E66B0D — deep orange
+            : UIColor(red: 0.800, green: 0.350, blue: 0.030, alpha: 1)  // #CC5908 — burnt orange
         })
         static let honey = Color(UIColor { $0.userInterfaceStyle == .dark
             ? UIColor(red: 0.900, green: 0.720, blue: 0.250, alpha: 1)  // #E6B840
             : UIColor(red: 0.800, green: 0.620, blue: 0.150, alpha: 1)  // #CC9E26
         })
         static let gold = Color(UIColor { $0.userInterfaceStyle == .dark
-            ? UIColor(red: 0.950, green: 0.800, blue: 0.300, alpha: 1)  // #F2CC4D
-            : UIColor(red: 0.850, green: 0.700, blue: 0.200, alpha: 1)  // #D9B333
+            ? UIColor(red: 0.960, green: 0.860, blue: 0.120, alpha: 1)  // #F5DB1F — bright yellow
+            : UIColor(red: 0.870, green: 0.770, blue: 0.060, alpha: 1)  // #DEC40F — vivid yellow
         })
         static let cream = Color(UIColor { $0.userInterfaceStyle == .dark
             ? UIColor(red: 0.950, green: 0.920, blue: 0.860, alpha: 1)  // #F2EBDB
@@ -108,21 +108,64 @@ enum DesignSystem {
         static let caution = honey
         static let info    = Color(red: 0.35, green: 0.55, blue: 0.75) // warm steel-blue
 
-        // Mastery level palette — sunburst progression
-        static let masteryMastered   = correct
-        static let masteryProficient = gold
-        static let masteryDeveloping = amber
-        static let masteryBeginner   = cherry
+        // Mastery level palette — 4-tier system
+        // Struggling = cherry red, Learning = amber, Proficient = green, Mastered = gold
+        static let masteryMastered   = gold
+        static let masteryProficient = correct
+        static let masteryLearning   = amber
+        static let masteryStruggling = cherry
+
+        // Legacy aliases — resolve to new tier colors
+        static let masteryDeveloping = masteryLearning
+        static let masteryBeginner   = masteryStruggling
 
         /// Returns the design-system mastery color for a 0–1 score.
+        /// For heatmap cells where you can distinguish proficient vs mastered,
+        /// use the `masteryColor(for:isMastered:)` overload instead.
         static func masteryColor(for score: Double) -> Color {
             switch score {
-            case ..<0.4:     return masteryBeginner    // cherry
-            case 0.4..<0.7:  return masteryDeveloping  // amber
-            case 0.7..<0.9:  return masteryProficient  // gold
-            default:         return masteryMastered     // green/correct
+            case ..<0.50:  return masteryStruggling  // cherry
+            case ..<0.90:  return masteryLearning    // amber
+            default:       return masteryProficient  // green
             }
         }
+
+        /// Returns the design-system mastery color with full context.
+        static func masteryColor(for score: Double, isMastered: Bool) -> Color {
+            switch score {
+            case ..<0.50:  return masteryStruggling  // cherry
+            case ..<0.90:  return masteryLearning    // amber
+            default:       return isMastered ? masteryMastered : masteryProficient
+            }
+        }
+
+        // Heatmap cell colors — flat, single color per tier.
+        // Struggling: cherry red
+        static let heatmapStruggling = Color(UIColor { $0.userInterfaceStyle == .dark
+            ? UIColor(red: 0.769, green: 0.196, blue: 0.235, alpha: 1)  // #C4323C
+            : UIColor(red: 0.690, green: 0.157, blue: 0.188, alpha: 1)  // #B02830
+        })
+        // Learning: amber
+        static let heatmapLearning = Color(UIColor { $0.userInterfaceStyle == .dark
+            ? UIColor(red: 0.831, green: 0.584, blue: 0.227, alpha: 1)  // #D4953A
+            : UIColor(red: 0.753, green: 0.522, blue: 0.188, alpha: 1)  // #C08530
+        })
+        // Proficient: green
+        static let heatmapProficient = Color(UIColor { $0.userInterfaceStyle == .dark
+            ? UIColor(red: 0.298, green: 0.686, blue: 0.314, alpha: 1)  // #4CAF50
+            : UIColor(red: 0.220, green: 0.557, blue: 0.235, alpha: 1)  // #388E3C
+        })
+        // Mastered: bright gold
+        static let heatmapMastered = Color(UIColor { $0.userInterfaceStyle == .dark
+            ? UIColor(red: 1.000, green: 0.843, blue: 0.000, alpha: 1)  // #FFD700
+            : UIColor(red: 0.855, green: 0.718, blue: 0.000, alpha: 1)  // #DAB700
+        })
+
+        // Heatmap glow colors (for .shadow modifier on dark mode)
+        static let heatmapStrugglingGlow  = Color(UIColor(red: 0.769, green: 0.196, blue: 0.235, alpha: 1))
+        static let heatmapLearningGlow    = Color(UIColor(red: 0.831, green: 0.584, blue: 0.227, alpha: 1))
+        static let heatmapProficientGlow  = Color(UIColor(red: 0.298, green: 0.686, blue: 0.314, alpha: 1))
+        static let heatmapMasteredGlow    = Color(UIColor(red: 1.000, green: 0.843, blue: 0.000, alpha: 1))
 
         // Fretboard
         static let fretboardWood    = rosewood
@@ -269,5 +312,66 @@ extension View {
 
     func sectionLabelStyle() -> some View {
         modifier(SectionLabelModifier())
+    }
+}
+
+// MARK: - GradientSlider
+
+/// A slider whose filled track uses a gradient instead of a flat color.
+struct GradientSlider: View {
+    @Binding var value: Double
+    var range: ClosedRange<Double>
+    var step: Double = 0
+    var gradient: LinearGradient = DesignSystem.Gradients.primary
+
+    private var fraction: Double {
+        let span = range.upperBound - range.lowerBound
+        guard span > 0 else { return 0 }
+        return (value - range.lowerBound) / span
+    }
+
+    var body: some View {
+        GeometryReader { geo in
+            let trackHeight: CGFloat = 6
+            let thumbSize: CGFloat = 28
+            let usable = geo.size.width - thumbSize
+            let thumbX = usable * CGFloat(fraction)
+
+            ZStack(alignment: .leading) {
+                // Background track
+                Capsule()
+                    .fill(DesignSystem.Colors.surface2)
+                    .frame(height: trackHeight)
+                    .padding(.horizontal, thumbSize / 2)
+
+                // Gradient fill
+                Capsule()
+                    .fill(gradient)
+                    .frame(width: thumbX + thumbSize / 2, height: trackHeight)
+                    .padding(.leading, thumbSize / 2)
+
+                // Thumb
+                Circle()
+                    .fill(.white)
+                    .shadow(color: .black.opacity(0.15), radius: 3, y: 1)
+                    .frame(width: thumbSize, height: thumbSize)
+                    .offset(x: thumbX)
+            }
+            .frame(height: geo.size.height)
+            .contentShape(Rectangle())
+            .gesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { drag in
+                        let raw = Double((drag.location.x - thumbSize / 2) / usable)
+                        let clamped = min(max(raw, 0), 1)
+                        var scaled = range.lowerBound + clamped * (range.upperBound - range.lowerBound)
+                        if step > 0 {
+                            scaled = (scaled / step).rounded() * step
+                        }
+                        value = min(max(scaled, range.lowerBound), range.upperBound)
+                    }
+            )
+        }
+        .frame(height: 28)
     }
 }

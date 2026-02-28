@@ -26,7 +26,6 @@ public struct SessionSetupView: View {
     @State private var chordToneSelection: ChordToneSelection = .closeTriad
     @State private var chordPositionEnabled = false
     @State private var chordStringGroup: [Int] = []    // empty = all strings
-    @State private var isAdaptive = true
     @State private var circleConstraint: CircleConstraint = .fullFretboard
     @State private var showPracticeModeInfo = false
     @State private var showFocusModeInfo = false
@@ -141,8 +140,6 @@ public struct SessionSetupView: View {
                         }
                     }
 
-                    adaptiveToggleSection
-
                     descriptionCard
                         .animation(.easeInOut(duration: 0.2), value: selectedFocusMode)
                 }
@@ -207,8 +204,6 @@ public struct SessionSetupView: View {
                             Divider().padding(.vertical, 16)
                         }
                     }
-
-                    adaptiveToggleSection
 
                     descriptionCard
                         .animation(.easeInOut(duration: 0.2), value: selectedFocusMode)
@@ -335,20 +330,6 @@ public struct SessionSetupView: View {
             }
             .pickerStyle(.segmented)
             .padding(.horizontal, 20)
-        }
-    }
-
-    @ViewBuilder
-    private var adaptiveToggleSection: some View {
-        if selectedFocusMode != .circleOfFourths &&
-           selectedFocusMode != .circleOfFifths &&
-           selectedFocusMode != .chordProgression {
-            Toggle(isOn: $isAdaptive) {
-                Label("Prioritize Weak Spots", systemImage: "brain")
-            }
-            .tint(DesignSystem.Colors.correct)
-            .padding(.horizontal, 20)
-            .padding(.bottom, 12)
         }
     }
 
@@ -911,6 +892,10 @@ public struct SessionSetupView: View {
             transposed.toneSelection = chordToneSelection
             return transposed
         }()
+
+        let isAdaptive = selectedFocusMode != .circleOfFourths &&
+                         selectedFocusMode != .circleOfFifths &&
+                         selectedFocusMode != .chordProgression
 
         let session = Session(
             focusMode: selectedFocusMode,

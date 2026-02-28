@@ -11,6 +11,7 @@ public struct QuizView: View {
     @State private var hintTask: Task<Void, Never>? = nil
     @Environment(\.appContainer) private var container
     var onDone: (() -> Void)? = nil
+    var onViewProgress: (() -> Void)? = nil
     var onRepeat: (() -> Void)? = nil
     @State private var showEndConfirm = false
     @State private var showFretHint = false
@@ -94,9 +95,11 @@ public struct QuizView: View {
 
     public init(vm: QuizViewModel,
                 onDone: (() -> Void)? = nil,
+                onViewProgress: (() -> Void)? = nil,
                 onRepeat: (() -> Void)? = nil) {
         _vm = State(initialValue: vm)
         self.onDone = onDone
+        self.onViewProgress = onViewProgress
         self.onRepeat = onRepeat
     }
 
@@ -346,7 +349,19 @@ public struct QuizView: View {
             Label(vm.session.gameMode.localizedLabel, systemImage: "metronome")
             if vm.session.isAdaptive {
                 Text("·")
-                Label("Adaptive", systemImage: "brain")
+                if vm.hasBaselineMastery {
+                    Image(systemName: "scope")
+                        .foregroundStyle(DesignSystem.Colors.amber)
+                    Text("Adaptive")
+                        .font(DesignSystem.Typography.dataSmall)
+                        .foregroundStyle(DesignSystem.Colors.amber)
+                } else {
+                    Image(systemName: "waveform.badge.magnifyingglass")
+                        .foregroundStyle(DesignSystem.Colors.text2)
+                    Text("Measuring Mastery")
+                        .font(DesignSystem.Typography.dataSmall)
+                        .foregroundStyle(DesignSystem.Colors.text2)
+                }
             }
         }
         .font(.caption)
@@ -731,14 +746,7 @@ public struct QuizView: View {
     }
 
     private var completedMasteryBadge: some View {
-        let mColor: Color = {
-            switch vm.session.masteryLevel {
-            case .mastered:   return .green
-            case .proficient: return .blue
-            case .developing: return .orange
-            case .beginner:   return .red
-            }
-        }()
+        let mColor = DesignSystem.Colors.masteryColor(for: vm.session.overallMasteryAtEnd)
         return HStack(spacing: 6) {
             Image(systemName: "graduationcap.fill")
             Text(vm.session.masteryLevel.localizedLabel)
@@ -756,7 +764,7 @@ public struct QuizView: View {
             Button {
                 onDone?()
             } label: {
-                Text("Done")
+                Text("Back to The Shed")
                     .font(.headline)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 16)
@@ -766,21 +774,41 @@ public struct QuizView: View {
             .buttonStyle(.plain)
             .padding(.horizontal, 20)
 
-            Button {
-                onRepeat?()
-            } label: {
-                Label("Repeat Session", systemImage: "arrow.counterclockwise")
-                    .font(.subheadline.weight(.semibold))
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
-            }
-            .buttonStyle(.bordered)
-            .tint(DesignSystem.Colors.correct)
-            .padding(.horizontal, 20)
+            HStack(spacing: 12) {
+                Button {
+                    onViewProgress?()
+                } label: {
+                    Label("View Journey", systemImage: "chart.bar.fill")
+                        .font(.subheadline.weight(.semibold))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                }
+                .buttonStyle(.bordered)
+                .tint(DesignSystem.Colors.cherry)
+                .padding(.leading, 20)
 
-            Label("Session saved to Journey", systemImage: "checkmark.circle")
-                .font(.caption)
-                .foregroundStyle(DesignSystem.Colors.text2)
+                Button {
+                    onRepeat?()
+                } label: {
+                    Label("Repeat", systemImage: "arrow.counterclockwise")
+                        .font(.subheadline.weight(.semibold))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                }
+                .buttonStyle(.bordered)
+                .tint(DesignSystem.Colors.correct)
+                .padding(.trailing, 20)
+            }
+
+            if vm.wasDiscarded {
+                Label("Session deleted", systemImage: "trash")
+                    .font(.caption)
+                    .foregroundStyle(DesignSystem.Colors.text2)
+            } else {
+                Label("Session saved to Journey", systemImage: "checkmark.circle")
+                    .font(.caption)
+                    .foregroundStyle(DesignSystem.Colors.text2)
+            }
         }
     }
 

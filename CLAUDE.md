@@ -203,7 +203,7 @@ Full analysis: `FretShed_Competitive_Analysis.md` in Claude.ai project files.
 **Phase 3:** Tasks 3.1–3.6 complete ✅ · Task 3.7 🔲 (device timing test)
 **Phase 4:** Not started
 **Phase 5:** Not started
-**Test suite:** 219 tests passing
+**Test suite:** 230 tests passing
 
 **Audio Calibration System (F22) — IMPLEMENTED.** Full calibration flow: silence measurement → 6-string test → profile saved to SwiftData. Quiz launch gated on calibration. Do This First card with action buttons. Settings > Audio Setup with trim sliders. PitchDetector pre-seeded from calibration profile. Single profile (re-calibrate overwrites).
 
@@ -219,7 +219,13 @@ Full analysis: `FretShed_Competitive_Analysis.md` in Claude.ai project files.
 
 **Crash Fix (C1) — FIXED.** PitchDetector crash on infinite/NaN Double→Int conversion. Root cause: YIN parabolic interpolation produces `interpolatedTau ≤ 0` when `bestTau=1`, making `sampleRate / interpolatedTau` infinite. Two-layer fix: guard in `detectPitch()` + defense in `pitchDetectorNoteAndCents()`.
 
-**All BUGLOG items resolved.** All feature ideas (F1–F30) complete.
+**4-Tier Mastery System (F33) — IMPLEMENTED.** Heatmap and stats now use 4 tiers: Struggling (red, <50%), Learning (amber, 50–89%), Proficient (green, 90%+ but <15 attempts), Mastered (gold, 90%+ AND ≥15 attempts). MasteryLevel enum updated with `from(score:isMastered:)`. HeatmapLegend shows per-tier cell counts. "Cells Mastered" stat uses `visibleMasteredCells()` to match heatmap fret-walk (accounts for octave repeats).
+
+**Journey Tab Enhancements (F34–F36) — IMPLEMENTED.** (F34) Time Practiced metric in Overall Results, responsive to filters. (F35) "Today's Sessions" filter in Journey filter menu. (F36) `.onAppear` reload for tab revisit freshness.
+
+**Device Test Polish (D8) — IMPLEMENTED.** MetroDrone DisclosureGroup labels styled with `sectionHeader` + `text` color.
+
+**All BUGLOG items resolved.** All feature ideas (F1–F36) complete.
 
 **Expert Review Technical Fixes (Feb 2026) — IMPLEMENTED.** 11 code items from expert panel review:
 - Design system sweep: ~458 system colors/fonts replaced with Woodshop tokens across 18 files
@@ -267,27 +273,29 @@ Full analysis: `FretShed_Competitive_Analysis.md` in Claude.ai project files.
 
 3. **Update ROADMAP.md** — Mark any completed tasks as ✅ and any in-progress tasks as 🚧.
 
-4. **Update CLAUDE.md** — If any architectural decisions were made, features implemented, or bugs fixed, update the Current Status section and any relevant sections.
+4. **Update BUGLOG.md** — Log any new features (F#) or bug fixes (section-appropriate) implemented this session to both the Feature Ideas & Enhancements table and the Fixed Bugs table. This should be done as changes are made, not just at session end.
 
-5. **Stage and review changes**
+5. **Update CLAUDE.md** — If any architectural decisions were made, features implemented, or bugs fixed, update the Current Status section and any relevant sections.
+
+6. **Stage and review changes**
    ```bash
    git status
    git diff --stat
    ```
    Show the user what will be committed. Stage specific files by name (avoid `git add -A` which can accidentally include sensitive files like .env or credentials). Wait for confirmation if the diff is large.
 
-6. **Commit with a descriptive message**
+7. **Commit with a descriptive message**
    ```bash
    git commit -m "[Task X.Y] Brief description of what was done"
    ```
    Use the task number from ROADMAP.md if applicable. For multi-task sessions, use multiple commits or a summary message.
 
-7. **Push to remote**
+8. **Push to remote**
    ```bash
    git push
    ```
 
-8. **Print a session summary** — A brief recap of:
+9. **Print a session summary** — A brief recap of:
    - What was accomplished
    - What tasks are now complete
    - What the next task is (per ROADMAP.md)

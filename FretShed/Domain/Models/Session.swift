@@ -34,28 +34,57 @@ public enum FocusMode: String, CaseIterable, Codable, Sendable, Hashable {
 // MARK: - MasteryLevel
 
 /// Human-readable mastery tier derived from a numeric mastery score.
+///
+/// 4-tier system:
+/// - `.struggling`  — mastery < 50% (cherry red)
+/// - `.learning`    — mastery 50–89% (amber)
+/// - `.proficient`  — mastery ≥ 90%, fewer than 15 attempts (green)
+/// - `.mastered`    — mastery ≥ 90% AND ≥ 15 attempts (gold)
+///
+/// Legacy cases `.beginner` and `.developing` are kept as
+/// deprecated aliases so that any persisted Codable data still decodes.
 public enum MasteryLevel: String, CaseIterable, Codable, Sendable, Comparable {
-    case beginner    = "beginner"
-    case developing  = "developing"
+    case struggling  = "struggling"
+    case learning    = "learning"
     case proficient  = "proficient"
     case mastered    = "mastered"
 
+    // Legacy aliases — kept for Codable backwards compatibility.
+    case beginner    = "beginner"
+    case developing  = "developing"
+
+    /// All "real" cases used by the current 4-tier UI.
+    public static var activeCases: [MasteryLevel] { [.struggling, .learning, .proficient, .mastered] }
+
+    /// Exclude legacy cases from CaseIterable's default allCases.
+    public static var allCases: [MasteryLevel] { [.struggling, .learning, .proficient, .mastered, .beginner, .developing] }
+
     /// Derives a `MasteryLevel` from a 0–1 mastery score.
+    /// Use the overload with `isMastered` when you have access to the
+    /// full `MasteryScore` to distinguish proficient from mastered.
     public static func from(score: Double) -> MasteryLevel {
         switch score {
-        case ..<0.40:  return .beginner
-        case ..<0.70:  return .developing
-        case ..<0.90:  return .proficient
-        default:       return .mastered
+        case ..<0.50:  return .struggling
+        case ..<0.90:  return .learning
+        default:       return .proficient
+        }
+    }
+
+    /// Derives a `MasteryLevel` with full context (score + attempt threshold).
+    public static func from(score: Double, isMastered: Bool) -> MasteryLevel {
+        switch score {
+        case ..<0.50:  return .struggling
+        case ..<0.90:  return .learning
+        default:       return isMastered ? .mastered : .proficient
         }
     }
 
     public var localizedLabel: String {
         switch self {
-        case .beginner:   return String(localized: "Beginner", bundle: .main)
-        case .developing: return String(localized: "Developing", bundle: .main)
-        case .proficient: return String(localized: "Proficient", bundle: .main)
-        case .mastered:   return String(localized: "Mastered", bundle: .main)
+        case .struggling, .beginner:   return String(localized: "Struggling", bundle: .main)
+        case .learning, .developing:   return String(localized: "Learning", bundle: .main)
+        case .proficient:              return String(localized: "Proficient", bundle: .main)
+        case .mastered:                return String(localized: "Mastered", bundle: .main)
         }
     }
 
@@ -65,10 +94,10 @@ public enum MasteryLevel: String, CaseIterable, Codable, Sendable, Comparable {
 
     private var order: Int {
         switch self {
-        case .beginner:   return 0
-        case .developing: return 1
-        case .proficient: return 2
-        case .mastered:   return 3
+        case .struggling, .beginner:   return 0
+        case .learning, .developing:   return 1
+        case .proficient:              return 2
+        case .mastered:                return 3
         }
     }
 }

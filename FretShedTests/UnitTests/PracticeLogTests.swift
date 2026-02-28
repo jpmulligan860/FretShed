@@ -80,30 +80,37 @@ final class PracticeLogTests: XCTestCase {
         XCTAssertEqual(session.accuracyPercent, 0.0, accuracy: 0.01)
     }
 
-    // MARK: - Mastery Level
+    // MARK: - Mastery Level (4-tier: struggling / learning / mastered)
 
-    func test_masteryLevel_beginner() {
+    func test_masteryLevel_struggling() {
         let session = Session(focusMode: .fullFretboard, gameMode: .untimed)
         session.overallMasteryAtEnd = 0.20
-        XCTAssertEqual(session.masteryLevel, .beginner)
+        XCTAssertEqual(session.masteryLevel, .struggling)
     }
 
-    func test_masteryLevel_developing() {
+    func test_masteryLevel_struggling_upperBound() {
+        let session = Session(focusMode: .fullFretboard, gameMode: .untimed)
+        session.overallMasteryAtEnd = 0.49
+        XCTAssertEqual(session.masteryLevel, .struggling)
+    }
+
+    func test_masteryLevel_learning() {
         let session = Session(focusMode: .fullFretboard, gameMode: .untimed)
         session.overallMasteryAtEnd = 0.55
-        XCTAssertEqual(session.masteryLevel, .developing)
+        XCTAssertEqual(session.masteryLevel, .learning)
+    }
+
+    func test_masteryLevel_learning_upperBound() {
+        let session = Session(focusMode: .fullFretboard, gameMode: .untimed)
+        session.overallMasteryAtEnd = 0.80
+        XCTAssertEqual(session.masteryLevel, .learning)
     }
 
     func test_masteryLevel_proficient() {
         let session = Session(focusMode: .fullFretboard, gameMode: .untimed)
-        session.overallMasteryAtEnd = 0.80
-        XCTAssertEqual(session.masteryLevel, .proficient)
-    }
-
-    func test_masteryLevel_mastered() {
-        let session = Session(focusMode: .fullFretboard, gameMode: .untimed)
         session.overallMasteryAtEnd = 0.95
-        XCTAssertEqual(session.masteryLevel, .mastered)
+        // Session-level masteryLevel uses score-only (no isMastered), so 90%+ = proficient
+        XCTAssertEqual(session.masteryLevel, .proficient)
     }
 
     // MARK: - Persistence
@@ -213,8 +220,8 @@ final class PracticeLogTests: XCTestCase {
     // MARK: - MasteryLevel Ordering
 
     func test_masteryLevel_ordering() {
-        XCTAssertLessThan(MasteryLevel.beginner, .developing)
-        XCTAssertLessThan(MasteryLevel.developing, .proficient)
+        XCTAssertLessThan(MasteryLevel.struggling, .learning)
+        XCTAssertLessThan(MasteryLevel.learning, .proficient)
         XCTAssertLessThan(MasteryLevel.proficient, .mastered)
     }
 }

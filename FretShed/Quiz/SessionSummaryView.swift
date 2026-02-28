@@ -64,6 +64,7 @@ public struct SessionSummaryView: View {
                             if !attempts.isEmpty {
                                 SessionHeatmapView(attempts: attempts, fretboardMap: container.fretboardMap)
                             }
+                            smartPracticeCard
                         }
                         .padding(.horizontal, 20)
                         .padding(.vertical, 20)
@@ -97,6 +98,10 @@ public struct SessionSummaryView: View {
                                 positionsStat
                                     .padding(.top, 8)
                             }
+
+                            smartPracticeCard
+                                .padding(.horizontal, 20)
+                                .padding(.top, 12)
                         }
                         .padding(.bottom, 16)
                     }
@@ -208,7 +213,7 @@ public struct SessionSummaryView: View {
         Button {
             onViewProgress?()
         } label: {
-            Label("View Progress", systemImage: "chart.bar.fill")
+            Label("View Journey", systemImage: "chart.bar.fill")
                 .font(.subheadline.weight(.semibold))
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 12)
@@ -230,6 +235,56 @@ public struct SessionSummaryView: View {
         .buttonStyle(.bordered)
         .tint(DesignSystem.Colors.correct)
         .padding(.trailing, 20)
+    }
+
+    // MARK: - Smart Practice
+
+    @ViewBuilder
+    private var smartPracticeCard: some View {
+        if vm.session.isAdaptive {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 6) {
+                    Image(systemName: "brain")
+                        .foregroundStyle(DesignSystem.Colors.amber)
+                    Text("SMART PRACTICE")
+                        .font(DesignSystem.Typography.smallLabel)
+                        .foregroundStyle(DesignSystem.Colors.amber)
+                        .tracking(1.0)
+                }
+
+                Text(smartPracticeSummary)
+                    .font(.caption)
+                    .foregroundStyle(DesignSystem.Colors.text2)
+            }
+            .padding(16)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                DesignSystem.Colors.surface2,
+                in: RoundedRectangle(cornerRadius: 16)
+            )
+        }
+    }
+
+    private var smartPracticeSummary: String {
+        if !vm.hasBaselineMastery {
+            return "Measuring your mastery — keep practicing and adaptive targeting will kick in."
+        }
+
+        var lines: [String] = []
+
+        if vm.weakSpotQuestionCount > 0 {
+            lines.append("\(vm.weakSpotQuestionCount) of \(vm.attemptCount) questions targeted your weakest positions.")
+        } else {
+            lines.append("No weak spots detected — you're performing well across the board.")
+        }
+
+        let sorted = vm.weakSpotsTargetedStrings.sorted { $0.value > $1.value }
+        if let top = sorted.first, top.value >= 2 {
+            let stringNames = sorted.prefix(2).map { "string \($0.key)" }
+            lines.append("Focused extra practice on \(stringNames.joined(separator: " and ")).")
+        }
+
+        return lines.joined(separator: " ")
     }
 
     // MARK: - Computed
@@ -302,12 +357,7 @@ public struct SessionSummaryView: View {
     }
 
     private var masteryColor: Color {
-        switch vm.session.masteryLevel {
-        case .mastered:   return DesignSystem.Colors.masteryMastered
-        case .proficient: return DesignSystem.Colors.masteryProficient
-        case .developing: return DesignSystem.Colors.masteryDeveloping
-        case .beginner:   return DesignSystem.Colors.masteryBeginner
-        }
+        DesignSystem.Colors.masteryColor(for: vm.session.overallMasteryAtEnd)
     }
 }
 

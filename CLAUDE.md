@@ -1,10 +1,9 @@
-# FretShed — Claude Development Guide
-
 ## Start of Every Session
 1. Read this file fully
-2. Read ROADMAP.md to know current task status
-3. Run `find . -name "*.swift" | sort > FILE_MANIFEST.txt` and review it
-4. Confirm which task we are working on before writing any code
+2. Read ROADMAP.md to know current technical task status
+3. Read CLAUDE_STRATEGY.md for business context (read only — do not edit)
+4. Run `find . -name "*.swift" | sort > FILE_MANIFEST.txt` and review it
+5. Confirm which task we are working on before writing any code
 
 ---
 
@@ -294,8 +293,10 @@ Full analysis: `FretShed_Competitive_Analysis.md` in Claude.ai project files.
    - What the next task is (per ROADMAP.md)
    - Whether any project docs were changed that need to be re-uploaded to Claude.ai Project Knowledge (flag this explicitly so the user knows)
 
-**If project docs (CLAUDE.md, ROADMAP.md, etc.) were modified, remind the user:**
+**If project docs were modified, remind the user:**
 > "CLAUDE.md / ROADMAP.md was updated this session. Remember to re-upload the updated version(s) to your Claude.ai Project Knowledge so both interfaces stay in sync."
+> 
+> If strategy-relevant changes were made (e.g., business model decisions, positioning updates), also note: "This change may need to be reflected in CLAUDE_STRATEGY.md — update it during your next Claude.ai session."
 
 ---
 
@@ -308,7 +309,18 @@ All device-testing bugs are resolved. All feature ideas (F1–F30) are complete.
 - `FretShed_MVP_Checklist_v2.docx` — Full task list with all calibration tasks integrated
 - `FretShed_AudioCalibration_Plan.docx` — Detailed implementation spec for calibration system
 - `FretShed_Competitive_Analysis.md` — Full competitive landscape analysis with feature matrix and revised positioning (Feb 2026)
-- `TEAM_OF_EXPERTS.md` — Prompt engineering personas for domain-specific guidance (invoke by name: Shred McStackview, Droptuned Doug, Chromatic Chris, Fretwise Freddie, Paywall Pete, Feedback Fiona, Lyric Lisa, Compliance Cliff, Encore Eddie, A11y Axel)
+- `TEAM_OF_EXPERTS.md` — 20 expert personas in two teams. Technical Team: Sean Whitfield (SwiftUI), Darren Lowe (DSP), Uma Chen (UX), Gavin Fretwell (guitar pedagogy), Mona Prescott (monetization), Quinn Ashford (QA), Cora Langston (copy), Parker Langdon (privacy), Lars Engström (launch), Ada Xiong (accessibility). Content & Strategy Team: Peter Graves (pedagogy), Theo Marsh (theory), Leo Sandoval (learning science), Irene Novak (instructional design), Trent Holloway (teaching), Fiona Beckett (fretboard), Carmen Reeves (content marketing), Grant Ellison (guitar community), Mason Albright (memory), Bianca Torres (biomechanics).
+- `CLAUDE_STRATEGY.md` — Strategy & content guide (Claude.ai's domain — read only from Claude Code)
+- `ROADMAP_STRATEGY.md` — Strategy & content task tracker (Claude.ai's domain — read only from Claude Code)
+
+## File Ownership Protocol
+| File | Owned by | Other interface |
+|---|---|---|
+| `CLAUDE.md` | Claude Code | Claude.ai reads, never edits |
+| `CLAUDE_STRATEGY.md` | Claude.ai | Claude Code reads, never edits |
+| `ROADMAP.md` | Claude Code | Claude.ai reads, never edits |
+| `ROADMAP_STRATEGY.md` | Claude.ai | Claude Code reads, never edits |
+| `TEAM_OF_EXPERTS.md` | Either (rarely changes) | Both read, coordinate edits |
 
 ---
 

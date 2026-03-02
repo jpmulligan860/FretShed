@@ -344,23 +344,33 @@ public struct QuizView: View {
 
     private var modeIndicator: some View {
         HStack(spacing: 6) {
-            Label(vm.session.focusMode.localizedLabel, systemImage: "scope")
-            Text("·")
-            Label(vm.session.gameMode.localizedLabel, systemImage: "metronome")
-            if vm.session.isAdaptive {
+            if vm.session.focusMode == .accuracyAssessment {
+                Label("Accuracy Assessment", systemImage: "waveform.badge.magnifyingglass")
                 Text("·")
-                if vm.hasBaselineMastery {
-                    Image(systemName: "scope")
-                        .foregroundStyle(DesignSystem.Colors.amber)
-                    Text("Adaptive")
-                        .font(DesignSystem.Typography.dataSmall)
-                        .foregroundStyle(DesignSystem.Colors.amber)
-                } else {
-                    Image(systemName: "waveform.badge.magnifyingglass")
-                        .foregroundStyle(DesignSystem.Colors.text2)
-                    Text("Measuring Mastery")
-                        .font(DesignSystem.Typography.dataSmall)
-                        .foregroundStyle(DesignSystem.Colors.text2)
+                Text("Cell \(vm.assessmentCurrentPosition)/\(vm.assessmentTotalCells)")
+                    .monospacedDigit()
+                Text("·")
+                Text("Rep \(vm.assessmentCurrentRep)/\(vm.assessmentRepsPerCell)")
+                    .monospacedDigit()
+            } else {
+                Label(vm.session.focusMode.localizedLabel, systemImage: "scope")
+                Text("·")
+                Label(vm.session.gameMode.localizedLabel, systemImage: "metronome")
+                if vm.session.isAdaptive {
+                    Text("·")
+                    if vm.hasBaselineMastery {
+                        Image(systemName: "scope")
+                            .foregroundStyle(DesignSystem.Colors.amber)
+                        Text("Adaptive")
+                            .font(DesignSystem.Typography.dataSmall)
+                            .foregroundStyle(DesignSystem.Colors.amber)
+                    } else {
+                        Image(systemName: "waveform.badge.magnifyingglass")
+                            .foregroundStyle(DesignSystem.Colors.text2)
+                        Text("Measuring Mastery")
+                            .font(DesignSystem.Typography.dataSmall)
+                            .foregroundStyle(DesignSystem.Colors.text2)
+                    }
                 }
             }
         }
@@ -574,12 +584,29 @@ public struct QuizView: View {
                 feedbackBanner(text: wrongMessage, color: .red, icon: "xmark.circle.fill")
                     .transition(.scale.combined(with: .opacity))
             case .active:
-                if vm.settings.tapToAnswerEnabled {
-                    tapToAnswerView.transition(.opacity)
-                } else if vm.settings.tapModeEnabled {
-                    tapModeView.transition(.opacity)
-                } else {
-                    micListeningView.transition(.opacity)
+                VStack(spacing: 8) {
+                    if vm.settings.tapToAnswerEnabled {
+                        tapToAnswerView.transition(.opacity)
+                    } else if vm.settings.tapModeEnabled {
+                        tapModeView.transition(.opacity)
+                    } else {
+                        micListeningView.transition(.opacity)
+                    }
+
+                    if vm.session.focusMode == .accuracyAssessment {
+                        Button {
+                            vm.skipQuestion()
+                        } label: {
+                            Label("Skip", systemImage: "forward.fill")
+                                .font(.subheadline.weight(.semibold))
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 10)
+                                .background(DesignSystem.Colors.surface,
+                                            in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
+                                .foregroundStyle(DesignSystem.Colors.text2)
+                        }
+                        .buttonStyle(.plain)
+                    }
                 }
             default:
                 EmptyView()
@@ -597,7 +624,13 @@ public struct QuizView: View {
 
     private var completedContent: some View {
         Group {
-            if vSizeClass == .compact {
+            if vm.session.focusMode == .accuracyAssessment {
+                if vSizeClass == .compact {
+                    assessmentCompletedLandscape
+                } else {
+                    assessmentCompletedContent
+                }
+            } else if vSizeClass == .compact {
                 // Landscape: trophy + buttons left, stats right
                 HStack(spacing: 0) {
                     VStack(spacing: 12) {
@@ -1021,6 +1054,203 @@ public struct QuizView: View {
                 }
             }
         }
+    }
+
+    // MARK: - Assessment Completed Content
+
+    /// Portrait layout for accuracy assessment results.
+    private var assessmentCompletedContent: some View {
+        VStack(spacing: 0) {
+            ScrollView {
+                VStack(spacing: 16) {
+                    assessmentHeadlineCard
+                        .padding(.horizontal, 20)
+                        .padding(.top, 16)
+
+                    assessmentPerStringBreakdown
+                        .padding(.horizontal, 20)
+
+                    assessmentConsistencyCard
+                        .padding(.horizontal, 20)
+
+                    assessmentQuickStats
+                        .padding(.horizontal, 20)
+                }
+                .padding(.bottom, 16)
+            }
+
+            completedButtons
+                .padding(.bottom, 32)
+        }
+    }
+
+    /// Landscape layout for accuracy assessment results.
+    private var assessmentCompletedLandscape: some View {
+        HStack(spacing: 0) {
+            VStack(spacing: 12) {
+                Spacer()
+                assessmentHeadlineCard
+                    .padding(.horizontal, 16)
+                Spacer()
+                completedButtons
+                    .padding(.bottom, 24)
+            }
+            .frame(maxWidth: .infinity)
+
+            Divider().padding(.vertical, 20)
+
+            ScrollView {
+                VStack(spacing: 16) {
+                    assessmentPerStringBreakdown
+                    assessmentConsistencyCard
+                    assessmentQuickStats
+                }
+                .padding(16)
+            }
+            .frame(maxWidth: .infinity)
+        }
+    }
+
+    /// Big accuracy headline: percentage, icon, and correct/total subtitle.
+    private var assessmentHeadlineCard: some View {
+        let pct = completedAccuracy
+        let pctInt = Int(pct * 100)
+        let icon: String = pct >= 0.9 ? "trophy.fill"
+            : pct >= 0.7 ? "target"
+            : "hand.thumbsup.fill"
+        let tColor: Color = pct >= 0.9 ? .yellow
+            : pct >= 0.7 ? .orange
+            : .blue
+
+        return VStack(spacing: 6) {
+            Image(systemName: icon)
+                .font(.system(size: 44))
+                .foregroundStyle(tColor)
+                .symbolEffect(.bounce, value: true)
+            Text("\(pctInt)%")
+                .font(DesignSystem.Typography.largeNumber)
+                .foregroundStyle(DesignSystem.Colors.text)
+            Text("Pitch Detection Accuracy")
+                .font(DesignSystem.Typography.bodyLabel)
+                .foregroundStyle(DesignSystem.Colors.text2)
+            Text("\(vm.correctCount) correct / \(vm.attemptCount) attempts")
+                .font(DesignSystem.Typography.dataSmall)
+                .foregroundStyle(DesignSystem.Colors.muted)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 20)
+        .background(
+            LinearGradient(
+                colors: [tColor.opacity(0.12), tColor.opacity(0.03)],
+                startPoint: .top,
+                endPoint: .bottom
+            ),
+            in: RoundedRectangle(cornerRadius: DesignSystem.Radius.xl)
+        )
+    }
+
+    /// Per-string accuracy bars: 6 rows with label, colored bar, and percentage.
+    private var assessmentPerStringBreakdown: some View {
+        let perString = vm.assessmentPerStringAccuracy
+        return VStack(alignment: .leading, spacing: 10) {
+            DesignSystem.Typography.capsLabel("PER-STRING ACCURACY")
+                .padding(.bottom, 2)
+
+            // Strings ordered 6 → 1 (low E at top)
+            ForEach([6, 5, 4, 3, 2, 1], id: \.self) { stringNum in
+                let data = perString[stringNum]
+                let pct = data.map { $0.total > 0 ? Double($0.correct) / Double($0.total) : 0 } ?? 0
+                let pctInt = Int(pct * 100)
+                HStack(spacing: 8) {
+                    Text(assessmentStringLabel(for: stringNum))
+                        .font(DesignSystem.Typography.dataSmall)
+                        .foregroundStyle(DesignSystem.Colors.text)
+                        .frame(width: 16, alignment: .trailing)
+
+                    GeometryReader { geo in
+                        ZStack(alignment: .leading) {
+                            RoundedRectangle(cornerRadius: 3)
+                                .fill(DesignSystem.Colors.surface2)
+                                .frame(height: 10)
+                            RoundedRectangle(cornerRadius: 3)
+                                .fill(assessmentBarColor(for: pct))
+                                .frame(width: geo.size.width * pct, height: 10)
+                        }
+                    }
+                    .frame(height: 10)
+
+                    Text("\(pctInt)%")
+                        .font(DesignSystem.Typography.dataSmall)
+                        .foregroundStyle(DesignSystem.Colors.text2)
+                        .frame(width: 36, alignment: .trailing)
+                        .monospacedDigit()
+                }
+            }
+        }
+        .padding(16)
+        .background(DesignSystem.Colors.surface, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.lg))
+    }
+
+    /// Consistency tiles: count of cells at each level (3/3, 2/3, 1/3, 0/3).
+    private var assessmentConsistencyCard: some View {
+        let buckets = vm.assessmentConsistencyBuckets
+        return VStack(alignment: .leading, spacing: 10) {
+            DesignSystem.Typography.capsLabel("CELL CONSISTENCY")
+                .padding(.bottom, 2)
+
+            HStack(spacing: 8) {
+                assessmentConsistencyTile(count: buckets[3, default: 0], label: "3/3", color: DesignSystem.Colors.correct)
+                assessmentConsistencyTile(count: buckets[2, default: 0], label: "2/3", color: DesignSystem.Colors.amber)
+                assessmentConsistencyTile(count: buckets[1, default: 0], label: "1/3", color: DesignSystem.Colors.wrong)
+                assessmentConsistencyTile(count: buckets[0, default: 0], label: "0/3", color: DesignSystem.Colors.muted)
+            }
+        }
+        .padding(16)
+        .background(DesignSystem.Colors.surface, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.lg))
+    }
+
+    private func assessmentConsistencyTile(count: Int, label: String, color: Color) -> some View {
+        VStack(spacing: 4) {
+            Text("\(count)")
+                .font(DesignSystem.Typography.dataDisplay)
+                .foregroundStyle(color)
+            Text(label)
+                .font(DesignSystem.Typography.dataSmall)
+                .foregroundStyle(DesignSystem.Colors.text2)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 10)
+        .background(color.opacity(0.1), in: RoundedRectangle(cornerRadius: DesignSystem.Radius.sm))
+    }
+
+    /// Quick stats row: Attempts + Best Streak.
+    private var assessmentQuickStats: some View {
+        LazyVGrid(columns: [.init(), .init()], spacing: 12) {
+            CompletedStatCard(label: "Attempts", value: "\(vm.attemptCount)", icon: "list.number", color: .blue)
+            CompletedStatCard(label: "Best Streak", value: "\(vm.bestStreak)🔥", icon: "flame.fill", color: .orange)
+        }
+    }
+
+    // MARK: - Assessment Helpers
+
+    /// Maps guitar string number to its standard label.
+    private func assessmentStringLabel(for string: Int) -> String {
+        switch string {
+        case 6: return "E"
+        case 5: return "A"
+        case 4: return "D"
+        case 3: return "G"
+        case 2: return "B"
+        case 1: return "e"
+        default: return "\(string)"
+        }
+    }
+
+    /// Returns a color for the accuracy bar based on percentage thresholds.
+    private func assessmentBarColor(for accuracy: Double) -> Color {
+        if accuracy >= 0.85 { return DesignSystem.Colors.correct }
+        if accuracy >= 0.60 { return DesignSystem.Colors.amber }
+        return DesignSystem.Colors.wrong
     }
 
     // MARK: - Helpers

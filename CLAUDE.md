@@ -174,7 +174,7 @@ Full analysis: `FretShed_Competitive_Analysis.md` in Claude.ai project files.
 ---
 
 ## Testing
-- Test suite: 219 tests passing
+- Test suite: 230 tests passing
 - Run: `xcodebuild test -scheme FretShed -destination 'platform=iOS Simulator,name=iPhone 16 Pro'`
 - All tests must pass before marking any task complete
 - New audio processing functions should have unit tests using pre-recorded PCM buffer fixtures
@@ -225,7 +225,9 @@ Full analysis: `FretShed_Competitive_Analysis.md` in Claude.ai project files.
 
 **Device Test Polish (D8) — IMPLEMENTED.** MetroDrone DisclosureGroup labels styled with `sectionHeader` + `text` color.
 
-**All BUGLOG items resolved.** All feature ideas (F1–F36) complete.
+**All BUGLOG items resolved.** All feature ideas (F1–F37) complete.
+
+**Accuracy Assessment 3× Repetition (F37) — IMPLEMENTED.** Each fretboard cell is played 3 times during an accuracy assessment run. Per-cell results stored in `assessmentCellResultsStore`. Mode indicator shows cell + rep progress. Custom assessment results view with headline accuracy %, per-string accuracy bars, consistency tiles (3/3, 2/3, 1/3, 0/3), and quick stats. Portrait + landscape layouts.
 
 **Expert Review Technical Fixes (Feb 2026) — IMPLEMENTED.** 11 code items from expert panel review:
 - Design system sweep: ~458 system colors/fonts replaced with Woodshop tokens across 18 files
@@ -309,17 +311,16 @@ Full analysis: `FretShed_Competitive_Analysis.md` in Claude.ai project files.
 ---
 
 ## Known Issues (from BUGLOG.md)
-All device-testing bugs are resolved. All feature ideas (F1–F30) are complete.
+All device-testing bugs are resolved. All feature ideas (F1–F36) are complete.
 
 ---
 
 ## Reference Documents (in Claude.ai Project)
-- `FretShed_MVP_Checklist_v2.docx` — Full task list with all calibration tasks integrated
-- `FretShed_AudioCalibration_Plan.docx` — Detailed implementation spec for calibration system
 - `FretShed_Competitive_Analysis.md` — Full competitive landscape analysis with feature matrix and revised positioning (Feb 2026)
 - `TEAM_OF_EXPERTS.md` — 20 expert personas in two teams. Technical Team: Sean Whitfield (SwiftUI), Darren Lowe (DSP), Uma Chen (UX), Gavin Fretwell (guitar pedagogy), Mona Prescott (monetization), Quinn Ashford (QA), Cora Langston (copy), Parker Langdon (privacy), Lars Engström (launch), Ada Xiong (accessibility). Content & Strategy Team: Peter Graves (pedagogy), Theo Marsh (theory), Leo Sandoval (learning science), Irene Novak (instructional design), Trent Holloway (teaching), Fiona Beckett (fretboard), Carmen Reeves (content marketing), Grant Ellison (guitar community), Mason Albright (memory), Bianca Torres (biomechanics).
 - `CLAUDE_STRATEGY.md` — Strategy & content guide (Claude.ai's domain — read only from Claude Code)
 - `ROADMAP_STRATEGY.md` — Strategy & content task tracker (Claude.ai's domain — read only from Claude Code)
+- `HOW_IT_WORKS.md` — How pitch detection, audio calibration, and adaptive learning work (plain language)
 
 ## File Ownership Protocol
 | File | Owned by | Other interface |

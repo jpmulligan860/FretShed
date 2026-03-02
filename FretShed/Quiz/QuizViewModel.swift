@@ -94,6 +94,19 @@ public final class QuizViewModel: Identifiable {
     /// Current position in the circle of fourths/fifths sequence (0 = C).
     /// Only used when focusMode is .circleOfFourths or .circleOfFifths.
     private var circleNoteIndex: Int = 0
+
+    // MARK: - Accuracy Assessment Tracking
+    /// Index into the string sequence (0 = string 6, 1 = string 5, …, 5 = string 1).
+    /// Only used when focusMode is .accuracyAssessment.
+    private var assessmentStringIndex: Int = 0
+    /// Current fret within the active string. Advances from fretRangeStart to fretRangeEnd.
+    private var assessmentFretIndex: Int = 0
+    /// Current repetition within the current cell (0, 1, 2). Resets when advancing to next cell.
+    private var assessmentRepIndex: Int = 0
+    /// Number of times each cell is played during an accuracy assessment.
+    private static let assessmentRepsPerCell = 3
+    /// Per-cell results: key = "string-fret", value = array of wasCorrect bools (one per rep).
+    private var assessmentCellResultsStore: [String: [Bool]] = [:]
     /// Index of the current chord in the chord progression (0-based).
     private var chordIndex: Int = 0
     /// Index of the current tone within the chord: 0 = root, 1 = third, 2 = fifth.
@@ -113,6 +126,54 @@ public final class QuizViewModel: Identifiable {
     /// True while displaying the completed chord summary (untimed only).
     /// The UI uses this alongside `currentChord` to show chord name and notes.
     public private(set) var showingChordCompleteSummary: Bool = false
+
+    /// Total number of cells in the accuracy assessment (6 × fret count).
+    public var assessmentTotalCells: Int {
+        guard session.focusMode == .accuracyAssessment else { return 0 }
+        return kStringCount * (session.fretRangeEnd - session.fretRangeStart + 1)
+    }
+
+    /// 1-based position within the accuracy assessment sequence.
+    public var assessmentCurrentPosition: Int {
+        let fretCount = session.fretRangeEnd - session.fretRangeStart + 1
+        return assessmentStringIndex * fretCount + assessmentFretIndex + 1
+    }
+
+    /// 1-based repetition index for the current cell.
+    public var assessmentCurrentRep: Int { assessmentRepIndex + 1 }
+
+    /// Number of reps per cell (read-only accessor for the view).
+    public var assessmentRepsPerCell: Int { Self.assessmentRepsPerCell }
+
+    /// Total attempts in the assessment (cells × reps).
+    public var assessmentTotalAttempts: Int { assessmentTotalCells * Self.assessmentRepsPerCell }
+
+    /// Read-only access to per-cell result arrays for the results view.
+    public var assessmentResults: [String: [Bool]] { assessmentCellResultsStore }
+
+    /// Per-string accuracy aggregated from cell results: string number → (correct, total).
+    public var assessmentPerStringAccuracy: [Int: (correct: Int, total: Int)] {
+        var result: [Int: (correct: Int, total: Int)] = [:]
+        for (key, bools) in assessmentCellResultsStore {
+            let parts = key.split(separator: "-")
+            guard let stringNum = Int(parts.first ?? "") else { continue }
+            let correct = bools.filter { $0 }.count
+            let existing = result[stringNum, default: (correct: 0, total: 0)]
+            result[stringNum] = (correct: existing.correct + correct, total: existing.total + bools.count)
+        }
+        return result
+    }
+
+    /// Count of cells at each consistency level: 0/3, 1/3, 2/3, 3/3.
+    /// Key = number correct (0…3), value = count of cells at that level.
+    public var assessmentConsistencyBuckets: [Int: Int] {
+        var buckets: [Int: Int] = [0: 0, 1: 0, 2: 0, 3: 0]
+        for (_, bools) in assessmentCellResultsStore {
+            let correct = bools.filter { $0 }.count
+            buckets[correct, default: 0] += 1
+        }
+        return buckets
+    }
 
     /// Response times (ms) for correct answers only — used to compute average for timed sessions.
     private var correctResponseTimes: [Int] = []
@@ -221,6 +282,12 @@ public final class QuizViewModel: Identifiable {
         }
         timerTask?.cancel()
         Task { recordAttempt(question: question, playedNote: note, correct: correct, responseMs: responseMs) }
+        // Accuracy assessment: record the per-cell result and advance the rep/cell cursor.
+        if session.focusMode == .accuracyAssessment {
+            let cellKey = "\(question.string)-\(question.fret)"
+            assessmentCellResultsStore[cellKey, default: []].append(correct)
+            advanceAssessment()
+        }
         // Streak mode: one wrong answer ends the session after showing feedback.
         if !correct && session.gameMode == .streak {
             scheduleFeedbackAdvance(thenComplete: true)
@@ -233,6 +300,24 @@ public final class QuizViewModel: Identifiable {
     public func advanceManually() {
         guard phase == .feedbackCorrect || phase == .feedbackWrong else { return }
         feedbackTask?.cancel()
+        advanceOrComplete()
+    }
+
+    /// Skip the current question in an accuracy assessment (records as a miss).
+    public func skipQuestion() {
+        guard phase == .active,
+              session.focusMode == .accuracyAssessment,
+              let question = currentQuestion else { return }
+        detectedNote = nil
+        lastAnswerWasCorrect = false
+        attemptCount += 1
+        session.attemptCount += 1
+        currentStreak = 0
+        let responseMs = Int(Date().timeIntervalSince(questionStartTime) * 1000)
+        Task { recordAttempt(question: question, playedNote: question.note.transposed(by: 1), correct: false, responseMs: responseMs) }
+        let cellKey = "\(question.string)-\(question.fret)"
+        assessmentCellResultsStore[cellKey, default: []].append(false)
+        advanceAssessment()
         advanceOrComplete()
     }
 
@@ -292,7 +377,14 @@ public final class QuizViewModel: Identifiable {
     }
 
     private func advanceOrComplete() {
-        if attemptCount >= settings.defaultSessionLength {
+        if session.focusMode == .accuracyAssessment {
+            if assessmentStringIndex >= kStringCount {
+                phase = .complete
+                finaliseSession()
+            } else {
+                advanceToNextQuestion()
+            }
+        } else if attemptCount >= settings.defaultSessionLength {
             phase = .complete
             finaliseSession()
         } else {
@@ -301,7 +393,7 @@ public final class QuizViewModel: Identifiable {
     }
 
     private func selectQuestion() -> QuizQuestion {
-        // Circle modes use strict ordering instead of mastery-weighted random selection.
+        // Modes with strict ordering instead of mastery-weighted random selection.
         switch session.focusMode {
         case .circleOfFourths:
             return selectCircleQuestion(from: MusicalNote.circleOfFourths)
@@ -309,6 +401,8 @@ public final class QuizViewModel: Identifiable {
             return selectCircleQuestion(from: MusicalNote.circleOfFifths)
         case .chordProgression:
             return selectChordProgressionQuestion()
+        case .accuracyAssessment:
+            return selectAssessmentQuestion()
         default:
             break
         }
@@ -478,6 +572,32 @@ public final class QuizViewModel: Identifiable {
         return (choices.isEmpty ? candidates : choices).randomElement()!
     }
 
+    /// Returns the next sequential cell for the accuracy assessment.
+    /// Order: string 6 fret 0…N, string 5 fret 0…N, …, string 1 fret 0…N.
+    private func selectAssessmentQuestion() -> QuizQuestion {
+        let stringNumber = kStringCount - assessmentStringIndex  // 6, 5, 4, 3, 2, 1
+        let fret = session.fretRangeStart + assessmentFretIndex
+        guard let fretMap = fretboardMap.map[stringNumber],
+              let note = fretMap[fret] else {
+            return QuizQuestion(note: .e, string: stringNumber, fret: fret)
+        }
+        return QuizQuestion(note: note, string: stringNumber, fret: fret)
+    }
+
+    /// Advance the assessment cursor: increment rep first, then move to next cell after 3 reps.
+    private func advanceAssessment() {
+        assessmentRepIndex += 1
+        if assessmentRepIndex >= Self.assessmentRepsPerCell {
+            assessmentRepIndex = 0
+            let fretCount = session.fretRangeEnd - session.fretRangeStart + 1
+            assessmentFretIndex += 1
+            if assessmentFretIndex >= fretCount {
+                assessmentFretIndex = 0
+                assessmentStringIndex += 1
+            }
+        }
+    }
+
     private func buildCandidates() -> [QuizQuestion] {
         var questions: [QuizQuestion] = []
         let fretStart = session.fretRangeStart
@@ -505,7 +625,7 @@ public final class QuizViewModel: Identifiable {
         case .circleOfFourths, .circleOfFifths:
             // Handled in selectCircleQuestion; fall through to all candidates.
             return candidates
-        case .fullFretboard, .chordProgression, .fretboardPosition:
+        case .fullFretboard, .chordProgression, .fretboardPosition, .accuracyAssessment:
             return candidates
         }
     }

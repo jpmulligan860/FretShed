@@ -159,6 +159,7 @@ Ideas discovered during testing. Not bugs — things that don't exist yet or cou
 | F35 | ✅ Done | Progress | "Today's Sessions" filter | Added "Today's Sessions" to the Journey filter menu, placed below "All Sessions". Filters to current day's sessions. All stats, charts, and heatmap update accordingly. Session 2026-02-28. |
 | F36 | ✅ Done | Progress | Journey tab stale data on return | Added `.onAppear` reload to ProgressTabView so stats refresh when returning from quiz. Previously `.task` only fired once; SwiftData live objects updated heatmap colors but stat counts were stale snapshots. Session 2026-02-28. |
 | D8 | ✅ Done | MetroDrone | DisclosureGroup sections for Drone and Time Signature | Wrapped Time Signature & Accents and Drone sections in collapsible DisclosureGroups matching Speed Trainer. All section titles use consistent `sectionHeader` font and `text` color. Session 2026-02-28. |
+| F37 | ✅ Done | Quiz | Accuracy Assessment 3× repetition + custom results view | Each cell now plays 3 times before advancing (assessmentRepIndex/assessmentRepsPerCell). Per-cell results tracked in assessmentCellResultsStore. Mode indicator shows "Cell X/Y · Rep N/3". Custom assessment results view: headline accuracy %, per-string accuracy bars (6→1), consistency tiles (3/3, 2/3, 1/3, 0/3), quick stats. Portrait + landscape layouts. Computed properties: assessmentPerStringAccuracy, assessmentConsistencyBuckets. Session 2026-03-01. |
 
 ---
 
@@ -220,3 +221,4 @@ Ideas discovered during testing. Not bugs — things that don't exist yet or cou
 | F31 | Adaptive learning intelligence indicators | Removed toggle, always-on adaptive. QuizView: "Measuring Mastery" → "Adaptive" transition. SessionSummaryView: Smart Practice card with weak-spot stats. Quick-launch `isAdaptive: true`. | Session 2026-02-27 |
 | F32 | Delete session from detail view | "Delete Session" button + confirmation alert in SessionDetailView. Closure-based, dismisses sheet, recalculates mastery. | Session 2026-02-27 |
 | Q18 | "Session saved to Journey" shown after End & Delete | Added `wasDiscarded` flag to QuizViewModel; set in `discardSession()`. Results screen shows "Session deleted" with trash icon when true. | Session 2026-02-27 |
+| F37 | Accuracy Assessment 3× repetition + custom results view | 3 reps per cell, per-cell result tracking, custom results view with per-string bars + consistency tiles. | Session 2026-03-01 |

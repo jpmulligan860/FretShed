@@ -176,6 +176,7 @@ struct PracticeHomeView: View {
     @Environment(\.appContainer) private var container
     @State private var lastSession: Session?
     @State private var activeProfileName: String?
+    @State private var allProfiles: [AudioCalibrationProfile] = []
 
     @AppStorage(LocalUserPreferences.Key.hasCompletedCalibration)
     private var hasCompletedCalibration = false
@@ -206,34 +207,24 @@ struct PracticeHomeView: View {
         .background(DesignSystem.Colors.background)
         .task {
             lastSession = try? container.sessionRepository.recentSessions(limit: 1).first
-            if let profile = try? container.calibrationRepository.activeProfile() {
-                activeProfileName = profile.displayName
-            }
+            reloadProfiles()
+        }
+        .onAppear {
+            reloadProfiles()
         }
     }
 
     @ViewBuilder
     private var doThisFirstCard: some View {
         if hasCompletedCalibration {
-            // Compact "Calibrated" status line
+            // Compact "Calibrated" status line with profile switcher
             HStack(spacing: 10) {
                 Image(systemName: "checkmark.circle.fill")
                     .foregroundStyle(DesignSystem.Colors.correct)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Audio Calibrated")
-                        .font(DesignSystem.Typography.bodyLabel)
-                    if let profileName = activeProfileName {
-                        Text(profileName)
-                            .font(.caption)
-                            .foregroundStyle(DesignSystem.Colors.text2)
-                    }
-                }
+                Text("Audio Calibrated")
+                    .font(DesignSystem.Typography.bodyLabel)
                 Spacer()
-                Button("Re-calibrate") {
-                    onCalibrateAudio()
-                }
-                .font(DesignSystem.Typography.smallLabel)
-                .foregroundStyle(DesignSystem.Colors.cherry)
+                profileSwitcherMenu
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 12)
@@ -288,6 +279,50 @@ struct PracticeHomeView: View {
                     .padding(20)
             }
         }
+    }
+
+    private var profileSwitcherMenu: some View {
+        Menu {
+            ForEach(allProfiles, id: \.id) { profile in
+                Button {
+                    switchToProfile(profile)
+                } label: {
+                    if profile.isActive {
+                        Label(profile.displayName, systemImage: "checkmark")
+                    } else {
+                        Text(profile.displayName)
+                    }
+                }
+            }
+            Divider()
+            Button {
+                onCalibrateAudio()
+            } label: {
+                Label("Add New Profile", systemImage: "plus")
+            }
+        } label: {
+            HStack(spacing: 4) {
+                Text(activeProfileName ?? "Guitar")
+                    .font(DesignSystem.Typography.smallLabel)
+                    .foregroundStyle(DesignSystem.Colors.cherry)
+                Image(systemName: "chevron.up.chevron.down")
+                    .font(.caption2)
+                    .foregroundStyle(DesignSystem.Colors.cherry)
+            }
+        }
+    }
+
+    private func reloadProfiles() {
+        if let profile = try? container.calibrationRepository.activeProfile() {
+            activeProfileName = profile.displayName
+        }
+        allProfiles = (try? container.calibrationRepository.allProfiles()) ?? []
+    }
+
+    private func switchToProfile(_ profile: AudioCalibrationProfile) {
+        guard !profile.isActive else { return }
+        try? container.calibrationRepository.setActive(profile)
+        reloadProfiles()
     }
 
     private var heroCard: some View {

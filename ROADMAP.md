@@ -191,7 +191,7 @@ Estimated: 10–13 hours
 | # | Task | Est. | Status |
 |---|---|---|---|
 | 4.12 | Add TelemetryDeck SDK via SPM — privacy-focused analytics, no PII collection | 30 min | 🔲 |
-| 4.13 | Define key events — session_started, session_completed, paywall_shown, subscription_started, calibration_completed | 30 min | 🔲 |
+| 4.13 | Define key events — session_started, session_completed, paywall_shown, subscription_started, calibration_completed, onboarding_completed, quiz_first_completed | 30 min | 🔲 |
 
 ---
 
@@ -214,8 +214,8 @@ Estimated: 18–25 hours
 | # | Task | Est. | Status |
 |---|---|---|---|
 | 5.5 | Privacy Policy — termly.io (free); specify mic use, local storage only, no third-party sharing | 1 hr | 🔲 |
-| 5.6 | Host Privacy Policy — e.g. Carrd.co (free), at `fretshed.carrd.co/privacy` | 30 min | 🔲 |
-| 5.7 | Support URL — `fretshed.carrd.co/support` (required by Apple) | 30 min | 🔲 |
+| 5.6 | Host Privacy Policy on WordPress — publish at `fretshed.com/privacy` (site is live on SiteGround GrowBig, Woodshop theme) | 30 min | 🔲 |
+| 5.7 | Support URL — `fretshed.com/support` with WPForms contact form (required by Apple) | 30 min | 🔲 |
 | 5.8 | Add `PrivacyInfo.xcprivacy` to project — declare microphone usage and `NSUserDefaults` access (missing = auto-rejection) | 1 hr | 🔲 |
 | 5.9 | Complete App Store privacy nutrition label — data not collected (on-device only) | 30 min | 🔲 |
 
@@ -254,8 +254,8 @@ Estimated: 18–25 hours
 
 | # | Task | Est. | Status |
 |---|---|---|---|
-| 6.1 | Pre-launch email sequence — 4-week drip (teaser, feature deep-dive, early access, launch day) | 2–3 hrs | 🔲 |
-| 6.2 | Reddit/YouTube community outreach — r/guitarlessons, r/learnguitar, relevant YouTube channels | 2–3 hrs | 🔲 |
+| 6.1 | Pre-launch email sequence — 4-week drip (teaser, feature deep-dive, early access, launch day). Detailed implementation plan in ROADMAP_STRATEGY Phase S6B (MailerLite) | 2–3 hrs | 🔲 |
+| 6.2 | Reddit/YouTube community outreach — r/guitarlessons, r/learnguitar, relevant YouTube channels. Detailed implementation plan in ROADMAP_STRATEGY Phase S6D (Reddit) | 2–3 hrs | 🔲 |
 | 6.3 | "Suggested Next Session" on quiz results screen — recommend next focus based on weak spots | 2–3 hrs | 🔲 |
 | 6.4 | Full accessibility audit — VoiceOver, Dynamic Type, color contrast across all screens | 4–6 hrs | 🔲 |
 | 6.5 | Auto-tune PitchDetector from accuracy assessment data — analyze per-attempt detection metadata (confidence, cents, frequency) to auto-adjust per-string confidence thresholds, consecutive frame gate, and spectral flatness threshold. Prerequisite: detection metadata capture (shipped). | 3–4 hrs | 🔲 |
@@ -289,3 +289,22 @@ Then share the relevant Swift files. Every task on this list is Claude-assisted 
 Mark tasks complete by changing `🔲` to `✅` as you go. When a full phase is done, that's a real milestone worth acknowledging.
 
 **You already built the hard parts. Everything here is execution, not invention.**
+
+---
+
+## Sync Ledger
+
+> See `SYNC_PROTOCOL.md` for how this works. Claude Code owns this file; Claude.ai reads only.
+
+### Outbound (changes Claude.ai needs to know about)
+| Date | What Changed | Target | Status |
+|---|---|---|---|
+| | | | |
+
+### Inbound (changes requested by Claude.ai)
+| Date | Change Requested | Source | Status |
+|---|---|---|---|
+| 2026-03-03 | Task 5.6: Change Carrd → WordPress. "Host Privacy Policy on WordPress — publish at `fretshed.com/privacy`" | ROADMAP_STRATEGY.md | ✅ Applied |
+| 2026-03-03 | Task 5.7: Change Carrd → WordPress. "Support URL — `fretshed.com/support` with WPForms contact form" | ROADMAP_STRATEGY.md | ✅ Applied |
+| 2026-03-03 | Task 4.13: Add events `onboarding_completed` and `quiz_first_completed` to key events list | ROADMAP_STRATEGY.md | ✅ Applied |
+| 2026-03-03 | Phase 6: Tasks 6.1 and 6.2 — add cross-references to ROADMAP_STRATEGY Phase S6B and S6D | ROADMAP_STRATEGY.md | ✅ Applied |

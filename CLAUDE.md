@@ -318,12 +318,12 @@ Full analysis: `FretShed_Competitive_Analysis.md` in Claude.ai project files.
    - What was accomplished
    - What tasks are now complete
    - What the next task is (per ROADMAP.md)
-   - Whether any project docs were changed that need to be re-uploaded to Claude.ai Project Knowledge (flag this explicitly so the user knows)
 
-**If project docs were modified, remind the user:**
-> "CLAUDE.md / ROADMAP.md was updated this session. Remember to re-upload the updated version(s) to your Claude.ai Project Knowledge so both interfaces stay in sync."
-> 
-> If strategy-relevant changes were made (e.g., business model decisions, positioning updates), also note: "This change may need to be reflected in CLAUDE_STRATEGY.md — update it during your next Claude.ai session."
+10. **Run sync check** — Scan the Sync Ledger in CLAUDE.md and ROADMAP.md.
+    - **Outbound:** If there are any 🔲 Pending outbound items, generate a sync report and a paste-ready prompt for Claude.ai.
+    - **Re-upload reminder:** If any of these files were changed this session — CLAUDE.md, ROADMAP.md, BUGLOG.md — list them and remind the user to re-upload to Claude.ai Project Knowledge.
+    - **Strategy flag:** If strategy-relevant changes were made (e.g., business model decisions, positioning updates), note: "This change may need to be reflected in CLAUDE_STRATEGY.md — update it during your next Claude.ai session."
+    - **Inbound:** If there are any 🔲 Pending inbound items that weren't addressed this session, flag them for the next session.
 
 ---
 
@@ -354,3 +354,19 @@ All device-testing bugs are resolved. All feature ideas (F1–F36) are complete.
 - [x] Update onboarding subtitle in code: "The guitar trainer that actually gets your notes right." (done in OnboardingView.swift)
 - [ ] When writing App Store description (Task 5.12): use revised positioning from competitive analysis — lead with calibration + adaptive learning, NOT "only app that listens"
 - [ ] When creating App Store screenshots (Task 5.2): feature the calibration flow as a key differentiator
+
+---
+
+## Sync Ledger
+
+> See `SYNC_PROTOCOL.md` for how this works. Claude Code owns this file; Claude.ai reads only.
+
+### Outbound (changes Claude.ai needs to know about)
+| Date | What Changed | Target | Status |
+|---|---|---|---|
+| | | | |
+
+### Inbound (changes requested by Claude.ai)
+| Date | Change Requested | Source | Status |
+|---|---|---|---|
+| | | | |

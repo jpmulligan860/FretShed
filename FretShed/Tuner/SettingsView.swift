@@ -31,6 +31,13 @@ public struct SettingsView: View {
     @State private var showDataInfo = false
     @State private var showCalibration = false
     @State private var calibrationProfile: AudioCalibrationProfile? = nil
+    @State private var calibrationProfiles: [AudioCalibrationProfile] = []
+    @State private var showRenameAlert = false
+    @State private var renameText = ""
+    @State private var renamingProfile: AudioCalibrationProfile? = nil
+    @State private var showDeleteConfirmation = false
+    @State private var deletingProfile: AudioCalibrationProfile? = nil
+    @State private var recalibratingProfile: AudioCalibrationProfile? = nil
 
     @AppStorage(LocalUserPreferences.Key.hasCompletedCalibration)
     private var hasCompletedCalibration = false
@@ -315,93 +322,117 @@ public struct SettingsView: View {
 
     private var audioSetupSection: some View {
         Section {
-            if hasCompletedCalibration, let profile = calibrationProfile {
-                // Status row
-                HStack {
-                    Text("Status")
-                    Spacer()
-                    Label("Completed", systemImage: "checkmark.circle.fill")
-                        .font(.subheadline)
-                        .foregroundStyle(DesignSystem.Colors.correct)
-                }
-
-                // Input source
-                HStack {
-                    Text("Input Source")
-                    Spacer()
-                    Text(profile.inputSource.displayName)
-                        .foregroundStyle(DesignSystem.Colors.text2)
-                }
-
-                // Last calibrated date
-                HStack {
-                    Text("Last Calibrated")
-                    Spacer()
-                    Text(profile.calibrationDate, style: .date)
-                        .foregroundStyle(DesignSystem.Colors.text2)
-                }
-
-                // Signal quality badge
-                HStack {
-                    Text("Signal Quality")
-                    Spacer()
-                    HStack(spacing: 4) {
-                        Circle()
-                            .fill(qualityBadgeColor(profile.signalQualityScore))
-                            .frame(width: 8, height: 8)
-                        Text("\(Int(profile.signalQualityScore * 100))%")
-                            .foregroundStyle(DesignSystem.Colors.text2)
-                    }
-                }
-
-                // Input Gain Trim slider
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack {
-                        Text("Input Gain Trim")
-                        Spacer()
-                        Text(String(format: "%+.1f dB", profile.userGainTrimDB))
-                            .foregroundStyle(DesignSystem.Colors.text2)
-                            .monospacedDigit()
-                    }
-                    GradientSlider(
-                        value: Binding(
-                            get: { Double(profile.userGainTrimDB) },
-                            set: {
-                                profile.userGainTrimDB = Float($0)
-                                try? container.calibrationRepository.save(profile)
+            if hasCompletedCalibration, !calibrationProfiles.isEmpty {
+                // Profile list
+                ForEach(calibrationProfiles, id: \.id) { profile in
+                    profileRow(profile)
+                        .contextMenu {
+                            if !profile.isActive {
+                                Button {
+                                    setActiveProfile(profile)
+                                } label: {
+                                    Label("Set Active", systemImage: "checkmark.circle")
+                                }
                             }
-                        ),
-                        range: -6...6,
-                        step: 0.5
-                    )
-                }
-
-                // Noise Gate Trim slider
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack {
-                        Text("Noise Gate Trim")
-                        Spacer()
-                        Text(String(format: "%+.1f dB", profile.userGateTrimDB))
-                            .foregroundStyle(DesignSystem.Colors.text2)
-                            .monospacedDigit()
-                    }
-                    GradientSlider(
-                        value: Binding(
-                            get: { Double(profile.userGateTrimDB) },
-                            set: {
-                                profile.userGateTrimDB = Float($0)
-                                try? container.calibrationRepository.save(profile)
+                            Button {
+                                renamingProfile = profile
+                                renameText = profile.name ?? ""
+                                showRenameAlert = true
+                            } label: {
+                                Label("Rename", systemImage: "pencil")
                             }
-                        ),
-                        range: -6...6,
-                        step: 0.5
-                    )
+                            Button {
+                                recalibratingProfile = profile
+                                showCalibration = true
+                            } label: {
+                                Label("Re-Calibrate", systemImage: "arrow.clockwise")
+                            }
+                            Button(role: .destructive) {
+                                deletingProfile = profile
+                                showDeleteConfirmation = true
+                            } label: {
+                                Label("Delete", systemImage: "trash")
+                            }
+                        }
+                        .swipeActions(edge: .trailing) {
+                            Button(role: .destructive) {
+                                deletingProfile = profile
+                                showDeleteConfirmation = true
+                            } label: {
+                                Label("Delete", systemImage: "trash")
+                            }
+                        }
+                        .swipeActions(edge: .leading) {
+                            if !profile.isActive {
+                                Button {
+                                    setActiveProfile(profile)
+                                } label: {
+                                    Label("Set Active", systemImage: "checkmark.circle")
+                                }
+                                .tint(DesignSystem.Colors.correct)
+                            }
+                        }
                 }
 
+                // Trim sliders for active profile
+                if let activeProfile = calibrationProfiles.first(where: { $0.isActive }) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack {
+                            Text("Input Gain Trim")
+                            Spacer()
+                            Text(String(format: "%+.1f dB", activeProfile.userGainTrimDB))
+                                .foregroundStyle(DesignSystem.Colors.text2)
+                                .monospacedDigit()
+                        }
+                        GradientSlider(
+                            value: Binding(
+                                get: { Double(activeProfile.userGainTrimDB) },
+                                set: {
+                                    activeProfile.userGainTrimDB = Float($0)
+                                    try? container.calibrationRepository.save(activeProfile)
+                                }
+                            ),
+                            range: -6...6,
+                            step: 0.5
+                        )
+                    }
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack {
+                            Text("Noise Gate Trim")
+                            Spacer()
+                            Text(String(format: "%+.1f dB", activeProfile.userGateTrimDB))
+                                .foregroundStyle(DesignSystem.Colors.text2)
+                                .monospacedDigit()
+                        }
+                        GradientSlider(
+                            value: Binding(
+                                get: { Double(activeProfile.userGateTrimDB) },
+                                set: {
+                                    activeProfile.userGateTrimDB = Float($0)
+                                    try? container.calibrationRepository.save(activeProfile)
+                                }
+                            ),
+                            range: -6...6,
+                            step: 0.5
+                        )
+                    }
+                }
+
+                // Add New Profile button
                 Button {
+                    recalibratingProfile = nil
                     showCalibration = true
                 } label: {
-                    Label("Re-Calibrate", systemImage: "arrow.clockwise")
+                    Label("Add New Profile", systemImage: "plus.circle")
+                }
+
+                if settings?.showAccuracyAssessment != false {
+                    Button {
+                        launchAccuracyAssessment()
+                    } label: {
+                        Label("Run Accuracy Assessment", systemImage: "waveform.badge.magnifyingglass")
+                    }
                 }
             } else {
                 // Not calibrated
@@ -413,6 +444,7 @@ public struct SettingsView: View {
                 }
 
                 Button {
+                    recalibratingProfile = nil
                     showCalibration = true
                 } label: {
                     Label("Run Calibration", systemImage: "waveform.badge.mic")
@@ -424,27 +456,108 @@ public struct SettingsView: View {
                 infoButton { showAudioSetupInfo = true }
             }
         } footer: {
-            Text("Calibrates the microphone for your guitar and environment. Adjust trims to fine-tune detection sensitivity.")
+            Text("Calibration profiles store audio settings per guitar. The active profile is used for note detection in quizzes.")
         }
         .fullScreenCover(isPresented: $showCalibration, onDismiss: {
-            // Reload profile after calibration
-            calibrationProfile = try? container.calibrationRepository.activeProfile()
+            reloadProfiles()
         }) {
-            CalibrationView(isRecalibration: hasCompletedCalibration)
+            if let profile = recalibratingProfile {
+                CalibrationView(isRecalibration: true, recalibratingProfile: profile)
+            } else {
+                CalibrationView(isRecalibration: hasCompletedCalibration)
+            }
         }
         .sheet(isPresented: $showAudioSetupInfo) {
             SettingsInfoSheet(
                 title: "Audio Setup",
                 items: [
-                    ("Calibration", "Measures your environment's noise level and tests detection for each guitar string. Required before using audio detection in quizzes."),
-                    ("Input Gain Trim", "Fine-tune the input sensitivity. Increase if notes aren't being detected; decrease if you're getting false detections."),
-                    ("Noise Gate Trim", "Adjust the threshold that separates signal from background noise. Increase in noisy environments; decrease in quiet ones.")
+                    ("Calibration Profiles", "Each profile stores calibration data for a specific guitar and input source. You can have multiple profiles and switch between them."),
+                    ("Input Gain Trim", "Fine-tune the input sensitivity for the active profile. Increase if notes aren't being detected; decrease if you're getting false detections."),
+                    ("Noise Gate Trim", "Adjust the noise gate threshold for the active profile. Increase in noisy environments; decrease in quiet ones.")
                 ]
             )
         }
-        .task {
-            calibrationProfile = try? container.calibrationRepository.activeProfile()
+        .alert("Rename Profile", isPresented: $showRenameAlert) {
+            TextField("Profile Name", text: $renameText)
+            Button("Save") {
+                if let profile = renamingProfile {
+                    let trimmed = renameText.trimmingCharacters(in: .whitespacesAndNewlines)
+                    profile.name = trimmed.isEmpty ? nil : trimmed
+                    try? container.calibrationRepository.save(profile)
+                    reloadProfiles()
+                }
+            }
+            Button("Cancel", role: .cancel) {}
         }
+        .alert("Delete Profile?", isPresented: $showDeleteConfirmation) {
+            Button("Delete", role: .destructive) {
+                if let profile = deletingProfile {
+                    try? container.calibrationRepository.delete(profile)
+                    reloadProfiles()
+                }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            if calibrationProfiles.count <= 1 {
+                Text("This is your only calibration profile. Deleting it will require you to re-calibrate before using audio detection.")
+            } else {
+                Text("This profile will be permanently deleted.")
+            }
+        }
+        .task {
+            reloadProfiles()
+        }
+    }
+
+    @ViewBuilder
+    private func profileRow(_ profile: AudioCalibrationProfile) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: profile.guitarType?.iconName ?? "guitars")
+                .font(.title3)
+                .foregroundStyle(profile.isActive ? DesignSystem.Colors.cherry : DesignSystem.Colors.text2)
+                .frame(width: 28)
+
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 6) {
+                    Text(profile.displayName)
+                        .font(.subheadline.weight(.semibold))
+                    if profile.isActive {
+                        Text("Active")
+                            .font(.caption2.weight(.bold))
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(DesignSystem.Colors.correct.opacity(0.2), in: Capsule())
+                            .foregroundStyle(DesignSystem.Colors.correct)
+                    }
+                }
+                HStack(spacing: 8) {
+                    if let guitarType = profile.guitarType {
+                        Text(guitarType.displayName)
+                    }
+                    Text(profile.inputSource.displayName)
+                    HStack(spacing: 2) {
+                        Circle()
+                            .fill(qualityBadgeColor(profile.signalQualityScore))
+                            .frame(width: 6, height: 6)
+                        Text("\(Int(profile.signalQualityScore * 100))%")
+                    }
+                }
+                .font(.caption)
+                .foregroundStyle(DesignSystem.Colors.text2)
+            }
+
+            Spacer()
+        }
+    }
+
+    private func setActiveProfile(_ profile: AudioCalibrationProfile) {
+        try? container.calibrationRepository.setActive(profile)
+        reloadProfiles()
+    }
+
+    private func reloadProfiles() {
+        calibrationProfiles = (try? container.calibrationRepository.allProfiles()) ?? []
+        calibrationProfile = calibrationProfiles.first(where: { $0.isActive }) ?? calibrationProfiles.first
     }
 
     private func qualityBadgeColor(_ score: Float) -> Color {
@@ -711,9 +824,9 @@ public struct SettingsView: View {
             let result = try manager.importBackup(from: url)
             restoreResult = result
             showRestoreSuccess = true
-            // Reload settings in the view
+            // Reload settings and profiles in the view
             settings = try? container.settingsRepository.loadSettings()
-            calibrationProfile = try? container.calibrationRepository.activeProfile()
+            reloadProfiles()
         } catch {
             backupErrorMessage = error.localizedDescription
             showBackupError = true
@@ -749,6 +862,30 @@ public struct SettingsView: View {
 
     private func save(_ settings: UserSettings) {
         try? container.settingsRepository.saveSettings(settings)
+    }
+
+    private func launchAccuracyAssessment() {
+        let fretEnd = defaultFretCountRaw  // matches user's chosen fret count (12, 21, 22, or 24)
+        let session = Session(
+            focusMode: .accuracyAssessment,
+            gameMode: .untimed,
+            fretRangeStart: 0,
+            fretRangeEnd: fretEnd,
+            isAdaptive: false
+        )
+        Task { @MainActor in
+            try? container.sessionRepository.save(session)
+            let settings = (try? container.settingsRepository.loadSettings()) ?? UserSettings()
+            let vm = QuizViewModel(
+                session: session,
+                fretboardMap: container.fretboardMap,
+                settings: settings,
+                masteryRepository: container.masteryRepository,
+                sessionRepository: container.sessionRepository,
+                attemptRepository: container.attemptRepository
+            )
+            NotificationCenter.default.post(name: .launchQuiz, object: vm)
+        }
     }
 
     // MARK: - Info Button

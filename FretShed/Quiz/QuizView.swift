@@ -15,6 +15,8 @@ public struct QuizView: View {
     var onRepeat: (() -> Void)? = nil
     @State private var showEndConfirm = false
     @State private var showFretHint = false
+    @State private var diagnosticShareURL: URL? = nil
+    @State private var showDiagnosticShare = false
     @State private var storedCorrectMessage: String = "Nice!"
     @State private var wrongAnswerPosition: (string: Int, fret: Int)? = nil
     @Environment(\.dismiss) private var dismiss
@@ -197,6 +199,7 @@ public struct QuizView: View {
                     let gateTrimMultiplier = pow(10.0, profile.userGateTrimDB / 20.0)
                     detector.calibratedNoiseFloor = profile.measuredNoiseFloorRMS * gateTrimMultiplier
                     detector.calibratedInputSource = profile.inputSource
+                    vm.session.calibrationProfileID = profile.id
                 }
                 try? await detector.start()
             }
@@ -218,7 +221,12 @@ public struct QuizView: View {
             }
             let holdMs = vm.settings.noteHoldDurationMs
             if holdMs <= 0 {
-                vm.submit(detectedNote: note)
+                vm.submit(
+                    detectedNote: note,
+                    detectedFrequencyHz: detector.detectedFrequency,
+                    detectedConfidence: detector.detectedConfidence,
+                    centsDeviation: detector.centsDeviation
+                )
             } else {
                 debounceTask?.cancel()
                 debounceTask = Task {
@@ -226,7 +234,12 @@ public struct QuizView: View {
                     guard !Task.isCancelled else { return }
                     // Confirm the same note is still being detected after the hold window.
                     guard detector.detectedNote == note, vm.phase == .active else { return }
-                    vm.submit(detectedNote: note)
+                    vm.submit(
+                        detectedNote: note,
+                        detectedFrequencyHz: detector.detectedFrequency,
+                        detectedConfidence: detector.detectedConfidence,
+                        centsDeviation: detector.centsDeviation
+                    )
                 }
             }
         }
@@ -1075,12 +1088,20 @@ public struct QuizView: View {
 
                     assessmentQuickStats
                         .padding(.horizontal, 20)
+
+                    diagnosticReportButton
+                        .padding(.horizontal, 20)
                 }
                 .padding(.bottom, 16)
             }
 
             completedButtons
                 .padding(.bottom, 32)
+        }
+        .sheet(isPresented: $showDiagnosticShare) {
+            if let url = diagnosticShareURL {
+                ShareSheet(items: [url])
+            }
         }
     }
 
@@ -1104,10 +1125,16 @@ public struct QuizView: View {
                     assessmentPerStringBreakdown
                     assessmentConsistencyCard
                     assessmentQuickStats
+                    diagnosticReportButton
                 }
                 .padding(16)
             }
             .frame(maxWidth: .infinity)
+        }
+        .sheet(isPresented: $showDiagnosticShare) {
+            if let url = diagnosticShareURL {
+                ShareSheet(items: [url])
+            }
         }
     }
 
@@ -1231,6 +1258,27 @@ public struct QuizView: View {
         }
     }
 
+    /// Button to export and share a diagnostic report for the current assessment session.
+    private var diagnosticReportButton: some View {
+        Button {
+            let manager = BackupManager(container: container)
+            do {
+                let url = try manager.exportDiagnosticReport(sessionID: vm.session.id)
+                diagnosticShareURL = url
+                showDiagnosticShare = true
+            } catch {
+                // Silently fail — diagnostic export is non-critical
+            }
+        } label: {
+            Label("Send Diagnostic Report", systemImage: "arrow.up.doc")
+                .font(.subheadline.weight(.semibold))
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 12)
+        }
+        .buttonStyle(.bordered)
+        .tint(DesignSystem.Colors.amber)
+    }
+
     // MARK: - Assessment Helpers
 
     /// Maps guitar string number to its standard label.
@@ -1314,4 +1362,16 @@ private struct CompletedStatCard: View {
         .padding(.vertical, 14)
         .background(DesignSystem.Colors.surface, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
     }
+}
+
+// MARK: - ShareSheet
+
+private struct ShareSheet: UIViewControllerRepresentable {
+    let items: [Any]
+
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: items, applicationActivities: nil)
+    }
+
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }

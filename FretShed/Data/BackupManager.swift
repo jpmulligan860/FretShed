@@ -23,7 +23,7 @@ struct BackupManager {
         let attempts = try container.attemptRepository.allAttempts()
         let masteryScores = try container.masteryRepository.allScores()
         let settings = try? container.settingsRepository.loadSettings()
-        let calibration = try? container.calibrationRepository.activeProfile()
+        let allCalibrationProfiles = (try? container.calibrationRepository.allProfiles()) ?? []
 
         let payload = BackupPayload(
             version: 1,
@@ -32,7 +32,7 @@ struct BackupManager {
             attempts: attempts.map { AttemptBackup(from: $0) },
             masteryScores: masteryScores.map { MasteryScoreBackup(from: $0) },
             settings: settings.map { SettingsBackup(from: $0) },
-            calibrationProfile: calibration.map { CalibrationProfileBackup(from: $0) }
+            calibrationProfiles: allCalibrationProfiles.map { CalibrationProfileBackup(from: $0) }
         )
 
         let encoder = JSONEncoder()
@@ -50,6 +50,39 @@ struct BackupManager {
 
         logger.info("Backup exported: \(sessions.count) sessions, \(attempts.count) attempts, \(masteryScores.count) mastery scores")
         return fileURL
+    }
+
+    // MARK: - Diagnostic Report
+
+    func exportDiagnosticReport(sessionID: UUID) throws -> URL {
+        let attempts = try container.attemptRepository.attempts(forSession: sessionID)
+        let calibration = try? container.calibrationRepository.activeProfile()
+
+        let payload = DiagnosticReport(
+            version: 1,
+            exportDate: Date(),
+            sessionID: sessionID,
+            attemptCount: attempts.count,
+            calibrationProfile: calibration.map { CalibrationProfileBackup(from: $0) },
+            profileName: calibration?.displayName,
+            guitarType: calibration?.guitarType?.displayName,
+            attempts: attempts.map { AttemptBackup(from: $0) }
+        )
+
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        encoder.dateEncodingStrategy = .iso8601
+        let data = try encoder.encode(payload)
+
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd-HHmmss"
+        let fileName = "FretShed-Diagnostic-\(dateFormatter.string(from: Date())).json"
+
+        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(fileName)
+        try data.write(to: tempURL, options: .atomic)
+
+        logger.info("Diagnostic report exported: \(attempts.count) attempts")
+        return tempURL
     }
 
     // MARK: - Import
@@ -100,12 +133,18 @@ struct BackupManager {
             settingsRestored = true
         }
 
-        // Restore calibration profile
+        // Restore calibration profiles
         var calibrationRestored = false
-        if let calibBackup = payload.calibrationProfile {
+        if !payload.calibrationProfiles.isEmpty {
             try container.calibrationRepository.deleteAll()
-            let profile = calibBackup.toModel()
-            try container.calibrationRepository.save(profile)
+            for backup in payload.calibrationProfiles {
+                let profile = backup.toModel()
+                try container.calibrationRepository.save(profile)
+            }
+            // Ensure at least one is active
+            if let active = try? container.calibrationRepository.activeProfile() {
+                _ = active // triggers fallback logic if none marked active
+            }
             calibrationRestored = true
         }
 

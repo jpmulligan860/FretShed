@@ -744,25 +744,27 @@ private struct SessionRow: View {
 
     private func modeIcon(_ mode: FocusMode) -> String {
         switch mode {
-        case .fullFretboard:      return "rectangle.grid.3x2"
-        case .singleNote:         return "music.note"
-        case .circleOfFifths:     return "circle.dashed"
-        case .circleOfFourths:    return "circle.grid.2x1"
-        case .singleString:       return "minus"
-        case .chordProgression:   return "pianokeys"
-        case .fretboardPosition:  return "slider.horizontal.3"
+        case .fullFretboard:       return "rectangle.grid.3x2"
+        case .singleNote:          return "music.note"
+        case .circleOfFifths:      return "circle.dashed"
+        case .circleOfFourths:     return "circle.grid.2x1"
+        case .singleString:        return "minus"
+        case .chordProgression:    return "pianokeys"
+        case .fretboardPosition:   return "slider.horizontal.3"
+        case .accuracyAssessment:  return "waveform.badge.magnifyingglass"
         }
     }
 
     private func modeColor(_ mode: FocusMode) -> Color {
         switch mode {
-        case .fullFretboard:      return DesignSystem.Colors.cherry
-        case .singleNote:         return DesignSystem.Colors.amber
-        case .circleOfFifths:     return DesignSystem.Colors.honey
-        case .fretboardPosition:  return DesignSystem.Colors.gold
+        case .fullFretboard:       return DesignSystem.Colors.cherry
+        case .singleNote:          return DesignSystem.Colors.amber
+        case .circleOfFifths:      return DesignSystem.Colors.honey
+        case .fretboardPosition:   return DesignSystem.Colors.gold
+        case .accuracyAssessment:  return DesignSystem.Colors.cherry
         case .circleOfFourths,
              .singleString,
-             .chordProgression:   return DesignSystem.Colors.amber
+             .chordProgression:    return DesignSystem.Colors.amber
         }
     }
 

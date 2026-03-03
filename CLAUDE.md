@@ -33,7 +33,7 @@ FretShed is an iOS guitar fretboard training application that helps guitarists m
 ## Key Architecture
 - **AppContainer:** Dependency injection container — all services injected here
 - **EntitlementManager:** Central authority for feature access (free vs. premium) [Phase 4]
-- **CalibrationProfileRepository:** Persists single calibration profile (SwiftData)
+- **CalibrationProfileRepository:** Persists named calibration profiles (SwiftData) — supports multiple profiles per guitar
 - **CalibrationEngine:** Orchestrates the calibration procedure (silence → 6 strings → save)
 - **PitchDetector:** Pre-seeded with calibrated noise floor + AGC gain on quiz start
 
@@ -48,14 +48,19 @@ FretShed is an iOS guitar fretboard training application that helps guitarists m
 
 ---
 
-## Audio Calibration System (Implemented Feb 2026)
+## Audio Calibration System (Implemented Feb 2026, Multi-Profile Mar 2026)
 
-FretShed includes a full audio calibration system that measures the user's environment and guitar once, stores the results, and pre-seeds the pitch detector on quiz start — eliminating the 5-10 second adaptation warmup and improving first-note accuracy.
+FretShed includes a full audio calibration system that measures the user's environment and guitar, stores the results as named profiles, and pre-seeds the pitch detector on quiz start — eliminating the 5-10 second adaptation warmup and improving first-note accuracy.
 
 ### Architecture
-- **Single profile** — one `AudioCalibrationProfile` stored at a time; re-calibration overwrites it
+- **Multi-profile** — multiple `AudioCalibrationProfile` records, one per guitar; `isActive` flag selects the profile used for quizzes
+- **Profile naming** — post-calibration flow prompts for name (e.g. "Strat") and guitar type (electric/acoustic/classical)
+- **Re-calibration** — overwrites calibration data on existing profile, keeps name/type
+- **Settings management** — profile list with context menu (set active, rename, re-calibrate, delete), swipe actions, "Add New Profile" button
 - **Required before quiz** — `hasCompletedCalibration` UserDefaults flag gates quiz launch
 - **All 6 strings required** — no skip during string test
+- **Session tracking** — `calibrationProfileID` on Session records which profile was used
+- **Upgrade path** — existing single profile auto-named "Guitar 1", marked active on first access
 
 ### Signal Processing Chain (in order)
 ```
@@ -79,8 +84,15 @@ HPF (60Hz Butterworth) → Adaptive Noise Gate → AGC (target −18 dBFS) → L
     var userGainTrimDB: Float             // Manual trim, ±6 dB, default 0.0
     var userGateTrimDB: Float             // Manual trim, ±6 dB, default 0.0
     var stringResultsData: Data           // JSON-encoded [Int: Bool] (string → passed)
+    var frettedStringResultsData: Data    // JSON-encoded [Int: Bool] (12th fret)
+    var name: String?                     // User-assigned name (e.g. "Strat")
+    var guitarTypeRaw: String?            // GuitarType raw value
+    var isActive: Bool = false            // Active profile for quiz detection
 }
 ```
+
+### GuitarType enum
+`.electric`, `.acoustic`, `.classical` — each with `displayName` and `iconName`.
 
 ### CalibrationEngine Phases
 ```
@@ -96,7 +108,7 @@ HPF (60Hz Butterworth) → Adaptive Noise Gate → AGC (target −18 dBFS) → L
 | 0 — Welcome | Explanation, detected input source, "Start" button |
 | 1 — Silence | "Stay quiet for 3 seconds", InputLevelBar, progress ring, auto-advances |
 | 2 — Strings | "Play String N (note)", live detection display, checkmarks |
-| 3 — Results | Quality score ring, per-string checkmarks, "Save & Close" button |
+| 3 — Results | Quality score ring, per-string checkmarks, profile naming (name + guitar type), "Save Profile" button |
 
 ### Quiz Integration
 QuizView `.task` loads `calibrationRepository.activeProfile()` and pre-seeds:
@@ -109,9 +121,12 @@ QuizView `.task` loads `calibrationRepository.activeProfile()` and pre-seeds:
 
 ### Settings > Audio Setup Section
 - Calibration status (Completed / Not Done)
-- If calibrated: input source, date, signal quality badge (green/yellow/red)
-- User trim sliders: Input Gain Trim (±6 dB), Noise Gate Trim (±6 dB)
-- "Re-Calibrate" / "Run Calibration" button → fullScreenCover
+- If calibrated: profile list with icon, name, "Active" badge, guitar type + input source + quality score
+- Context menu per profile: Set Active, Rename, Re-Calibrate, Delete
+- Swipe actions: Delete (trailing), Set Active (leading)
+- User trim sliders for active profile: Input Gain Trim (±6 dB), Noise Gate Trim (±6 dB)
+- "Add New Profile" / "Run Calibration" button → fullScreenCover
+- Rename via alert with text field; delete with confirmation (warns if only profile)
 
 ---
 
@@ -205,7 +220,9 @@ Full analysis: `FretShed_Competitive_Analysis.md` in Claude.ai project files.
 **Phase 5:** Not started
 **Test suite:** 230 tests passing
 
-**Audio Calibration System (F22) — IMPLEMENTED.** Full calibration flow: silence measurement → 6-string test → profile saved to SwiftData. Quiz launch gated on calibration. Do This First card with action buttons. Settings > Audio Setup with trim sliders. PitchDetector pre-seeded from calibration profile. Single profile (re-calibrate overwrites).
+**Audio Calibration System (F22) — IMPLEMENTED.** Full calibration flow: silence measurement → 6-string test → profile saved to SwiftData. Quiz launch gated on calibration. Do This First card with action buttons. Settings > Audio Setup with trim sliders. PitchDetector pre-seeded from calibration profile.
+
+**Multi-Profile Calibration (F38) — IMPLEMENTED.** Multiple named calibration profiles per guitar. GuitarType enum (electric/acoustic/classical). Post-calibration naming flow (name + guitar type picker). Settings profile list with context menu (set active, rename, re-calibrate, delete) and swipe actions. Active profile used for quiz detection. Session stamps calibrationProfileID. Practice tab shows active profile name. Backup/restore handles multiple profiles with v1 backward compatibility. Upgrade path auto-names existing profile "Guitar 1".
 
 **Pitch Detection Enhancements (F23) — IMPLEMENTED.** Five improvements to reduce false detections: (1) Spectral flatness gate rejects broadband string slide noise; (2) Consecutive frame gate requires 3 frames of same note; (3) HPF lowered to 60 Hz for better low-string fundamental capture; (4) String-aware frequency constraints narrow detection to target string's Hz range during quiz; (5) HPS octave verification cross-checks YIN with Harmonic Product Spectrum for low-string octave correction.
 
@@ -215,7 +232,7 @@ Full analysis: `FretShed_Competitive_Analysis.md` in Claude.ai project files.
 
 **Tuner Sustain Hysteresis (F29) — IMPLEMENTED.** Fixes 12th-fret sustain dropout where the tuner needle drops while the note is still ringing. Three-layer approach: (1) `sustainMode` flag on PitchDetector — TunerView sets true, QuizView leaves false (default); (2) Tap floor lowered to 60% of confidenceThreshold in sustain mode (0.51 vs 0.85) to pass decay-phase frames; (3) Consumer-side confidence hysteresis — once a note is established (consecutive gate met), accepts confidence >= 0.65 to extend sustain; hold window doubled to 500ms. TunerView onChange split into two handlers: detectedNote (resets displayCents on nil→some) and centsDeviation (amplitude-aware EMA only while note active). Quiz behavior is byte-for-byte identical — sustainMode defaults to false, tap floor and hysteresis are both gated.
 
-**Session Data Backup & Restore (F30) — IMPLEMENTED.** JSON export/import in Settings > Data Management. BackupPayload Codable structs decoupled from SwiftData models. BackupManager handles export to Documents directory and import with security-scoped resource access. Files visible in iOS Files app via UIFileSharingEnabled.
+**Session Data Backup & Restore (F30) — IMPLEMENTED.** JSON export/import in Settings > Data Management. BackupPayload Codable structs decoupled from SwiftData models. BackupManager handles export to Documents directory and import with security-scoped resource access. Files visible in iOS Files app via UIFileSharingEnabled. Updated for multi-profile: exports/imports all calibration profiles with v1 backward compatibility.
 
 **Crash Fix (C1) — FIXED.** PitchDetector crash on infinite/NaN Double→Int conversion. Root cause: YIN parabolic interpolation produces `interpolatedTau ≤ 0` when `bestTau=1`, making `sampleRate / interpolatedTau` infinite. Two-layer fix: guard in `detectPitch()` + defense in `pitchDetectorNoteAndCents()`.
 
@@ -225,7 +242,7 @@ Full analysis: `FretShed_Competitive_Analysis.md` in Claude.ai project files.
 
 **Device Test Polish (D8) — IMPLEMENTED.** MetroDrone DisclosureGroup labels styled with `sectionHeader` + `text` color.
 
-**All BUGLOG items resolved.** All feature ideas (F1–F37) complete.
+**All BUGLOG items resolved.** All feature ideas (F1–F38) complete.
 
 **Accuracy Assessment 3× Repetition (F37) — IMPLEMENTED.** Each fretboard cell is played 3 times during an accuracy assessment run. Per-cell results stored in `assessmentCellResultsStore`. Mode indicator shows cell + rep progress. Custom assessment results view with headline accuracy %, per-string accuracy bars, consistency tiles (3/3, 2/3, 1/3, 0/3), and quick stats. Portrait + landscape layouts.
 

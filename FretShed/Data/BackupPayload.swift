@@ -6,6 +6,19 @@
 
 import Foundation
 
+// MARK: - DiagnosticReport
+
+struct DiagnosticReport: Codable {
+    let version: Int
+    let exportDate: Date
+    let sessionID: UUID
+    let attemptCount: Int
+    let calibrationProfile: CalibrationProfileBackup?
+    let profileName: String?
+    let guitarType: String?
+    let attempts: [AttemptBackup]
+}
+
 // MARK: - BackupPayload
 
 struct BackupPayload: Codable {
@@ -15,7 +28,54 @@ struct BackupPayload: Codable {
     let attempts: [AttemptBackup]
     let masteryScores: [MasteryScoreBackup]
     let settings: SettingsBackup?
-    let calibrationProfile: CalibrationProfileBackup?
+    let calibrationProfiles: [CalibrationProfileBackup]
+
+    enum CodingKeys: String, CodingKey {
+        case version, exportDate, sessions, attempts, masteryScores, settings
+        case calibrationProfiles
+        case calibrationProfile // v1 singular key for backward compat
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(version, forKey: .version)
+        try container.encode(exportDate, forKey: .exportDate)
+        try container.encode(sessions, forKey: .sessions)
+        try container.encode(attempts, forKey: .attempts)
+        try container.encode(masteryScores, forKey: .masteryScores)
+        try container.encodeIfPresent(settings, forKey: .settings)
+        try container.encode(calibrationProfiles, forKey: .calibrationProfiles)
+    }
+
+    init(version: Int, exportDate: Date, sessions: [SessionBackup], attempts: [AttemptBackup],
+         masteryScores: [MasteryScoreBackup], settings: SettingsBackup?, calibrationProfiles: [CalibrationProfileBackup]) {
+        self.version = version
+        self.exportDate = exportDate
+        self.sessions = sessions
+        self.attempts = attempts
+        self.masteryScores = masteryScores
+        self.settings = settings
+        self.calibrationProfiles = calibrationProfiles
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        version = try container.decode(Int.self, forKey: .version)
+        exportDate = try container.decode(Date.self, forKey: .exportDate)
+        sessions = try container.decode([SessionBackup].self, forKey: .sessions)
+        attempts = try container.decode([AttemptBackup].self, forKey: .attempts)
+        masteryScores = try container.decode([MasteryScoreBackup].self, forKey: .masteryScores)
+        settings = try container.decodeIfPresent(SettingsBackup.self, forKey: .settings)
+
+        // v2: read plural key; v1 fallback: read singular key and wrap in array
+        if let profiles = try? container.decode([CalibrationProfileBackup].self, forKey: .calibrationProfiles) {
+            calibrationProfiles = profiles
+        } else if let single = try? container.decodeIfPresent(CalibrationProfileBackup.self, forKey: .calibrationProfile) {
+            calibrationProfiles = [single]
+        } else {
+            calibrationProfiles = []
+        }
+    }
 }
 
 // MARK: - BackupImportResult
@@ -48,6 +108,7 @@ struct SessionBackup: Codable {
     let isAdaptive: Bool
     let overallMasteryAtEnd: Double
     let chordProgressionDataBase64: String?
+    let calibrationProfileID: UUID?
 
     init(from session: Session) {
         self.id = session.id
@@ -67,6 +128,7 @@ struct SessionBackup: Codable {
         self.isAdaptive = session.isAdaptive
         self.overallMasteryAtEnd = session.overallMasteryAtEnd
         self.chordProgressionDataBase64 = session.chordProgressionData?.base64EncodedString()
+        self.calibrationProfileID = session.calibrationProfileID
     }
 
     func toModel() -> Session {
@@ -91,6 +153,7 @@ struct SessionBackup: Codable {
         if let base64 = chordProgressionDataBase64 {
             session.chordProgressionData = Data(base64Encoded: base64)
         }
+        session.calibrationProfileID = calibrationProfileID
         return session
     }
 }
@@ -110,6 +173,9 @@ struct AttemptBackup: Codable {
     let sessionID: UUID
     let gameModeRaw: String
     let acceptedAnyString: Bool
+    let detectedFrequencyHz: Double?
+    let detectedConfidence: Double?
+    let centsDeviation: Double?
 
     init(from attempt: Attempt) {
         self.id = attempt.id
@@ -124,6 +190,9 @@ struct AttemptBackup: Codable {
         self.sessionID = attempt.sessionID
         self.gameModeRaw = attempt.gameModeRaw
         self.acceptedAnyString = attempt.acceptedAnyString
+        self.detectedFrequencyHz = attempt.detectedFrequencyHz
+        self.detectedConfidence = attempt.detectedConfidence
+        self.centsDeviation = attempt.centsDeviation
     }
 
     func toModel() -> Attempt {
@@ -139,7 +208,10 @@ struct AttemptBackup: Codable {
             wasCorrect: wasCorrect,
             sessionID: sessionID,
             gameMode: GameMode(rawValue: gameModeRaw) ?? .untimed,
-            acceptedAnyString: acceptedAnyString
+            acceptedAnyString: acceptedAnyString,
+            detectedFrequencyHz: detectedFrequencyHz,
+            detectedConfidence: detectedConfidence,
+            centsDeviation: centsDeviation
         )
     }
 }
@@ -291,6 +363,10 @@ struct CalibrationProfileBackup: Codable {
     let userGainTrimDB: Float
     let userGateTrimDB: Float
     let stringResultsDataBase64: String
+    let frettedStringResultsDataBase64: String?
+    let name: String?
+    let guitarTypeRaw: String?
+    let isActive: Bool?
 
     init(from profile: AudioCalibrationProfile) {
         self.id = profile.id
@@ -302,10 +378,17 @@ struct CalibrationProfileBackup: Codable {
         self.userGainTrimDB = profile.userGainTrimDB
         self.userGateTrimDB = profile.userGateTrimDB
         self.stringResultsDataBase64 = profile.stringResultsData.base64EncodedString()
+        self.frettedStringResultsDataBase64 = profile.frettedStringResultsData.base64EncodedString()
+        self.name = profile.name
+        self.guitarTypeRaw = profile.guitarTypeRaw
+        self.isActive = profile.isActive
     }
 
     func toModel() -> AudioCalibrationProfile {
         let stringResults = Data(base64Encoded: stringResultsDataBase64)
+            .flatMap { try? JSONDecoder().decode([Int: Bool].self, from: $0) } ?? [:]
+        let frettedStringResults = frettedStringResultsDataBase64
+            .flatMap { Data(base64Encoded: $0) }
             .flatMap { try? JSONDecoder().decode([Int: Bool].self, from: $0) } ?? [:]
         let profile = AudioCalibrationProfile(
             inputSource: AudioInputSource(rawValue: inputSourceRaw) ?? .unknown,
@@ -313,8 +396,12 @@ struct CalibrationProfileBackup: Codable {
             measuredAGCGain: measuredAGCGain,
             signalQualityScore: signalQualityScore,
             stringResults: stringResults,
+            frettedStringResults: frettedStringResults,
             userGainTrimDB: userGainTrimDB,
-            userGateTrimDB: userGateTrimDB
+            userGateTrimDB: userGateTrimDB,
+            name: name,
+            guitarType: guitarTypeRaw.flatMap { GuitarType(rawValue: $0) },
+            isActive: isActive ?? false
         )
         return profile
     }

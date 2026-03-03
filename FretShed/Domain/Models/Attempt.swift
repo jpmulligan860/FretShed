@@ -47,6 +47,9 @@ public final class Attempt {
     public var sessionID: UUID
     public var gameModeRaw: String           // GameMode.rawValue
     public var acceptedAnyString: Bool
+    public var detectedFrequencyHz: Double?  // Raw Hz from PitchDetector
+    public var detectedConfidence: Double?   // 0.0–1.0 YIN confidence
+    public var centsDeviation: Double?       // ±50 cents from equal temperament
 
     // MARK: Computed Convenience
 
@@ -82,7 +85,10 @@ public final class Attempt {
         wasCorrect: Bool,
         sessionID: UUID,
         gameMode: GameMode,
-        acceptedAnyString: Bool
+        acceptedAnyString: Bool,
+        detectedFrequencyHz: Double? = nil,
+        detectedConfidence: Double? = nil,
+        centsDeviation: Double? = nil
     ) {
         self.id = id
         self.timestamp = timestamp
@@ -96,5 +102,8 @@ public final class Attempt {
         self.sessionID = sessionID
         self.gameModeRaw = gameMode.rawValue
         self.acceptedAnyString = acceptedAnyString
+        self.detectedFrequencyHz = detectedFrequencyHz
+        self.detectedConfidence = detectedConfidence
+        self.centsDeviation = centsDeviation
     }
 }

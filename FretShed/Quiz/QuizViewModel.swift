@@ -221,7 +221,12 @@ public final class QuizViewModel: Identifiable {
         advanceToNextQuestion()
     }
 
-    public func submit(detectedNote note: MusicalNote) {
+    public func submit(
+        detectedNote note: MusicalNote,
+        detectedFrequencyHz: Double? = nil,
+        detectedConfidence: Double? = nil,
+        centsDeviation: Double? = nil
+    ) {
         guard phase == .active, let question = currentQuestion else { return }
         detectedNote = note
         let correct = note == question.note
@@ -281,7 +286,7 @@ public final class QuizViewModel: Identifiable {
             }
         }
         timerTask?.cancel()
-        Task { recordAttempt(question: question, playedNote: note, correct: correct, responseMs: responseMs) }
+        Task { recordAttempt(question: question, playedNote: note, correct: correct, responseMs: responseMs, detectedFrequencyHz: detectedFrequencyHz, detectedConfidence: detectedConfidence, centsDeviation: centsDeviation) }
         // Accuracy assessment: record the per-cell result and advance the rep/cell cursor.
         if session.focusMode == .accuracyAssessment {
             let cellKey = "\(question.string)-\(question.fret)"
@@ -699,7 +704,7 @@ public final class QuizViewModel: Identifiable {
 
     // MARK: - Private: Persistence
 
-    private func recordAttempt(question: QuizQuestion, playedNote: MusicalNote, correct: Bool, responseMs: Int) {
+    private func recordAttempt(question: QuizQuestion, playedNote: MusicalNote, correct: Bool, responseMs: Int, detectedFrequencyHz: Double? = nil, detectedConfidence: Double? = nil, centsDeviation: Double? = nil) {
         let attempt = Attempt(
             targetNote: question.note,
             targetString: question.string,
@@ -710,7 +715,10 @@ public final class QuizViewModel: Identifiable {
             wasCorrect: correct,
             sessionID: session.id,
             gameMode: session.gameMode,
-            acceptedAnyString: settings.defaultNoteAcceptanceMode == .anyString
+            acceptedAnyString: settings.defaultNoteAcceptanceMode == .anyString,
+            detectedFrequencyHz: detectedFrequencyHz,
+            detectedConfidence: detectedConfidence,
+            centsDeviation: centsDeviation
         )
         do { try attemptRepository.save(attempt) } catch {
             logger.error("Failed to save attempt: \(error)")

@@ -243,7 +243,7 @@ public struct SessionSetupView: View {
             .padding(.horizontal, 20)
 
             LazyVGrid(columns: [.init(.flexible()), .init(.flexible())], spacing: 10) {
-                ForEach(FocusMode.allCases, id: \.self) { mode in
+                ForEach(FocusMode.allCases.filter { $0 != .accuracyAssessment }, id: \.self) { mode in
                     FocusModeChip(
                         mode: mode,
                         isSelected: selectedFocusMode == mode
@@ -932,25 +932,27 @@ public struct SessionSetupView: View {
 
     private func focusModeDescription(_ mode: FocusMode) -> String {
         switch mode {
-        case .singleNote:         return "All strings, one note at a time"
-        case .singleString:       return "All notes across your selected strings"
-        case .fullFretboard:      return "Every note across all strings"
-        case .fretboardPosition:  return "All strings within your selected fret range"
-        case .circleOfFourths:    return "Notes in circle-of-fourths order"
-        case .circleOfFifths:     return "Notes in circle-of-fifths order"
-        case .chordProgression:   return "Chord-based training"
+        case .singleNote:          return "All strings, one note at a time"
+        case .singleString:        return "All notes across your selected strings"
+        case .fullFretboard:       return "Every note across all strings"
+        case .fretboardPosition:   return "All strings within your selected fret range"
+        case .circleOfFourths:     return "Notes in circle-of-fourths order"
+        case .circleOfFifths:      return "Notes in circle-of-fifths order"
+        case .chordProgression:    return "Chord-based training"
+        case .accuracyAssessment:  return "Chromatic walk of every fretboard position"
         }
     }
 
     private func focusModeIcon(_ mode: FocusMode) -> String {
         switch mode {
-        case .fullFretboard:      return "rectangle.grid.3x2"
-        case .fretboardPosition:  return "rectangle.grid.1x2"
-        case .singleNote:         return "music.note"
-        case .circleOfFifths:     return "circle.dashed"
-        case .circleOfFourths:    return "circle.grid.2x1"
-        case .singleString:       return "minus"
-        case .chordProgression:   return "pianokeys"
+        case .fullFretboard:       return "rectangle.grid.3x2"
+        case .fretboardPosition:   return "rectangle.grid.1x2"
+        case .singleNote:          return "music.note"
+        case .circleOfFifths:      return "circle.dashed"
+        case .circleOfFourths:     return "circle.grid.2x1"
+        case .singleString:        return "minus"
+        case .chordProgression:    return "pianokeys"
+        case .accuracyAssessment:  return "waveform.badge.magnifyingglass"
         }
     }
 }

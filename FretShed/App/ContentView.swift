@@ -175,6 +175,7 @@ struct PracticeHomeView: View {
     let onCalibrateAudio: () -> Void
     @Environment(\.appContainer) private var container
     @State private var lastSession: Session?
+    @State private var activeProfileName: String?
 
     @AppStorage(LocalUserPreferences.Key.hasCompletedCalibration)
     private var hasCompletedCalibration = false
@@ -205,6 +206,9 @@ struct PracticeHomeView: View {
         .background(DesignSystem.Colors.background)
         .task {
             lastSession = try? container.sessionRepository.recentSessions(limit: 1).first
+            if let profile = try? container.calibrationRepository.activeProfile() {
+                activeProfileName = profile.displayName
+            }
         }
     }
 
@@ -215,8 +219,15 @@ struct PracticeHomeView: View {
             HStack(spacing: 10) {
                 Image(systemName: "checkmark.circle.fill")
                     .foregroundStyle(DesignSystem.Colors.correct)
-                Text("Audio Calibrated")
-                    .font(DesignSystem.Typography.bodyLabel)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Audio Calibrated")
+                        .font(DesignSystem.Typography.bodyLabel)
+                    if let profileName = activeProfileName {
+                        Text(profileName)
+                            .font(.caption)
+                            .foregroundStyle(DesignSystem.Colors.text2)
+                    }
+                }
                 Spacer()
                 Button("Re-calibrate") {
                     onCalibrateAudio()
@@ -456,13 +467,14 @@ private struct QuickModeCard: View {
 
     private var modeIcon: String {
         switch mode {
-        case .fullFretboard:      return "rectangle.grid.3x2"
-        case .fretboardPosition:  return "rectangle.grid.1x2"
-        case .singleNote:         return "music.note"
-        case .circleOfFifths:     return "circle.dashed"
-        case .circleOfFourths:    return "circle.grid.2x1"
-        case .singleString:       return "line.3.horizontal"
-        case .chordProgression:   return "pianokeys"
+        case .fullFretboard:       return "rectangle.grid.3x2"
+        case .fretboardPosition:   return "rectangle.grid.1x2"
+        case .singleNote:          return "music.note"
+        case .circleOfFifths:      return "circle.dashed"
+        case .circleOfFourths:     return "circle.grid.2x1"
+        case .singleString:        return "line.3.horizontal"
+        case .chordProgression:    return "pianokeys"
+        case .accuracyAssessment:  return "waveform.badge.magnifyingglass"
         }
     }
 }

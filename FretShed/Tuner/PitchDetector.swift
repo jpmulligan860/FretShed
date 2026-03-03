@@ -56,6 +56,9 @@ public final class PitchDetector {
     /// Cents deviation from the nearest equal-temperament pitch (-50 … +50).
     public private(set) var centsDeviation: Double = 0
 
+    /// Confidence of the most recent detection (0.0–1.0), from the YIN algorithm.
+    public private(set) var detectedConfidence: Double = 0
+
     /// Microphone input level (0.0–1.0), mapped from RMS on a dB scale.
     public private(set) var inputLevel: Double = 0
 
@@ -266,6 +269,7 @@ public final class PitchDetector {
                     self.detectedNote = nil
                     self.detectedFrequency = nil
                     self.centsDeviation = 0
+                    self.detectedConfidence = 0
                     self.inputLevel = 0
                     holdUntilDate = nil
                     consecutiveNoteCount = 0
@@ -284,6 +288,7 @@ public final class PitchDetector {
                     self.detectedNote = nil
                     self.detectedFrequency = nil
                     self.centsDeviation = 0
+                    self.detectedConfidence = 0
                     holdUntilDate = nil
                     consecutiveNoteCount = 0
                     lastConsecutiveNote = nil
@@ -360,6 +365,7 @@ public final class PitchDetector {
                     holdUntilDate = Date().addingTimeInterval(holdDuration)
                     self.detectedNote = note
                     self.detectedFrequency = useFreq
+                    self.detectedConfidence = confidence
                     // Dead-zone: skip sub-cent jitter
                     if abs(smoothedCents - self.centsDeviation) >= 0.5 {
                         self.centsDeviation = smoothedCents
@@ -469,6 +475,7 @@ public final class PitchDetector {
         detectedNote = nil
         detectedFrequency = nil
         centsDeviation = 0
+        detectedConfidence = 0
         inputLevel = 0
         logger.info("PitchDetector stopped")
     }

@@ -101,7 +101,7 @@ Estimated: 6–8 hours
 | 3.4 | `OnboardingView` screen 4: Audio test — play any open string, app shows detected note | 1–2 hrs | ✅ |
 | 3.5 | Wire onboarding to app launch — show only on first launch via `UserDefaults` (`hasCompletedOnboarding`) | 30 min | ✅ |
 | 3.6 | Add "Skip" option — allow skipping from screen 2 onward | 30 min | ✅ |
-| 3.7 | Test on device — cold launch → onboarding → Practice tab → 'Use Tap Mode' → Session Setup → Start → first quiz question (target: under 60s). Also test audio path: Do This First → Use Audio Detection → tune → Calibrate → success → Session Setup → Start (target: under 3 min including tuning). | 30 min | 🔲 |
+| 3.7 | Test on device — cold launch → onboarding → Practice tab → 'Use Tap Mode' → Session Setup → Start → first quiz question (target: under 60s). Also test audio path: Do This First → Use Audio Detection → tune → Calibrate → success → Session Setup → Start (target: under 3 min including tuning). | 30 min | ✅ |
 
 ---
 
@@ -133,7 +133,7 @@ Estimated: 6–8 hours
 | J2 | Calibration Tuner — matching Phase D tuner styling | S | ✅ |
 | K1 | Onboarding — cherry/amber/gold feature icons, gradient buttons, warm background | M | ✅ |
 | L1 | Remove deprecated aliases — zero stray Color.indigo/teal/systemGroupedBackground | M | ✅ |
-| L2 | Light/dark mode audit — pending device testing | M | 🔲 |
+| L2 | Light/dark mode audit — pending device testing | M | ✅ |
 | L3 | Full test suite — 219 tests, 3 pre-existing failures (unrelated to redesign) | S | ✅ |
 
 ---
@@ -258,6 +258,7 @@ Estimated: 18–25 hours
 | 6.2 | Reddit/YouTube community outreach — r/guitarlessons, r/learnguitar, relevant YouTube channels | 2–3 hrs | 🔲 |
 | 6.3 | "Suggested Next Session" on quiz results screen — recommend next focus based on weak spots | 2–3 hrs | 🔲 |
 | 6.4 | Full accessibility audit — VoiceOver, Dynamic Type, color contrast across all screens | 4–6 hrs | 🔲 |
+| 6.5 | Auto-tune PitchDetector from accuracy assessment data — analyze per-attempt detection metadata (confidence, cents, frequency) to auto-adjust per-string confidence thresholds, consecutive frame gate, and spectral flatness threshold. Prerequisite: detection metadata capture (shipped). | 3–4 hrs | 🔲 |
 
 ---
 

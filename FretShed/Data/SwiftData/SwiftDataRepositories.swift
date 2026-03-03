@@ -228,11 +228,72 @@ public final class SwiftDataCalibrationRepository: CalibrationProfileRepository 
     }
 
     public func activeProfile() throws -> AudioCalibrationProfile? {
-        var descriptor = FetchDescriptor<AudioCalibrationProfile>(
+        // Primary: look for explicitly active profile
+        let activeDescriptor = FetchDescriptor<AudioCalibrationProfile>(
+            predicate: #Predicate { $0.isActive == true },
             sortBy: [SortDescriptor(\.calibrationDate, order: .reverse)]
         )
-        descriptor.fetchLimit = 1
-        return try context.fetch(descriptor).first
+        if let active = try context.fetch(activeDescriptor).first {
+            return active
+        }
+
+        // Fallback: most recent by date (upgrade path — assigns name "Guitar 1")
+        var fallbackDescriptor = FetchDescriptor<AudioCalibrationProfile>(
+            sortBy: [SortDescriptor(\.calibrationDate, order: .reverse)]
+        )
+        fallbackDescriptor.fetchLimit = 1
+        if let fallback = try context.fetch(fallbackDescriptor).first {
+            fallback.isActive = true
+            if fallback.name == nil { fallback.name = "Guitar 1" }
+            try context.save()
+            UserDefaults.standard.set(fallback.id.uuidString, forKey: LocalUserPreferences.Key.activeCalibrationProfileID)
+            return fallback
+        }
+
+        return nil
+    }
+
+    public func allProfiles() throws -> [AudioCalibrationProfile] {
+        let descriptor = FetchDescriptor<AudioCalibrationProfile>(
+            sortBy: [SortDescriptor(\.calibrationDate, order: .reverse)]
+        )
+        return try context.fetch(descriptor)
+    }
+
+    public func setActive(_ profile: AudioCalibrationProfile) throws {
+        // Clear all isActive flags
+        let all = try allProfiles()
+        for p in all { p.isActive = false }
+
+        // Set target as active
+        profile.isActive = true
+        try context.save()
+
+        // Sync to UserDefaults for fast reads
+        UserDefaults.standard.set(profile.id.uuidString, forKey: LocalUserPreferences.Key.activeCalibrationProfileID)
+    }
+
+    public func delete(_ profile: AudioCalibrationProfile) throws {
+        let wasActive = profile.isActive
+        context.delete(profile)
+        try context.save()
+
+        if wasActive {
+            // Promote next most recent profile
+            var descriptor = FetchDescriptor<AudioCalibrationProfile>(
+                sortBy: [SortDescriptor(\.calibrationDate, order: .reverse)]
+            )
+            descriptor.fetchLimit = 1
+            if let next = try context.fetch(descriptor).first {
+                next.isActive = true
+                try context.save()
+                UserDefaults.standard.set(next.id.uuidString, forKey: LocalUserPreferences.Key.activeCalibrationProfileID)
+            } else {
+                // No profiles left — clear calibration state
+                UserDefaults.standard.set(false, forKey: LocalUserPreferences.Key.hasCompletedCalibration)
+                UserDefaults.standard.removeObject(forKey: LocalUserPreferences.Key.activeCalibrationProfileID)
+            }
+        }
     }
 
     public func deleteAll() throws {

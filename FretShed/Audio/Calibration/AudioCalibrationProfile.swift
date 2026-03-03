@@ -3,7 +3,9 @@
 //
 // SwiftData model for persisted audio calibration profiles.
 // Each profile captures the measured noise floor, AGC gain, and per-string
-// detection results for a specific input source.
+// detection results for a specific input source. Multiple profiles can be
+// stored (one per guitar); the active profile (isActive) is used for quiz
+// pitch detection pre-seeding.
 
 import Foundation
 import SwiftData
@@ -67,6 +69,31 @@ public enum AudioInputSource: String, Codable, Sendable {
     }
 }
 
+// MARK: - GuitarType
+
+/// Identifies the type of guitar used during calibration.
+public enum GuitarType: String, CaseIterable, Codable, Sendable {
+    case electric  = "electric"
+    case acoustic  = "acoustic"
+    case classical = "classical"
+
+    public var displayName: String {
+        switch self {
+        case .electric:  return "Electric"
+        case .acoustic:  return "Acoustic"
+        case .classical: return "Classical"
+        }
+    }
+
+    public var iconName: String {
+        switch self {
+        case .electric:  return "guitars.fill"
+        case .acoustic:  return "guitars"
+        case .classical: return "guitars"
+        }
+    }
+}
+
 // MARK: - AudioCalibrationProfile
 
 @Model
@@ -98,11 +125,34 @@ public final class AudioCalibrationProfile {
     /// JSON-encoded [Int: Bool] — string number → passed/failed.
     public var stringResultsData: Data
 
+    /// JSON-encoded [Int: Bool] — string number → passed/failed at 12th fret.
+    public var frettedStringResultsData: Data
+
+    /// User-assigned profile name (e.g. "Strat", "Acoustic").
+    public var name: String?
+
+    /// Raw value of `GuitarType` for SwiftData storage.
+    public var guitarTypeRaw: String?
+
+    /// Whether this is the currently active calibration profile.
+    public var isActive: Bool = false
+
     // MARK: Computed
 
     public var inputSource: AudioInputSource {
         get { AudioInputSource(rawValue: inputSourceRaw) ?? .unknown }
         set { inputSourceRaw = newValue.rawValue }
+    }
+
+    public var guitarType: GuitarType? {
+        get { guitarTypeRaw.flatMap { GuitarType(rawValue: $0) } }
+        set { guitarTypeRaw = newValue?.rawValue }
+    }
+
+    /// Display name for the profile, falling back to "Guitar" if unnamed.
+    public var displayName: String {
+        if let name, !name.isEmpty { return name }
+        return "Guitar"
     }
 
     /// Decoded per-string results. Key = string number (1–6), value = passed.
@@ -115,6 +165,16 @@ public final class AudioCalibrationProfile {
         }
     }
 
+    /// Decoded per-string 12th-fret results. Key = string number (1–6), value = passed.
+    public var frettedStringResults: [Int: Bool] {
+        get {
+            (try? JSONDecoder().decode([Int: Bool].self, from: frettedStringResultsData)) ?? [:]
+        }
+        set {
+            frettedStringResultsData = (try? JSONEncoder().encode(newValue)) ?? Data()
+        }
+    }
+
     // MARK: Initializer
 
     public init(
@@ -123,8 +183,12 @@ public final class AudioCalibrationProfile {
         measuredAGCGain: Float,
         signalQualityScore: Float,
         stringResults: [Int: Bool],
+        frettedStringResults: [Int: Bool] = [:],
         userGainTrimDB: Float = 0.0,
-        userGateTrimDB: Float = 0.0
+        userGateTrimDB: Float = 0.0,
+        name: String? = nil,
+        guitarType: GuitarType? = nil,
+        isActive: Bool = false
     ) {
         self.id = UUID()
         self.inputSourceRaw = inputSource.rawValue
@@ -135,5 +199,9 @@ public final class AudioCalibrationProfile {
         self.userGainTrimDB = userGainTrimDB
         self.userGateTrimDB = userGateTrimDB
         self.stringResultsData = (try? JSONEncoder().encode(stringResults)) ?? Data()
+        self.frettedStringResultsData = (try? JSONEncoder().encode(frettedStringResults)) ?? Data()
+        self.name = name
+        self.guitarTypeRaw = guitarType?.rawValue
+        self.isActive = isActive
     }
 }

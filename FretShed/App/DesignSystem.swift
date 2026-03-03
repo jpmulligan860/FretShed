@@ -360,7 +360,7 @@ struct GradientSlider: View {
             .frame(height: geo.size.height)
             .contentShape(Rectangle())
             .gesture(
-                DragGesture(minimumDistance: 0)
+                DragGesture(minimumDistance: 10)
                     .onChanged { drag in
                         let raw = Double((drag.location.x - thumbSize / 2) / usable)
                         let clamped = min(max(raw, 0), 1)

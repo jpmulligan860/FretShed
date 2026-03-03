@@ -44,5 +44,8 @@ public protocol SettingsRepository {
 public protocol CalibrationProfileRepository {
     func save(_ profile: AudioCalibrationProfile) throws
     func activeProfile() throws -> AudioCalibrationProfile?
+    func allProfiles() throws -> [AudioCalibrationProfile]
+    func setActive(_ profile: AudioCalibrationProfile) throws
+    func delete(_ profile: AudioCalibrationProfile) throws
     func deleteAll() throws
 }

@@ -18,6 +18,7 @@ public enum CalibrationPhase: Equatable {
     case welcome
     case measuringNoise(progress: Double)  // 0.0–1.0
     case testingString(number: Int)        // 1–6 (current string being tested)
+    case testingFretted(number: Int)       // 1–6 (current string, 12th fret)
     case complete
 }
 
@@ -31,7 +32,8 @@ public final class CalibrationEngine {
 
     public private(set) var phase: CalibrationPhase = .welcome
     public private(set) var detectedInputSource: AudioInputSource = .unknown
-    public private(set) var stringResults: [Int: Bool] = [:]  // string number → passed
+    public private(set) var stringResults: [Int: Bool] = [:]  // string number → passed (open)
+    public private(set) var frettedStringResults: [Int: Bool] = [:]  // string number → passed (12th fret)
     public private(set) var measuredNoiseFloor: Float = 0.01
     public private(set) var measuredAGCGain: Float = 2.0
     public private(set) var signalQualityScore: Float = 0.0
@@ -69,12 +71,26 @@ public final class CalibrationEngine {
         1: "High E (1st)"
     ]
 
+    /// Expected notes at the 12th fret for each string (one octave above open).
+    /// Same note names as open strings — the detector matches by note name, not octave.
+    static let frettedStringNotes: [(string: Int, note: MusicalNote)] = [
+        (6, .e),   // E3 (12th fret of low E)
+        (5, .a),   // A3
+        (4, .d),   // D4
+        (3, .g),   // G4
+        (2, .b),   // B4
+        (1, .e),   // E5
+    ]
+
     // MARK: - Init
 
     public init(isRecalibration: Bool = false) {
         self.isRecalibration = isRecalibration
         // Pre-initialise all strings as not-yet-tested
-        for s in 1...6 { stringResults[s] = false }
+        for s in 1...6 {
+            stringResults[s] = false
+            frettedStringResults[s] = false
+        }
     }
 
     // MARK: - Input Source Detection
@@ -149,21 +165,38 @@ public final class CalibrationEngine {
 
     // MARK: - String Testing
 
-    /// The expected note for the current string being tested.
+    /// The expected note for the current string being tested (open or fretted).
     public var expectedNote: MusicalNote? {
-        guard case .testingString(let num) = phase else { return nil }
-        return Self.openStringNotes.first(where: { $0.string == num })?.note
+        switch phase {
+        case .testingString(let num):
+            return Self.openStringNotes.first(where: { $0.string == num })?.note
+        case .testingFretted(let num):
+            return Self.frettedStringNotes.first(where: { $0.string == num })?.note
+        default:
+            return nil
+        }
     }
 
     /// The display name for the current string being tested.
     public var currentStringName: String? {
-        guard case .testingString(let num) = phase else { return nil }
-        return Self.stringNames[num]
+        switch phase {
+        case .testingString(let num), .testingFretted(let num):
+            return Self.stringNames[num]
+        default:
+            return nil
+        }
+    }
+
+    /// Whether the engine is currently in the fretted (12th fret) test phase.
+    public var isFrettedPhase: Bool {
+        if case .testingFretted = phase { return true }
+        return false
     }
 
     private func startStringTest(stringIndex: Int) {
         guard stringIndex < Self.openStringNotes.count else {
-            completeCalibration()
+            // All open strings done — transition to fretted phase
+            startFrettedTest(stringIndex: 0)
             return
         }
 
@@ -172,22 +205,49 @@ public final class CalibrationEngine {
 
         stringTestTask?.cancel()
         stringTestTask = Task { @MainActor in
-            // Poll detector.detectedNote until the expected note is found
             while !Task.isCancelled {
                 try? await Task.sleep(for: .milliseconds(50))
                 guard !Task.isCancelled else { return }
 
                 if detector.detectedNote == entry.note {
-                    // Mark this string as passed
                     stringResults[entry.string] = true
-                    logger.info("String \(entry.string) detected: \(entry.note.sharpName)")
+                    logger.info("String \(entry.string) open detected: \(entry.note.sharpName)")
 
-                    // Brief pause so the user sees the checkmark
                     try? await Task.sleep(for: .milliseconds(500))
                     guard !Task.isCancelled else { return }
 
-                    // Advance to next string
                     startStringTest(stringIndex: stringIndex + 1)
+                    return
+                }
+            }
+        }
+    }
+
+    // MARK: - Fretted String Testing (12th Fret)
+
+    private func startFrettedTest(stringIndex: Int) {
+        guard stringIndex < Self.frettedStringNotes.count else {
+            completeCalibration()
+            return
+        }
+
+        let entry = Self.frettedStringNotes[stringIndex]
+        phase = .testingFretted(number: entry.string)
+
+        stringTestTask?.cancel()
+        stringTestTask = Task { @MainActor in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .milliseconds(50))
+                guard !Task.isCancelled else { return }
+
+                if detector.detectedNote == entry.note {
+                    frettedStringResults[entry.string] = true
+                    logger.info("String \(entry.string) fret 12 detected: \(entry.note.sharpName)")
+
+                    try? await Task.sleep(for: .milliseconds(500))
+                    guard !Task.isCancelled else { return }
+
+                    startFrettedTest(stringIndex: stringIndex + 1)
                     return
                 }
             }
@@ -217,7 +277,8 @@ public final class CalibrationEngine {
             measuredNoiseFloorRMS: measuredNoiseFloor,
             measuredAGCGain: measuredAGCGain,
             signalQualityScore: signalQualityScore,
-            stringResults: stringResults
+            stringResults: stringResults,
+            frettedStringResults: frettedStringResults
         )
     }
 

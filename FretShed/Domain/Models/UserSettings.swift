@@ -152,6 +152,10 @@ public final class UserSettings {
     public var practiceReminderMinute: Int
     public var streakReminderEnabled: Bool
 
+    // Feature flags (pre-launch testing — remove before release)
+    /// Nil is treated as true so existing DB rows (migrated as nil) show the button.
+    public var showAccuracyAssessment: Bool?
+
     // MARK: Computed Typed Accessors
 
     public var defaultGameMode: GameMode {
@@ -227,6 +231,7 @@ public final class UserSettings {
         self.practiceReminderHour = 18
         self.practiceReminderMinute = 0
         self.streakReminderEnabled = false
+        self.showAccuracyAssessment = true
     }
 }
 
@@ -245,6 +250,7 @@ public enum LocalUserPreferences {
         public static let colorScheme            = "colorScheme"   // "light" / "dark" / "system"
         public static let lastActiveTab          = "lastActiveTab"
         public static let hasCompletedCalibration = "hasCompletedCalibration"
+        public static let activeCalibrationProfileID = "activeCalibrationProfileID"
     }
 
     /// Default values matching the spec.

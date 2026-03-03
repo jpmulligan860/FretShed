@@ -45,14 +45,16 @@ enum SchemaV1: VersionedSchema {
 // MARK: - Migration Plan
 
 /// Declares the ordered list of schema versions for SwiftData migration.
-/// When a future SchemaV2 is added, insert a MigrationStage between V1 and V2 here.
+/// V1 → current: new optional/defaulted fields on AudioCalibrationProfile
+/// (name, guitarTypeRaw, isActive) and Session (calibrationProfileID) are handled
+/// automatically via lightweight migration — no explicit stage needed.
 enum FretShedMigrationPlan: SchemaMigrationPlan {
     static var schemas: [any VersionedSchema.Type] {
         [SchemaV1.self]
     }
 
     static var stages: [MigrationStage] {
-        []   // No migrations yet — SchemaV1 is the initial (and only) version.
+        []
     }
 }
 

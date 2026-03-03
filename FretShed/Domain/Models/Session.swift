@@ -17,16 +17,18 @@ public enum FocusMode: String, CaseIterable, Codable, Sendable, Hashable {
     case circleOfFourths = "circleOfFourths"
     case circleOfFifths  = "circleOfFifths"
     case chordProgression = "chordProgression"
+    case accuracyAssessment = "accuracyAssessment"
 
     public var localizedLabel: String {
         switch self {
-        case .singleNote:         return String(localized: "Single Note", bundle: .main)
-        case .singleString:       return String(localized: "String Selector", bundle: .main)
-        case .fullFretboard:      return String(localized: "Full Fretboard", bundle: .main)
-        case .fretboardPosition:  return String(localized: "Fretboard Position", bundle: .main)
-        case .circleOfFourths:    return String(localized: "Circle of Fourths", bundle: .main)
-        case .circleOfFifths:     return String(localized: "Circle of Fifths", bundle: .main)
-        case .chordProgression:   return String(localized: "Chord Progression", bundle: .main)
+        case .singleNote:           return String(localized: "Single Note", bundle: .main)
+        case .singleString:         return String(localized: "String Selector", bundle: .main)
+        case .fullFretboard:        return String(localized: "Full Fretboard", bundle: .main)
+        case .fretboardPosition:    return String(localized: "Fretboard Position", bundle: .main)
+        case .circleOfFourths:      return String(localized: "Circle of Fourths", bundle: .main)
+        case .circleOfFifths:       return String(localized: "Circle of Fifths", bundle: .main)
+        case .chordProgression:     return String(localized: "Chord Progression", bundle: .main)
+        case .accuracyAssessment:   return String(localized: "Accuracy Assessment", bundle: .main)
         }
     }
 }
@@ -132,6 +134,10 @@ public final class Session {
     /// JSON-encoded ChordProgression for .chordProgression focus mode.
     /// Nil for all other modes.
     public var chordProgressionData: Data?
+
+    /// ID of the calibration profile used for this session.
+    /// Nullable for migration compatibility with existing sessions.
+    public var calibrationProfileID: UUID?
 
     // MARK: Computed Convenience
 

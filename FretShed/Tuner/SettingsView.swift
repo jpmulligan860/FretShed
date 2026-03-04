@@ -39,6 +39,11 @@ public struct SettingsView: View {
     @State private var deletingProfile: AudioCalibrationProfile? = nil
     @State private var recalibratingProfile: AudioCalibrationProfile? = nil
 
+    @State private var testDataSeeded = TestDataSeeder.isSeeded
+    @State private var showSeedConfirmation = false
+    @State private var showRemoveConfirmation = false
+    @State private var seedStatusMessage = ""
+
     @AppStorage(LocalUserPreferences.Key.hasCompletedCalibration)
     private var hasCompletedCalibration = false
 
@@ -83,6 +88,7 @@ public struct SettingsView: View {
             audioSetupSection
             quizSection(settings: settings)
             dataSection
+            debugSection
             licensesSection
         }
         .tint(DesignSystem.Colors.amber)
@@ -768,6 +774,65 @@ public struct SettingsView: View {
                      + (result.settingsRestored ? " Settings restored." : "")
                      + (result.calibrationRestored ? " Calibration restored." : ""))
             }
+        }
+    }
+
+    // MARK: - Debug Section
+
+    private var debugSection: some View {
+        Section {
+            if testDataSeeded {
+                HStack {
+                    Label("Test Data Active", systemImage: "checkmark.circle.fill")
+                        .foregroundStyle(DesignSystem.Colors.correct)
+                    Spacer()
+                    Text("18 sessions")
+                        .font(.caption)
+                        .foregroundStyle(DesignSystem.Colors.muted)
+                }
+
+                Button(role: .destructive) {
+                    showRemoveConfirmation = true
+                } label: {
+                    Label("Remove Test Data", systemImage: "trash")
+                }
+            } else {
+                Button {
+                    showSeedConfirmation = true
+                } label: {
+                    Label("Seed Test Data", systemImage: "square.stack.3d.up.fill")
+                }
+            }
+
+            if !seedStatusMessage.isEmpty {
+                Text(seedStatusMessage)
+                    .font(.caption)
+                    .foregroundStyle(DesignSystem.Colors.muted)
+            }
+        } header: {
+            DesignSystem.Typography.capsLabel("Developer")
+        } footer: {
+            Text("Seeds 18 dummy sessions (3 per focus mode) with ~65% accuracy for UI testing. Remove before TestFlight.")
+        }
+        .alert("Seed Test Data?", isPresented: $showSeedConfirmation) {
+            Button("Seed") {
+                TestDataSeeder.seed(container: container)
+                testDataSeeded = TestDataSeeder.isSeeded
+                seedStatusMessage = testDataSeeded ? "Done — 6 sessions seeded" : "Failed"
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This will create 6 dummy sessions with attempts and mastery scores.")
+        }
+        .alert("Remove Test Data?", isPresented: $showRemoveConfirmation) {
+            Button("Remove", role: .destructive) {
+                TestDataSeeder.remove(container: container)
+                testDataSeeded = TestDataSeeder.isSeeded
+                seedStatusMessage = !testDataSeeded ? "Test data removed" : "Failed"
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This will delete all test sessions and rebuild mastery scores.")
         }
     }
 

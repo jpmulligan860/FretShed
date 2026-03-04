@@ -38,6 +38,9 @@ struct FretShedApp: App {
             }
             .task {
                 if container == nil {
+                    // Clean up stale flags from failed seed attempts
+                    UserDefaults.standard.removeObject(forKey: "testDataPendingSeed")
+                    UserDefaults.standard.removeObject(forKey: "testDataPendingRemove")
                     container = await AppContainer.create()
                 }
             }

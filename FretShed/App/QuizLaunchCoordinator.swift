@@ -221,4 +221,23 @@ final class QuizLaunchCoordinator {
     func handleCalibrateAudio() {
         showCalibration = true
     }
+
+    func handleBuildCustomSession() {
+        showSetup = true
+    }
+
+    /// Launches a session directly from a pre-built Session object (Smart Practice, presets, timed).
+    func launchSession(_ session: Session) {
+        let settings = (try? container.settingsRepository.loadSettings()) ?? UserSettings()
+        try? container.sessionRepository.save(session)
+        let vm = QuizViewModel(
+            session: session,
+            fretboardMap: container.fretboardMap,
+            settings: settings,
+            masteryRepository: container.masteryRepository,
+            sessionRepository: container.sessionRepository,
+            attemptRepository: container.attemptRepository
+        )
+        launchQuiz(vm: vm)
+    }
 }

@@ -170,6 +170,8 @@ struct SessionDetailView: View {
         case .chordProgression:    return "pianokeys"
         case .fretboardPosition:   return "slider.horizontal.3"
         case .accuracyAssessment:  return "waveform.badge.magnifyingglass"
+        case .naturalNotes:        return "textformat.abc"
+        case .sharpsAndFlats:      return "number"
         }
     }
 
@@ -180,6 +182,8 @@ struct SessionDetailView: View {
         case .circleOfFifths:      return DesignSystem.Colors.honey
         case .fretboardPosition:   return DesignSystem.Colors.gold
         case .accuracyAssessment:  return DesignSystem.Colors.cherry
+        case .naturalNotes:        return DesignSystem.Colors.correct
+        case .sharpsAndFlats:      return DesignSystem.Colors.honey
         case .circleOfFourths,
              .singleString,
              .chordProgression:    return DesignSystem.Colors.amber

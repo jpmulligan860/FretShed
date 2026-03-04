@@ -61,11 +61,13 @@ struct ContentView: View {
             }
         }
 
-        // ── Setup cover ────────────────────────────────────────────────
-        .fullScreenCover(isPresented: $quiz.showSetup, onDismiss: {
+        // ── Setup sheet (half-sheet) ──────────────────────────────────
+        .sheet(isPresented: $quiz.showSetup, onDismiss: {
             quiz.handleSetupDismiss()
         }) {
             SessionSetupView()
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
         }
 
         // ── Notification handlers (only what's still needed) ───────────
@@ -131,13 +133,8 @@ struct ContentView: View {
 
     private var practiceTab: some View {
         NavigationStack {
-            PracticeHomeView(
-                onStartPractice: { quiz.handleStartPractice() },
-                onSetupAudio: { quiz.handleSetupAudio() },
-                onUseTapMode: { quiz.handleUseTapModeFromHome() },
-                onCalibrateAudio: { quiz.handleCalibrateAudio() }
-            )
-            .toolbar(.hidden, for: .navigationBar)
+            PracticeHomeView(coordinator: quiz)
+                .toolbar(.hidden, for: .navigationBar)
         }
     }
 
@@ -164,353 +161,326 @@ struct ContentView: View {
 
 // MARK: - PracticeHomeView
 
-/// Landing page inside the Practice tab.
-/// Does NOT own quiz or results presentation — posts .launchQuiz which
-/// ContentView handles. This keeps all modal presentation at the top level.
+/// Landing page inside the Practice (Shed) tab.
+/// Uses QuizLaunchCoordinator to launch sessions — no NotificationCenter for launches.
 struct PracticeHomeView: View {
 
-    let onStartPractice: () -> Void
-    let onSetupAudio: () -> Void
-    let onUseTapMode: () -> Void
-    let onCalibrateAudio: () -> Void
+    let coordinator: QuizLaunchCoordinator
     @Environment(\.appContainer) private var container
     @State private var lastSession: Session?
-    @State private var activeProfileName: String?
-    @State private var allProfiles: [AudioCalibrationProfile] = []
+    @State private var sessionCount: Int = 0
+    @State private var smartEngine: SmartPracticeEngine?
+    @State private var smartDescription: String = ""
+    @State private var weakSpots: Int = 0
+    @State private var selectedTimedMinutes: Int = 5
+    @State private var timedGameMode: GameMode = .untimed
+    @State private var calibrationBannerDismissed = false
 
     @AppStorage(LocalUserPreferences.Key.hasCompletedCalibration)
     private var hasCompletedCalibration = false
 
+    private var isNewUser: Bool { sessionCount == 0 }
+
     var body: some View {
         ScrollView {
-            VStack(spacing: 28) {
-                // Title
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("The Shed")
-                        .font(DesignSystem.Typography.screenTitle)
-                        .foregroundStyle(DesignSystem.Colors.text)
-                    Text("Time to put in the work.")
-                        .font(DesignSystem.Typography.tagline)
-                        .foregroundStyle(DesignSystem.Colors.muted)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-
-                doThisFirstCard
-                heroCard
-                quickStartGrid
+            VStack(spacing: 20) {
+                header
+                calibrationBanner
+                primaryCTA
+                if !isNewUser { compactHeatmap }
+                quickStartSection
+                timedPracticeSection
+                buildCustomButton
             }
             .padding(.horizontal, 20)
             .padding(.top, 16)
+            .padding(.bottom, 32)
             .frame(maxWidth: 800)
             .frame(maxWidth: .infinity)
         }
         .background(DesignSystem.Colors.background)
-        .task {
-            lastSession = try? container.sessionRepository.recentSessions(limit: 1).first
-            reloadProfiles()
-        }
-        .onAppear {
-            reloadProfiles()
-        }
+        .task { await loadData() }
+        .onAppear { refreshData() }
     }
+
+    // MARK: - Header
+
+    private var header: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("The Shed")
+                .font(DesignSystem.Typography.screenTitle)
+                .foregroundStyle(DesignSystem.Colors.text)
+            Text(isNewUser ? "Time to put in the work." : "Pick up where you left off.")
+                .font(DesignSystem.Typography.tagline)
+                .foregroundStyle(DesignSystem.Colors.muted)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    // MARK: - Calibration Banner
 
     @ViewBuilder
-    private var doThisFirstCard: some View {
-        if hasCompletedCalibration {
-            // Compact "Calibrated" status line with profile switcher
+    private var calibrationBanner: some View {
+        if !hasCompletedCalibration && !calibrationBannerDismissed {
             HStack(spacing: 10) {
-                Image(systemName: "checkmark.circle.fill")
-                    .foregroundStyle(DesignSystem.Colors.correct)
-                Text("Audio Calibrated")
+                Image(systemName: "mic.badge.xmark")
+                    .foregroundStyle(DesignSystem.Colors.amber)
+                Text("Audio calibration needed")
                     .font(DesignSystem.Typography.bodyLabel)
+                    .foregroundStyle(DesignSystem.Colors.text)
                 Spacer()
-                profileSwitcherMenu
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
-            .background(DesignSystem.Colors.surface, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
-        } else {
-            // Full "Do This First" card — two paths: audio detection or tap mode
-            ZStack(alignment: .bottomLeading) {
-                RoundedRectangle(cornerRadius: DesignSystem.Radius.xl)
-                    .fill(DesignSystem.Gradients.primary)
-
-                VStack(alignment: .leading, spacing: DesignSystem.Spacing.sm) {
-                    Text("Do This First")
-                        .font(DesignSystem.Typography.screenTitle)
-                        .foregroundStyle(.white)
-                    Text("Choose how you want to practice:")
-                        .font(DesignSystem.Typography.accentDescription)
-                        .foregroundStyle(.white.opacity(0.85))
-
-                    HStack(spacing: 12) {
-                        Button {
-                            onSetupAudio()
-                        } label: {
-                            Label("Use Audio Detection", systemImage: "mic.fill")
-                                .font(DesignSystem.Typography.bodyLabel)
-                                .padding(.horizontal, 14)
-                                .padding(.vertical, 10)
-                                .background(.white.opacity(0.25), in: Capsule())
-                                .foregroundStyle(.white)
-                        }
-                        .buttonStyle(.plain)
-
-                        Button {
-                            onUseTapMode()
-                        } label: {
-                            Label("Use Tap Mode", systemImage: "hand.tap")
-                                .font(DesignSystem.Typography.bodyLabel)
-                                .padding(.horizontal, 14)
-                                .padding(.vertical, 10)
-                                .background(.white.opacity(0.25), in: Capsule())
-                                .foregroundStyle(.white)
-                        }
-                        .buttonStyle(.plain)
-                    }
-                    .padding(.top, 4)
+                Button("Set Up") {
+                    coordinator.handleSetupAudio()
                 }
-                .padding(20)
-            }
-            .overlay(alignment: .topTrailing) {
-                Image(systemName: "checklist")
-                    .font(.system(size: 60))
-                    .foregroundStyle(.white.opacity(0.15))
-                    .padding(20)
-            }
-        }
-    }
-
-    private var profileSwitcherMenu: some View {
-        Menu {
-            ForEach(allProfiles, id: \.id) { profile in
+                .font(DesignSystem.Typography.smallLabel)
+                .foregroundStyle(DesignSystem.Colors.cherry)
                 Button {
-                    switchToProfile(profile)
+                    calibrationBannerDismissed = true
                 } label: {
-                    if profile.isActive {
-                        Label(profile.displayName, systemImage: "checkmark")
-                    } else {
-                        Text(profile.displayName)
-                    }
+                    Image(systemName: "xmark")
+                        .font(.caption)
+                        .foregroundStyle(DesignSystem.Colors.muted)
                 }
             }
-            Divider()
-            Button {
-                onCalibrateAudio()
-            } label: {
-                Label("Add New Profile", systemImage: "plus")
-            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .background(DesignSystem.Colors.surface, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.sm))
+        }
+    }
+
+    // MARK: - Primary CTA
+
+    private var primaryCTA: some View {
+        Button {
+            launchSmartPractice()
         } label: {
-            HStack(spacing: 4) {
-                Text(activeProfileName ?? "Guitar")
-                    .font(DesignSystem.Typography.smallLabel)
-                    .foregroundStyle(DesignSystem.Colors.cherry)
-                Image(systemName: "chevron.up.chevron.down")
-                    .font(.caption2)
-                    .foregroundStyle(DesignSystem.Colors.cherry)
-            }
-        }
-    }
-
-    private func reloadProfiles() {
-        if let profile = try? container.calibrationRepository.activeProfile() {
-            activeProfileName = profile.displayName
-        }
-        allProfiles = (try? container.calibrationRepository.allProfiles()) ?? []
-    }
-
-    private func switchToProfile(_ profile: AudioCalibrationProfile) {
-        guard !profile.isActive else { return }
-        try? container.calibrationRepository.setActive(profile)
-        reloadProfiles()
-    }
-
-    private var heroCard: some View {
-        ZStack(alignment: .topLeading) {
-            RoundedRectangle(cornerRadius: DesignSystem.Radius.xl)
-                .fill(
-                    LinearGradient(
-                        colors: [DesignSystem.Colors.cherry, DesignSystem.Colors.amber],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-
-            VStack(alignment: .leading, spacing: DesignSystem.Spacing.xs) {
-                Text("Ready to practice?")
+            VStack(alignment: .leading, spacing: 4) {
+                DesignSystem.Typography.capsLabel(isNewUser ? "START HERE" : "BASED ON YOUR PROGRESS")
+                    .foregroundStyle(.white.opacity(0.7))
+                Text(isNewUser ? "Start Practice" : "Smart Practice")
                     .font(DesignSystem.Typography.screenTitle)
                     .foregroundStyle(.white)
-                Text("Tap here, design a session and start building your fretboard knowledge.")
+                Text(isNewUser
+                     ? "Adaptive session based on your level"
+                     : "Next: \(smartDescription) \u{2022} \(weakSpots) weak spots")
                     .font(DesignSystem.Typography.accentDescription)
                     .foregroundStyle(.white.opacity(0.85))
             }
-            .padding(20)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(16)
+            .background(DesignSystem.Gradients.primary, in: RoundedRectangle(cornerRadius: 16))
         }
-        .overlay(alignment: .topTrailing) {
-            Image(systemName: "guitars.fill")
-                .font(.system(size: 60))
-                .foregroundStyle(.white.opacity(0.15))
-                .padding(20)
-        }
-        .onTapGesture { onStartPractice() }
+        .buttonStyle(.plain)
     }
 
-    private var quickStartGrid: some View {
-        ZStack(alignment: .bottomLeading) {
-            RoundedRectangle(cornerRadius: DesignSystem.Radius.xl)
-                .fill(
-                    LinearGradient(
-                        colors: [DesignSystem.Colors.amber, DesignSystem.Colors.honey],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
+    // MARK: - Compact Heatmap
 
-            VStack(alignment: .leading, spacing: 12) {
-                Text("Quick Start")
-                    .font(DesignSystem.Typography.screenTitle)
-                    .foregroundStyle(.white)
+    private var compactHeatmap: some View {
+        CompactHeatmapView(
+            masteryRepository: container.masteryRepository,
+            fretboardMap: container.fretboardMap
+        )
+    }
 
-                ViewThatFits(in: .horizontal) {
-                    LazyVGrid(columns: [.init(), .init(), .init(), .init()], spacing: 12) {
-                        if lastSession != nil { repeatLastCard }
-                        quickStartCards
+    // MARK: - Quick Start Presets
+
+    private var quickStartSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            DesignSystem.Typography.capsLabel("QUICK START")
+
+            if isNewUser {
+                HStack(spacing: 10) {
+                    presetCard(icon: "play.circle.fill", title: "Guided Start", subtitle: "10 questions, relaxed") {
+                        let session = Session(focusMode: .fullFretboard, gameMode: .untimed, fretRangeEnd: 7, isAdaptive: true)
+                        coordinator.launchSession(session)
                     }
-                    LazyVGrid(columns: [.init(), .init()], spacing: 12) {
-                        if lastSession != nil { repeatLastCard }
-                        quickStartCards
+                    presetCard(icon: "music.note", title: "Root Notes", subtitle: "20 questions, open position") {
+                        let session = Session(focusMode: .fullFretboard, gameMode: .untimed, fretRangeEnd: 7, isAdaptive: true)
+                        coordinator.launchSession(session)
+                    }
+                }
+            } else {
+                HStack(spacing: 10) {
+                    presetCard(icon: "target", title: "Weak Spots", subtitle: "Target lowest scores") {
+                        let session = Session(focusMode: .fullFretboard, gameMode: .untimed, fretRangeEnd: 7, isAdaptive: true)
+                        coordinator.launchSession(session)
+                    }
+                    presetCard(icon: "square.grid.3x3.topleft.filled", title: "Fill the Gaps", subtitle: "Unattempted cells") {
+                        let session = Session(focusMode: .fullFretboard, gameMode: .untimed, fretRangeEnd: 7, isAdaptive: true)
+                        coordinator.launchSession(session)
+                    }
+                    if let prev = lastSession {
+                        presetCard(
+                            icon: "arrow.counterclockwise",
+                            title: "Repeat Last",
+                            subtitle: "\(prev.focusMode.localizedLabel) \u{2022} \(Int(prev.accuracyPercent))%"
+                        ) {
+                            Task { await coordinator.launchRepeatSession(from: prev) }
+                        }
                     }
                 }
             }
-            .padding(20)
-        }
-        .overlay(alignment: .topTrailing) {
-            Image(systemName: "bolt.fill")
-                .font(.system(size: 60))
-                .foregroundStyle(.white.opacity(0.15))
-                .padding(20)
         }
     }
 
-    private var repeatLastCard: some View {
-        Button(action: repeatLastSession) {
+    private func presetCard(icon: String, title: String, subtitle: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
             VStack(alignment: .leading, spacing: 6) {
-                Image(systemName: "arrow.counterclockwise.circle.fill")
-                    .font(.title2)
-                    .foregroundStyle(DesignSystem.Colors.correct)
-                Text("Repeat Last")
-                    .font(DesignSystem.Typography.bodyLabel)
-                    .foregroundStyle(DesignSystem.Colors.text)
-                    .lineLimit(2)
-            }
-            .frame(maxWidth: .infinity, minHeight: 70, alignment: .leading)
-            .padding(14)
-            .background(DesignSystem.Colors.surface, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
-        }
-        .buttonStyle(.plain)
-    }
-
-    @ViewBuilder
-    private var quickStartCards: some View {
-        QuickModeCard(mode: .singleNote, label: "Same Note Full Fretboard", onTap: {
-            quickLaunch(focusMode: .singleNote)
-        })
-        QuickModeCard(mode: .singleString, label: "Single String Workout", onTap: {
-            quickLaunchRandomString()
-        })
-        QuickModeCard(mode: .fullFretboard, label: "Random Notes Full Fretboard", onTap: {
-            quickLaunch(focusMode: .fullFretboard)
-        })
-    }
-
-    private func quickLaunch(focusMode: FocusMode, targetStrings: [Int] = []) {
-        Task { @MainActor in
-            let settings = (try? container.settingsRepository.loadSettings()) ?? UserSettings()
-            let session = Session(focusMode: focusMode, gameMode: .untimed, targetStrings: targetStrings, isAdaptive: true)
-            try? container.sessionRepository.save(session)
-            let vm = QuizViewModel(
-                session: session,
-                fretboardMap: container.fretboardMap,
-                settings: settings,
-                masteryRepository: container.masteryRepository,
-                sessionRepository: container.sessionRepository,
-                attemptRepository: container.attemptRepository
-            )
-            NotificationCenter.default.post(name: .launchQuiz, object: vm)
-        }
-    }
-
-    private func quickLaunchRandomString() {
-        let randomString = Int.random(in: 1...6)
-        quickLaunch(focusMode: .singleString, targetStrings: [randomString])
-    }
-
-    private func repeatLastSession() {
-        guard let prev = lastSession else { return }
-        let targetNotes = prev.notes.compactMap { MusicalNote(rawValue: $0) }
-        let session = Session(
-            focusMode: prev.focusMode,
-            gameMode: prev.gameMode,
-            fretRangeStart: prev.fretRangeStart,
-            fretRangeEnd: prev.fretRangeEnd,
-            targetNotes: targetNotes,
-            targetStrings: prev.targetStrings,
-            chordProgression: prev.chordProgression,
-            isAdaptive: prev.isAdaptive
-        )
-        // MainActor task so notification posts on main thread.
-        Task { @MainActor in
-            try? container.sessionRepository.save(session)
-            let settings = (try? container.settingsRepository.loadSettings()) ?? UserSettings()
-            let vm = QuizViewModel(
-                session: session,
-                fretboardMap: container.fretboardMap,
-                settings: settings,
-                masteryRepository: container.masteryRepository,
-                sessionRepository: container.sessionRepository,
-                attemptRepository: container.attemptRepository
-            )
-            NotificationCenter.default.post(name: .launchQuiz, object: vm)
-        }
-    }
-}
-
-// MARK: - QuickModeCard
-
-private struct QuickModeCard: View {
-    let mode: FocusMode
-    var label: String? = nil
-    let onTap: () -> Void
-
-    var body: some View {
-        Button(action: onTap) {
-            VStack(alignment: .leading, spacing: 6) {
-                Image(systemName: modeIcon)
-                    .font(.title2)
+                Image(systemName: icon)
+                    .font(.title3)
                     .foregroundStyle(DesignSystem.Colors.cherry)
-                Text(label ?? mode.localizedLabel)
+                Text(title)
                     .font(DesignSystem.Typography.bodyLabel)
                     .foregroundStyle(DesignSystem.Colors.text)
-                    .lineLimit(2)
+                    .lineLimit(1)
+                Text(subtitle)
+                    .font(.caption)
+                    .foregroundStyle(DesignSystem.Colors.muted)
+                    .lineLimit(1)
             }
-            .frame(maxWidth: .infinity, minHeight: 70, alignment: .leading)
-            .padding(14)
-            .background(DesignSystem.Colors.surface, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
+            .frame(maxWidth: .infinity, minHeight: 100, alignment: .leading)
+            .padding(12)
+            .background(DesignSystem.Colors.surface, in: RoundedRectangle(cornerRadius: 14))
+            .overlay(
+                RoundedRectangle(cornerRadius: 14)
+                    .stroke(DesignSystem.Colors.border, lineWidth: 1)
+            )
         }
         .buttonStyle(.plain)
     }
 
-    private var modeIcon: String {
-        switch mode {
-        case .fullFretboard:       return "rectangle.grid.3x2"
-        case .fretboardPosition:   return "rectangle.grid.1x2"
-        case .singleNote:          return "music.note"
-        case .circleOfFifths:      return "circle.dashed"
-        case .circleOfFourths:     return "circle.grid.2x1"
-        case .singleString:        return "line.3.horizontal"
-        case .chordProgression:    return "pianokeys"
-        case .accuracyAssessment:  return "waveform.badge.magnifyingglass"
+    // MARK: - Timed Practice
+
+    private var timedPracticeSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 6) {
+                Image(systemName: "timer")
+                    .foregroundStyle(DesignSystem.Colors.cherry)
+                Text("Timed Practice")
+                    .font(DesignSystem.Typography.sectionHeader)
+            }
+
+            // Time chips
+            HStack(spacing: 8) {
+                ForEach([2, 5, 10, 15], id: \.self) { mins in
+                    Button {
+                        selectedTimedMinutes = mins
+                    } label: {
+                        Text("\(mins) min")
+                            .font(DesignSystem.Typography.smallLabel)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .background(
+                                selectedTimedMinutes == mins ? DesignSystem.Colors.cherry : DesignSystem.Colors.surface2,
+                                in: Capsule()
+                            )
+                            .foregroundStyle(selectedTimedMinutes == mins ? .white : DesignSystem.Colors.text)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+
+            // Mode picker
+            HStack(spacing: 8) {
+                ForEach([GameMode.untimed, .timed, .streak], id: \.self) { mode in
+                    Button {
+                        timedGameMode = mode
+                    } label: {
+                        Text(mode.localizedLabel)
+                            .font(.caption)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 6)
+                            .background(
+                                timedGameMode == mode ? DesignSystem.Colors.surface2 : Color.clear,
+                                in: Capsule()
+                            )
+                            .foregroundStyle(timedGameMode == mode ? DesignSystem.Colors.text : DesignSystem.Colors.muted)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+
+            // Go button
+            Button {
+                let session = Session(
+                    focusMode: .fullFretboard,
+                    gameMode: timedGameMode,
+                    fretRangeEnd: 7,
+                    isAdaptive: true,
+                    sessionTimeLimitSeconds: selectedTimedMinutes * 60
+                )
+                coordinator.launchSession(session)
+            } label: {
+                Text("Go — \(selectedTimedMinutes) Minutes")
+                    .font(DesignSystem.Typography.bodyLabel)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                    .background(DesignSystem.Gradients.primary, in: RoundedRectangle(cornerRadius: 12))
+                    .foregroundStyle(.white)
+            }
+            .buttonStyle(.plain)
         }
+        .padding(16)
+        .background(DesignSystem.Colors.surface, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
+    }
+
+    // MARK: - Build Custom
+
+    private var buildCustomButton: some View {
+        Button {
+            coordinator.handleBuildCustomSession()
+        } label: {
+            Label("Build Custom Session", systemImage: "gear")
+                .font(DesignSystem.Typography.bodyLabel)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 14)
+                .background(DesignSystem.Colors.surface, in: RoundedRectangle(cornerRadius: 14))
+                .foregroundStyle(DesignSystem.Colors.text)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14)
+                        .stroke(DesignSystem.Colors.border, lineWidth: 1)
+                )
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: - Data Loading
+
+    private func loadData() async {
+        // Lightweight: just check if sessions exist + get last session
+        let recent = (try? container.sessionRepository.recentSessions(limit: 1)) ?? []
+        lastSession = recent.first
+        sessionCount = recent.isEmpty ? 0 : 1 // Only need to know new vs returning
+
+        let engine = SmartPracticeEngine(
+            masteryRepository: container.masteryRepository,
+            sessionRepository: container.sessionRepository,
+            fretboardMap: container.fretboardMap
+        )
+        smartEngine = engine
+        smartDescription = engine.nextModeDescription()
+
+        // Yield before heavier mastery query
+        await Task.yield()
+        weakSpots = (try? engine.weakSpotCount()) ?? 0
+    }
+
+    private func refreshData() {
+        Task {
+            let recent = (try? container.sessionRepository.recentSessions(limit: 1)) ?? []
+            lastSession = recent.first
+            sessionCount = recent.isEmpty ? 0 : 1
+            if let engine = smartEngine {
+                smartDescription = engine.nextModeDescription()
+                weakSpots = (try? engine.weakSpotCount()) ?? 0
+            }
+        }
+    }
+
+    private func launchSmartPractice() {
+        guard let engine = smartEngine else { return }
+        guard let (session, _) = try? engine.nextSession() else { return }
+        coordinator.launchSession(session)
     }
 }
 

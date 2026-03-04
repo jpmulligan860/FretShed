@@ -212,13 +212,14 @@ Full analysis: `FretShed_Competitive_Analysis.md` in Claude.ai project files.
 
 ---
 
-## Current Status (as of Feb 2026)
+## Current Status (as of Mar 2026)
 **Phase 1:** Tasks 1.1–1.8 complete ✅
 **Phase 2:** Tasks 2.1–2.17 complete ✅ (Design System fully applied to all tabs)
-**Phase 3:** Tasks 3.1–3.6 complete ✅ · Task 3.7 🔲 (device timing test)
+**Phase 3:** Tasks 3.1–3.7 complete ✅
+**Phase 3.6:** Shed Redesign complete ✅ (SD.1–SD.8)
 **Phase 4:** Not started
 **Phase 5:** Not started
-**Test suite:** 230 tests passing
+**Test suite:** 230 tests passing (3 pre-existing session length default failures)
 
 **Audio Calibration System (F22) — IMPLEMENTED.** Full calibration flow: silence measurement → 6-string test → profile saved to SwiftData. Quiz launch gated on calibration. Do This First card with action buttons. Settings > Audio Setup with trim sliders. PitchDetector pre-seeded from calibration profile.
 
@@ -259,7 +260,17 @@ Full analysis: `FretShed_Competitive_Analysis.md` in Claude.ai project files.
 
 **Finalized business model:** Free tier (strings 4–6, frets 0–7, Full Fretboard + Single String modes, audio detection, adaptive, full stats). Premium ($4.99/mo, $29.99/yr, $49.99 lifetime, 14-day trial). Analytics: TelemetryDeck. Subtitle: "Learn Every Fretboard Note."
 
-**Next task:** Task 3.7 (onboarding device test), then Phase 4.
+**Shed Redesign (Phase 3.6) — IMPLEMENTED.** Complete redesign of the Practice ("Shed") tab:
+- `BaselinePrior.swift`: `BaselineLevel` enum (5 cases) seeds Bayesian mastery priors for new users based on experience level
+- `SmartPracticeEngine.swift`: Rotates focus modes (Full Fretboard → Single String → Same Note), targets weakest areas, `weakSpotCount()` for CTA
+- `CompactHeatmapView.swift`: Lightweight 6×13 mastery heatmap for Shed page with 3-label legend
+- New `FocusMode` cases: `naturalNotes`, `sharpsAndFlats` with filtering in QuizViewModel; `isFreeMode` computed property
+- `sessionTimeLimitSeconds` on Session model with countdown timer in QuizViewModel (auto-completes on expiry)
+- Onboarding: 4 screens (added baseline selection: "Where are you at?" with 5 options)
+- `SessionSetupView`: Half-sheet (`.presentationDetents([.medium, .large])`), chip-based UI, premium lock icons
+- `PracticeHomeView`: Complete rewrite — Smart Practice CTA, calibration banner, compact heatmap, dynamic presets, timed practice, "Build Custom Session"
+
+**Next task:** Phase 4 (Monetization).
 
 **Quiz Presentation Architecture (current — ZStack overlay + QuizLaunchCoordinator):**
 - `QuizLaunchCoordinator` (`@MainActor @Observable`): owns `selectedTab`, `activeQuizVM`, `showSetup`, `showCalibration*`, `gatedQuizVM`, `pendingTapMode`, `tapModeWasForced`, `pendingQuizVM`

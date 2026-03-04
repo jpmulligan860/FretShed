@@ -55,10 +55,32 @@ public final class AppContainer: ObservableObject {
                 try makeModelContainer(inMemory: false)
             }.value
         } catch {
-            logger.critical("Failed to create ModelContainer: \(error). Using in-memory fallback.")
-            mc = try! makeModelContainer(inMemory: true)
+            logger.critical("Failed to create ModelContainer: \(error). Deleting store and retrying.")
+            // Delete the corrupted/unmigrated store and start fresh
+            Self.deleteExistingStore()
+            do {
+                mc = try await Task.detached(priority: .userInitiated) {
+                    try makeModelContainer(inMemory: false)
+                }.value
+                logger.info("Successfully created fresh store after migration failure.")
+            } catch {
+                logger.critical("Fresh store also failed: \(error). Using in-memory fallback.")
+                mc = try! makeModelContainer(inMemory: true)
+            }
         }
         return AppContainer(modelContainer: mc)
+    }
+
+    /// Deletes the default SwiftData store files when migration fails.
+    private static func deleteExistingStore() {
+        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+        let storeURL = appSupport.appendingPathComponent("default.store")
+        let suffixes = ["", "-wal", "-shm"]
+        for suffix in suffixes {
+            let url = storeURL.deletingPathExtension().appendingPathExtension("store\(suffix)")
+            try? FileManager.default.removeItem(at: url)
+        }
+        logger.info("Deleted existing SwiftData store files.")
     }
 
     // MARK: Initializers

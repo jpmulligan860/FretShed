@@ -50,6 +50,8 @@ public final class QuizViewModel: Identifiable {
     public private(set) var detectedNote: MusicalNote?
     /// Current per-question time budget for Tempo mode (shrinks with each correct answer).
     public private(set) var tempoTimeAllowance: Double = 10
+    /// Remaining seconds for timed practice sessions (nil = no session time limit).
+    public private(set) var sessionTimeRemaining: Double?
 
     // MARK: - Adaptive Tracking
     /// Number of questions that targeted positions with mastery < 50%.
@@ -91,6 +93,7 @@ public final class QuizViewModel: Identifiable {
     private var questionStartTime: Date = Date()
     private var feedbackTask: Task<Void, Never>?
     private var timerTask: Task<Void, Never>?
+    private var sessionTimerTask: Task<Void, Never>?
     /// Current position in the circle of fourths/fifths sequence (0 = C).
     /// Only used when focusMode is .circleOfFourths or .circleOfFifths.
     private var circleNoteIndex: Int = 0
@@ -218,6 +221,11 @@ public final class QuizViewModel: Identifiable {
         }
         // Initialise tempo allowance from settings so it resets cleanly on each session.
         tempoTimeAllowance = Double(settings.defaultTimerDuration)
+        // Start session countdown timer if a time limit is set.
+        if session.sessionTimeLimitSeconds > 0 {
+            sessionTimeRemaining = Double(session.sessionTimeLimitSeconds)
+            startSessionTimer()
+        }
         advanceToNextQuestion()
     }
 
@@ -329,6 +337,7 @@ public final class QuizViewModel: Identifiable {
     public func endSession() async {
         feedbackTask?.cancel()
         timerTask?.cancel()
+        sessionTimerTask?.cancel()
         phase = .complete
         finaliseSession()
     }
@@ -336,6 +345,7 @@ public final class QuizViewModel: Identifiable {
     public func discardSession() async {
         feedbackTask?.cancel()
         timerTask?.cancel()
+        sessionTimerTask?.cancel()
         do {
             try attemptRepository.deleteAttempts(forSession: session.id)
             try sessionRepository.delete(session)
@@ -389,6 +399,9 @@ public final class QuizViewModel: Identifiable {
             } else {
                 advanceToNextQuestion()
             }
+        } else if session.sessionTimeLimitSeconds > 0 {
+            // Timed practice: keep going until the session timer expires
+            advanceToNextQuestion()
         } else if attemptCount >= settings.defaultSessionLength {
             phase = .complete
             finaliseSession()
@@ -433,6 +446,11 @@ public final class QuizViewModel: Identifiable {
                 guard let score = allScores.first(where: {
                     $0.noteRaw == c.note.rawValue && $0.stringNumber == c.string
                 }) else {
+                    // Use baseline prior for unseen cells
+                    if let baseline = BaselineLevel.load() {
+                        let prior = baseline.priorScore(string: c.string, fret: c.fret)
+                        return max(pow(1.0 - prior, 2.0), 0.001)
+                    }
                     return 1.0
                 }
                 if score.isStruggling { return 5.0 }
@@ -627,6 +645,10 @@ public final class QuizViewModel: Identifiable {
             let targetStrings = session.targetStrings
             if targetStrings.isEmpty { return candidates }
             return candidates.filter { targetStrings.contains($0.string) }
+        case .naturalNotes:
+            return candidates.filter { $0.note.isNatural }
+        case .sharpsAndFlats:
+            return candidates.filter { !$0.note.isNatural }
         case .circleOfFourths, .circleOfFifths:
             // Handled in selectCircleQuestion; fall through to all candidates.
             return candidates
@@ -639,12 +661,34 @@ public final class QuizViewModel: Identifiable {
         guard let score = allScores.first(where: {
             $0.noteRaw == question.note.rawValue && $0.stringNumber == question.string
         }) else {
+            // Use baseline prior if the user selected one during onboarding
+            if let baseline = BaselineLevel.load() {
+                return baseline.priorScore(string: question.string, fret: question.fret)
+            }
             return MasteryScore.alpha / (MasteryScore.alpha + MasteryScore.beta)
         }
         return score.score
     }
 
     // MARK: - Private: Timer
+
+    private func startSessionTimer() {
+        sessionTimerTask = Task {
+            while let remaining = sessionTimeRemaining, remaining > 0 {
+                try? await Task.sleep(for: .seconds(1))
+                guard !Task.isCancelled else { return }
+                sessionTimeRemaining = max(0, remaining - 1)
+                if sessionTimeRemaining == 0 {
+                    // Session time expired — complete after current feedback
+                    feedbackTask?.cancel()
+                    timerTask?.cancel()
+                    phase = .complete
+                    finaliseSession()
+                    return
+                }
+            }
+        }
+    }
 
     private func startTimer() {
         timerTask?.cancel()

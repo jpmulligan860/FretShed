@@ -18,6 +18,8 @@ public enum FocusMode: String, CaseIterable, Codable, Sendable, Hashable {
     case circleOfFifths  = "circleOfFifths"
     case chordProgression = "chordProgression"
     case accuracyAssessment = "accuracyAssessment"
+    case naturalNotes = "naturalNotes"
+    case sharpsAndFlats = "sharpsAndFlats"
 
     public var localizedLabel: String {
         switch self {
@@ -29,6 +31,16 @@ public enum FocusMode: String, CaseIterable, Codable, Sendable, Hashable {
         case .circleOfFifths:       return String(localized: "Circle of Fifths", bundle: .main)
         case .chordProgression:     return String(localized: "Chord Progression", bundle: .main)
         case .accuracyAssessment:   return String(localized: "Accuracy Assessment", bundle: .main)
+        case .naturalNotes:         return String(localized: "Natural Notes", bundle: .main)
+        case .sharpsAndFlats:       return String(localized: "Sharps & Flats", bundle: .main)
+        }
+    }
+
+    /// True for modes available to free-tier users.
+    public var isFreeMode: Bool {
+        switch self {
+        case .fullFretboard, .singleString: return true
+        default: return false
         }
     }
 }
@@ -139,6 +151,9 @@ public final class Session {
     /// Nullable for migration compatibility with existing sessions.
     public var calibrationProfileID: UUID?
 
+    /// Time limit in seconds for timed practice sessions. 0 = no limit.
+    public var sessionTimeLimitSeconds: Int = 0
+
     // MARK: Computed Convenience
 
     public var focusMode: FocusMode {
@@ -190,7 +205,8 @@ public final class Session {
         targetNotes: [MusicalNote] = [],
         targetStrings: [Int] = [],
         chordProgression: ChordProgression? = nil,
-        isAdaptive: Bool = false
+        isAdaptive: Bool = false,
+        sessionTimeLimitSeconds: Int = 0
     ) {
         self.id = id
         self.startTime = startTime
@@ -209,5 +225,6 @@ public final class Session {
         self.isAdaptive = isAdaptive
         self.overallMasteryAtEnd = 0
         self.chordProgressionData = try? JSONEncoder().encode(chordProgression)
+        self.sessionTimeLimitSeconds = sessionTimeLimitSeconds
     }
 }

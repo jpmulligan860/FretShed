@@ -243,12 +243,18 @@ public struct SessionSetupView: View {
             .padding(.horizontal, 20)
 
             LazyVGrid(columns: [.init(.flexible()), .init(.flexible())], spacing: 10) {
-                ForEach(FocusMode.allCases.filter { $0 != .accuracyAssessment }, id: \.self) { mode in
+                ForEach(displayedFocusModes, id: \.self) { mode in
                     FocusModeChip(
                         mode: mode,
-                        isSelected: selectedFocusMode == mode
+                        isSelected: selectedFocusMode == mode,
+                        isPremium: !mode.isFreeMode
                     ) {
-                        selectedFocusMode = mode
+                        if mode.isFreeMode {
+                            selectedFocusMode = mode
+                        } else {
+                            // Premium modes — visual-only lock until Phase 4 paywall
+                            selectedFocusMode = mode
+                        }
                         if isCircleMode {
                             circleConstraint = .fullFretboard
                         }
@@ -930,6 +936,13 @@ public struct SessionSetupView: View {
 
     // MARK: - Helpers
 
+    /// Focus modes shown in the session builder. Excludes accuracy assessment
+    /// (moved to Settings) and circle modes (hidden from Shed UI per spec).
+    private var displayedFocusModes: [FocusMode] {
+        [.fullFretboard, .singleString, .naturalNotes, .sharpsAndFlats,
+         .fretboardPosition, .singleNote, .chordProgression]
+    }
+
     private func focusModeDescription(_ mode: FocusMode) -> String {
         switch mode {
         case .singleNote:          return "All strings, one note at a time"
@@ -940,6 +953,8 @@ public struct SessionSetupView: View {
         case .circleOfFifths:      return "Notes in circle-of-fifths order"
         case .chordProgression:    return "Chord-based training"
         case .accuracyAssessment:  return "Chromatic walk of every fretboard position"
+        case .naturalNotes:        return "Only natural notes (no sharps or flats)"
+        case .sharpsAndFlats:      return "Only sharps and flats (no naturals)"
         }
     }
 
@@ -953,6 +968,8 @@ public struct SessionSetupView: View {
         case .singleString:        return "minus"
         case .chordProgression:    return "pianokeys"
         case .accuracyAssessment:  return "waveform.badge.magnifyingglass"
+        case .naturalNotes:        return "textformat.abc"
+        case .sharpsAndFlats:      return "number"
         }
     }
 }
@@ -962,20 +979,28 @@ public struct SessionSetupView: View {
 private struct FocusModeChip: View {
     let mode: FocusMode
     let isSelected: Bool
+    var isPremium: Bool = false
     let onTap: () -> Void
 
     var body: some View {
         Button(action: onTap) {
-            Text(mode.localizedLabel)
-                .font(.subheadline)
-                .fontWeight(isSelected ? .semibold : .regular)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 10)
-                .background(
-                    isSelected ? DesignSystem.Colors.cherry : DesignSystem.Colors.surface2,
-                    in: RoundedRectangle(cornerRadius: DesignSystem.Radius.sm)
-                )
-                .foregroundStyle(isSelected ? .white : .primary)
+            HStack(spacing: 4) {
+                Text(mode.localizedLabel)
+                    .font(.subheadline)
+                    .fontWeight(isSelected ? .semibold : .regular)
+                if isPremium {
+                    Image(systemName: "lock.fill")
+                        .font(.caption2)
+                        .foregroundStyle(isSelected ? .white.opacity(0.7) : DesignSystem.Colors.muted)
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 10)
+            .background(
+                isSelected ? DesignSystem.Colors.cherry : DesignSystem.Colors.surface2,
+                in: RoundedRectangle(cornerRadius: DesignSystem.Radius.sm)
+            )
+            .foregroundStyle(isSelected ? .white : .primary)
         }
         .buttonStyle(.plain)
         .animation(.easeInOut(duration: 0.15), value: isSelected)

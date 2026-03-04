@@ -1,10 +1,11 @@
 // OnboardingView.swift
 // FretShed — App Layer
 //
-// First-launch onboarding: 3 screens.
+// First-launch onboarding: 4 screens.
 //   0 — Welcome
 //   1 — How it works
-//   2 — Mic permission (explain WHY before triggering system prompt)
+//   2 — Baseline selection ("Where are you at?")
+//   3 — Mic permission (explain WHY before triggering system prompt)
 //
 // The audio test screen was removed — the full Audio Calibration flow
 // (accessible from the Practice tab's "Do This First" card) provides a
@@ -24,8 +25,9 @@ struct OnboardingView: View {
 
     @State private var currentPage = 0
     @State private var hasRequestedMicPermission = false
+    @State private var selectedBaseline: BaselineLevel?
 
-    private let pageCount = 3
+    private let pageCount = 4
 
     var body: some View {
         ZStack {
@@ -34,7 +36,8 @@ struct OnboardingView: View {
             TabView(selection: $currentPage) {
                 welcomePage.tag(0)
                 howItWorksPage.tag(1)
-                micPermissionPage.tag(2)
+                baselinePage.tag(2)
+                micPermissionPage.tag(3)
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
             .animation(.easeInOut(duration: 0.3), value: currentPage)
@@ -155,7 +158,91 @@ struct OnboardingView: View {
         }
     }
 
-    // MARK: - Screen 2: Mic permission
+    // MARK: - Screen 2: Baseline selection
+
+    private var baselinePage: some View {
+        VStack(spacing: 0) {
+            Spacer()
+
+            DesignSystem.Typography.capsLabel("GETTING STARTED")
+                .padding(.bottom, DesignSystem.Spacing.sm)
+
+            Text("Where are you at?")
+                .font(DesignSystem.Typography.subDisplay)
+                .padding(.bottom, DesignSystem.Spacing.xs)
+
+            Text("This helps FretShed focus your practice on what you actually need.")
+                .font(DesignSystem.Typography.tagline)
+                .foregroundStyle(DesignSystem.Colors.text2)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, DesignSystem.Spacing.xl)
+                .padding(.bottom, DesignSystem.Spacing.lg)
+
+            VStack(spacing: DesignSystem.Spacing.sm) {
+                ForEach(BaselineLevel.allCases, id: \.rawValue) { level in
+                    baselineOption(level)
+                }
+            }
+            .padding(.horizontal, DesignSystem.Spacing.xl)
+
+            Text("Don't worry about getting it perfect — FretShed adapts as you play.")
+                .font(.caption)
+                .foregroundStyle(DesignSystem.Colors.muted)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, DesignSystem.Spacing.xl)
+                .padding(.top, DesignSystem.Spacing.md)
+
+            Spacer()
+
+            primaryGradientButton("Continue", disabled: selectedBaseline == nil) {
+                selectedBaseline?.save()
+                withAnimation { currentPage = 3 }
+            }
+            .padding(.bottom, 48)
+        }
+    }
+
+    private func baselineOption(_ level: BaselineLevel) -> some View {
+        let isSelected = selectedBaseline == level
+        return Button {
+            withAnimation(.easeInOut(duration: 0.2)) {
+                selectedBaseline = level
+            }
+        } label: {
+            HStack(spacing: DesignSystem.Spacing.sm) {
+                Text(level.emoji)
+                    .font(.title2)
+                    .frame(width: 36)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(level.title)
+                        .font(DesignSystem.Typography.bodyLabel)
+                        .foregroundStyle(DesignSystem.Colors.text)
+                    Text(level.description)
+                        .font(.caption)
+                        .foregroundStyle(DesignSystem.Colors.text2)
+                        .lineLimit(2)
+                }
+                Spacer()
+                if isSelected {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundStyle(DesignSystem.Colors.cherry)
+                }
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
+            .background(
+                RoundedRectangle(cornerRadius: DesignSystem.Radius.md)
+                    .fill(isSelected ? DesignSystem.Colors.surface2 : DesignSystem.Colors.surface)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: DesignSystem.Radius.md)
+                    .stroke(isSelected ? DesignSystem.Colors.cherry : DesignSystem.Colors.border, lineWidth: isSelected ? 2 : 1)
+            )
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: - Screen 3: Mic permission
 
     private var micPermissionPage: some View {
         VStack(spacing: 0) {
@@ -218,6 +305,24 @@ struct OnboardingView: View {
                 .foregroundStyle(.white)
         }
         .buttonStyle(.plain)
+        .padding(.horizontal, DesignSystem.Spacing.xl)
+    }
+
+    private func primaryGradientButton(_ title: String, disabled: Bool = false, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title)
+                .font(.headline)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, DesignSystem.Spacing.md)
+                .background(
+                    disabled ? AnyShapeStyle(DesignSystem.Colors.surface2)
+                             : AnyShapeStyle(DesignSystem.Gradients.primary),
+                    in: RoundedRectangle(cornerRadius: 16)
+                )
+                .foregroundStyle(disabled ? DesignSystem.Colors.muted : .white)
+        }
+        .buttonStyle(.plain)
+        .disabled(disabled)
         .padding(.horizontal, DesignSystem.Spacing.xl)
     }
 

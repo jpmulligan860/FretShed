@@ -138,6 +138,23 @@ Estimated: 6–8 hours
 
 ---
 
+## Phase 3.6 — Shed Redesign
+
+**Fewer taps to playing, smarter defaults, new onboarding baseline screen.**
+
+| # | Task | Status |
+|---|---|---|
+| SD.1 | Baseline Prior System + New Focus Modes — `BaselineLevel` enum (5 cases), `naturalNotes`/`sharpsAndFlats` FocusModes, `isFreeMode`, baseline prior weighting in QuizViewModel | ✅ |
+| SD.2 | Onboarding Baseline Screen — "Where are you at?" screen (4th onboarding page), saves BaselineLevel to UserDefaults | ✅ |
+| SD.3 | Smart Practice Engine — `SmartPracticeEngine` class, focus mode rotation (Full Fretboard → Single String → Same Note), targets weakest areas | ✅ |
+| SD.4 | Timed Practice Support — `sessionTimeLimitSeconds` on Session, countdown timer in QuizViewModel, auto-complete on expiry | ✅ |
+| SD.5 | Compact Heatmap Component — `CompactHeatmapView` (6×13 grid, 3-label legend) for Shed page | ✅ |
+| SD.6 | Half-Sheet Session Builder — `.sheet` with `.presentationDetents`, chip-based UI, premium lock icons | ✅ |
+| SD.7 | Shed Page Layout Rewrite — Smart Practice CTA, calibration banner, compact heatmap, quick start presets, timed practice, build custom button | ✅ |
+| SD.8 | Wire Up & Integration Testing — All launch paths verified, 230 tests passing (3 pre-existing failures), no migration errors | ✅ |
+
+---
+
 ## Phase 4 — Monetization
 
 **StoreKit 2 paywall — your revenue engine.**

@@ -30,7 +30,8 @@ public struct QuizView: View {
     private var defaultFretCount: Int = LocalUserPreferences.Default.defaultFretCount
 
     private var noteFormat: NoteNameFormat {
-        NoteNameFormat(rawValue: noteFormatRaw) ?? .sharps
+        if vm.session.focusMode == .sharpsAndFlats { return .both }
+        return NoteNameFormat(rawValue: noteFormatRaw) ?? .sharps
     }
     private var isLeftHanded: Bool {
         FretboardOrientation(rawValue: orientationRaw) == .leftHand
@@ -330,6 +331,9 @@ public struct QuizView: View {
         HStack(spacing: 10) {
             statPill(label: "Score", value: "\(vm.correctCount)/\(vm.attemptCount)")
             statPill(label: "Streak", value: "\(vm.currentStreak)🔥")
+            if let remaining = vm.sessionTimeRemaining, remaining > 0 {
+                statPill(label: "Time", value: formatTimeRemaining(remaining))
+            }
             Spacer(minLength: 0)
             accuracyRing
             if vm.phase == .complete {
@@ -561,6 +565,13 @@ public struct QuizView: View {
                 .monospacedDigit()
                 .contentTransition(.numericText())
         }
+    }
+
+    private func formatTimeRemaining(_ seconds: Double) -> String {
+        let total = Int(seconds)
+        let m = total / 60
+        let s = total % 60
+        return String(format: "%d:%02d", m, s)
     }
 
     private var accuracyRing: some View {

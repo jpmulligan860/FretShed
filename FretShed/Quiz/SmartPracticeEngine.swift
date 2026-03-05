@@ -122,6 +122,55 @@ final class SmartPracticeEngine {
         return count
     }
 
+    /// Returns two sessions that differ from whatever Smart Practice is currently recommending.
+    /// Each entry includes a session, display title, subtitle, and SF Symbol icon name.
+    func alternativeSessions() throws -> [(session: Session, title: String, subtitle: String, icon: String)] {
+        let lastMode = Self.loadLastMode()
+        let currentMode = Self.rotateMode(from: lastMode)
+        let allScores = try masteryRepository.allScores()
+
+        // Build the two modes that Smart Practice is NOT recommending
+        let alternatives = SmartPracticeMode.allCases.filter { $0 != currentMode }
+        return alternatives.map { mode in
+            switch mode {
+            case .fullFretboard:
+                let session = Session(
+                    focusMode: .fullFretboard,
+                    gameMode: .untimed,
+                    fretRangeStart: Self.freeFretStart,
+                    fretRangeEnd: Self.freeFretEnd,
+                    isAdaptive: true
+                )
+                return (session, "Full Fretboard", "Cover all positions", "rectangle.grid.3x2.fill")
+
+            case .singleString:
+                let weakest = Self.weakestString(from: allScores, strings: Self.freeStrings)
+                let name = Self.stringName(weakest)
+                let session = Session(
+                    focusMode: .singleString,
+                    gameMode: .untimed,
+                    fretRangeStart: Self.freeFretStart,
+                    fretRangeEnd: Self.freeFretEnd,
+                    targetStrings: [weakest],
+                    isAdaptive: true
+                )
+                return (session, "Single String", "Weakest: \(name)", "guitars")
+
+            case .sameNote:
+                let weakest = Self.weakestNote(from: allScores, fretboardMap: fretboardMap, strings: Self.freeStrings, fretEnd: Self.freeFretEnd)
+                let session = Session(
+                    focusMode: .singleNote,
+                    gameMode: .untimed,
+                    fretRangeStart: Self.freeFretStart,
+                    fretRangeEnd: Self.freeFretEnd,
+                    targetNotes: [weakest],
+                    isAdaptive: true
+                )
+                return (session, "Same Note", "Weakest: \(weakest.sharpName)", "music.note")
+            }
+        }
+    }
+
     // MARK: - Private Helpers
 
     private static func rotateMode(from last: SmartPracticeMode?) -> SmartPracticeMode {

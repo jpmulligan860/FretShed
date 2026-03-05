@@ -23,7 +23,7 @@ public enum FocusMode: String, CaseIterable, Codable, Sendable, Hashable {
 
     public var localizedLabel: String {
         switch self {
-        case .singleNote:           return String(localized: "Single Note", bundle: .main)
+        case .singleNote:           return String(localized: "Same Note", bundle: .main)
         case .singleString:         return String(localized: "String Selector", bundle: .main)
         case .fullFretboard:        return String(localized: "Full Fretboard", bundle: .main)
         case .fretboardPosition:    return String(localized: "Fretboard Position", bundle: .main)

@@ -1157,7 +1157,7 @@ private struct FocusModeInfoSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     private let modes: [(String, String, Color, String)] = [
-        ("Single Note",        "music.note",          DesignSystem.Colors.amber,
+        ("Same Note",          "music.note",          DesignSystem.Colors.amber,
          "Practice finding one specific note across all strings. Great for memorizing where a note appears everywhere on the fretboard."),
         ("String Selector",    "line.3.horizontal",   DesignSystem.Colors.honey,
          "Focus on one or more specific strings. All notes on your selected strings will be quizzed."),

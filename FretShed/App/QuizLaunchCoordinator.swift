@@ -51,6 +51,12 @@ final class QuizLaunchCoordinator {
     var showCalibrationTuner = false
     var showCalibrationGate = false
 
+    // MARK: Last Completed Session
+
+    /// The most recently completed session — updated when any quiz finishes.
+    /// PracticeHomeView reads this for the "Repeat Last" tile and seeds it from DB on first load.
+    var lastCompletedSession: Session?
+
     // MARK: Internal
 
     var pendingQuizVM: QuizViewModel?
@@ -89,7 +95,8 @@ final class QuizLaunchCoordinator {
             targetNotes: targetNotes,
             targetStrings: session.targetStrings,
             chordProgression: session.chordProgression,
-            isAdaptive: session.isAdaptive
+            isAdaptive: session.isAdaptive,
+            sessionTimeLimitSeconds: session.sessionTimeLimitSeconds
         )
         try? container.sessionRepository.save(newSession)
         let settings = (try? container.settingsRepository.loadSettings()) ?? UserSettings()
@@ -151,6 +158,7 @@ final class QuizLaunchCoordinator {
             vm.settings.tapToAnswerEnabled = false
             tapModeWasForced = false
         }
+        lastCompletedSession = vm.session
         activeQuizVM = nil
     }
 
@@ -159,6 +167,7 @@ final class QuizLaunchCoordinator {
             vm.settings.tapToAnswerEnabled = false
             tapModeWasForced = false
         }
+        lastCompletedSession = vm.session
         activeQuizVM = nil
         selectedTab = .progress
     }
@@ -169,6 +178,7 @@ final class QuizLaunchCoordinator {
             tapModeWasForced = false
         }
         let session = vm.session
+        lastCompletedSession = session
         activeQuizVM = nil
         Task { @MainActor in
             try? await Task.sleep(for: .milliseconds(350))

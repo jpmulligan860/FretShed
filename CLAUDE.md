@@ -216,7 +216,7 @@ Full analysis: `FretShed_Competitive_Analysis.md` in Claude.ai project files.
 **Phase 1:** Tasks 1.1–1.8 complete ✅
 **Phase 2:** Tasks 2.1–2.17 complete ✅ (Design System fully applied to all tabs)
 **Phase 3:** Tasks 3.1–3.7 complete ✅
-**Phase 3.6:** Shed Redesign complete ✅ (SD.1–SD.8)
+**Phase 3.6:** Shed Redesign complete ✅ (SD.1–SD.14)
 **Phase 4:** Not started
 **Phase 5:** Not started
 **Test suite:** 230 tests passing (3 pre-existing session length default failures)
@@ -268,7 +268,8 @@ Full analysis: `FretShed_Competitive_Analysis.md` in Claude.ai project files.
 - `sessionTimeLimitSeconds` on Session model with countdown timer in QuizViewModel (auto-completes on expiry)
 - Onboarding: 4 screens (added baseline selection: "Where are you at?" with 5 options)
 - `SessionSetupView`: Half-sheet (`.presentationDetents([.medium, .large])`), chip-based UI, premium lock icons
-- `PracticeHomeView`: Complete rewrite — Smart Practice CTA, calibration banner, compact heatmap, dynamic presets, timed practice, "Build Custom Session"
+- `PracticeHomeView`: Complete rewrite — Smart Practice CTA, calibration banner, dynamic presets, timed practice, "Build Custom Session"
+- Shed polish (SD.9–SD.14): CTA label fix, removed compact heatmap from Shed, `alternativeSessions()` quick start tiles, "Got Time?" timed picker, onboarding auto-advance after mic permission, sharpsAndFlats note format override, quiz countdown timer pill, branded LaunchScreen.storyboard, Repeat Last session tracking via coordinator, Repeat Last subtitle (focus mode + game mode + time), "Single Note" renamed to "Same Note"
 
 **Next task:** Phase 4 (Monetization).
 

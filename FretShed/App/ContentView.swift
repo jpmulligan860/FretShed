@@ -66,7 +66,7 @@ struct ContentView: View {
             quiz.handleSetupDismiss()
         }) {
             SessionSetupView()
-                .presentationDetents([.medium, .large])
+                .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
         }
 
@@ -167,19 +167,19 @@ struct PracticeHomeView: View {
 
     let coordinator: QuizLaunchCoordinator
     @Environment(\.appContainer) private var container
-    @State private var lastSession: Session?
     @State private var sessionCount: Int = 0
     @State private var smartEngine: SmartPracticeEngine?
     @State private var smartDescription: String = ""
     @State private var weakSpots: Int = 0
+    @State private var alternativeTiles: [(session: Session, title: String, subtitle: String, icon: String)] = []
+    @State private var showTimedPicker = false
     @State private var selectedTimedMinutes: Int = 5
-    @State private var timedGameMode: GameMode = .untimed
     @State private var calibrationBannerDismissed = false
 
     @AppStorage(LocalUserPreferences.Key.hasCompletedCalibration)
     private var hasCompletedCalibration = false
 
-    private var isNewUser: Bool { sessionCount == 0 }
+    private var isNewUser: Bool { sessionCount == 0 && coordinator.lastCompletedSession == nil }
 
     var body: some View {
         ScrollView {
@@ -187,10 +187,8 @@ struct PracticeHomeView: View {
                 header
                 calibrationBanner
                 primaryCTA
-                if !isNewUser { compactHeatmap }
+                customSessionCTA
                 quickStartSection
-                timedPracticeSection
-                buildCustomButton
             }
             .padding(.horizontal, 20)
             .padding(.top, 16)
@@ -201,6 +199,14 @@ struct PracticeHomeView: View {
         .background(DesignSystem.Colors.background)
         .task { await loadData() }
         .onAppear { refreshData() }
+        .onChange(of: coordinator.lastCompletedSession?.id) {
+            // Quiz just finished — refresh smart practice data
+            if let engine = smartEngine {
+                smartDescription = engine.nextModeDescription()
+                weakSpots = (try? engine.weakSpotCount()) ?? 0
+                alternativeTiles = (try? engine.alternativeSessions()) ?? []
+            }
+        }
     }
 
     // MARK: - Header
@@ -255,8 +261,10 @@ struct PracticeHomeView: View {
             launchSmartPractice()
         } label: {
             VStack(alignment: .leading, spacing: 4) {
-                DesignSystem.Typography.capsLabel(isNewUser ? "START HERE" : "BASED ON YOUR PROGRESS")
-                    .foregroundStyle(.white.opacity(0.7))
+                Text((isNewUser ? "START HERE" : "BASED ON YOUR PROGRESS, WE RECOMMEND").uppercased())
+                    .font(DesignSystem.Typography.sectionLabel)
+                    .tracking(1.5)
+                    .foregroundStyle(.white)
                 Text(isNewUser ? "Start Practice" : "Smart Practice")
                     .font(DesignSystem.Typography.screenTitle)
                     .foregroundStyle(.white)
@@ -271,15 +279,6 @@ struct PracticeHomeView: View {
             .background(DesignSystem.Gradients.primary, in: RoundedRectangle(cornerRadius: 16))
         }
         .buttonStyle(.plain)
-    }
-
-    // MARK: - Compact Heatmap
-
-    private var compactHeatmap: some View {
-        CompactHeatmapView(
-            masteryRepository: container.masteryRepository,
-            fretboardMap: container.fretboardMap
-        )
     }
 
     // MARK: - Quick Start Presets
@@ -300,26 +299,36 @@ struct PracticeHomeView: View {
                     }
                 }
             } else {
+                // Row 1: two alternative modes (different from Smart Practice)
                 HStack(spacing: 10) {
-                    presetCard(icon: "target", title: "Weak Spots", subtitle: "Target lowest scores") {
-                        let session = Session(focusMode: .fullFretboard, gameMode: .untimed, fretRangeEnd: 7, isAdaptive: true)
-                        coordinator.launchSession(session)
+                    ForEach(Array(alternativeTiles.prefix(2).enumerated()), id: \.offset) { _, tile in
+                        presetCard(icon: tile.icon, title: tile.title, subtitle: tile.subtitle) {
+                            coordinator.launchSession(tile.session)
+                        }
                     }
-                    presetCard(icon: "square.grid.3x3.topleft.filled", title: "Fill the Gaps", subtitle: "Unattempted cells") {
-                        let session = Session(focusMode: .fullFretboard, gameMode: .untimed, fretRangeEnd: 7, isAdaptive: true)
-                        coordinator.launchSession(session)
+                }
+
+                // Row 2: Got Time? + Repeat Last
+                HStack(spacing: 10) {
+                    presetCard(icon: "timer", title: "Got Time?", subtitle: "2, 5, or 10 min") {
+                        showTimedPicker = true
                     }
-                    if let prev = lastSession {
+                    if let prev = coordinator.lastCompletedSession {
                         presetCard(
                             icon: "arrow.counterclockwise",
                             title: "Repeat Last",
-                            subtitle: "\(prev.focusMode.localizedLabel) \u{2022} \(Int(prev.accuracyPercent))%"
+                            subtitle: repeatLastSubtitle(for: prev)
                         ) {
                             Task { await coordinator.launchRepeatSession(from: prev) }
                         }
                     }
                 }
             }
+        }
+        .sheet(isPresented: $showTimedPicker) {
+            timedPickerSheet
+                .presentationDetents([.height(200)])
+                .presentationDragIndicator(.visible)
         }
     }
 
@@ -336,7 +345,7 @@ struct PracticeHomeView: View {
                 Text(subtitle)
                     .font(.caption)
                     .foregroundStyle(DesignSystem.Colors.muted)
-                    .lineLimit(1)
+                    .lineLimit(2)
             }
             .frame(maxWidth: .infinity, minHeight: 100, alignment: .leading)
             .padding(12)
@@ -349,30 +358,26 @@ struct PracticeHomeView: View {
         .buttonStyle(.plain)
     }
 
-    // MARK: - Timed Practice
+    // MARK: - Timed Picker Sheet
 
-    private var timedPracticeSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 6) {
-                Image(systemName: "timer")
-                    .foregroundStyle(DesignSystem.Colors.cherry)
-                Text("Timed Practice")
-                    .font(DesignSystem.Typography.sectionHeader)
-            }
+    private var timedPickerSheet: some View {
+        VStack(spacing: 16) {
+            Text("How long?")
+                .font(DesignSystem.Typography.sectionHeader)
+                .foregroundStyle(DesignSystem.Colors.text)
 
-            // Time chips
-            HStack(spacing: 8) {
-                ForEach([2, 5, 10, 15], id: \.self) { mins in
+            HStack(spacing: 12) {
+                ForEach([2, 5, 10], id: \.self) { mins in
                     Button {
                         selectedTimedMinutes = mins
                     } label: {
                         Text("\(mins) min")
-                            .font(DesignSystem.Typography.smallLabel)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 8)
+                            .font(DesignSystem.Typography.bodyLabel)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 12)
                             .background(
                                 selectedTimedMinutes == mins ? DesignSystem.Colors.cherry : DesignSystem.Colors.surface2,
-                                in: Capsule()
+                                in: RoundedRectangle(cornerRadius: 10)
                             )
                             .foregroundStyle(selectedTimedMinutes == mins ? .white : DesignSystem.Colors.text)
                     }
@@ -380,31 +385,11 @@ struct PracticeHomeView: View {
                 }
             }
 
-            // Mode picker
-            HStack(spacing: 8) {
-                ForEach([GameMode.untimed, .timed, .streak], id: \.self) { mode in
-                    Button {
-                        timedGameMode = mode
-                    } label: {
-                        Text(mode.localizedLabel)
-                            .font(.caption)
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 6)
-                            .background(
-                                timedGameMode == mode ? DesignSystem.Colors.surface2 : Color.clear,
-                                in: Capsule()
-                            )
-                            .foregroundStyle(timedGameMode == mode ? DesignSystem.Colors.text : DesignSystem.Colors.muted)
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-
-            // Go button
             Button {
+                showTimedPicker = false
                 let session = Session(
                     focusMode: .fullFretboard,
-                    gameMode: timedGameMode,
+                    gameMode: .untimed,
                     fretRangeEnd: 7,
                     isAdaptive: true,
                     sessionTimeLimitSeconds: selectedTimedMinutes * 60
@@ -420,37 +405,54 @@ struct PracticeHomeView: View {
             }
             .buttonStyle(.plain)
         }
-        .padding(16)
-        .background(DesignSystem.Colors.surface, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
+        .padding(20)
+        .background(DesignSystem.Colors.background)
     }
 
     // MARK: - Build Custom
 
-    private var buildCustomButton: some View {
+    private var customSessionCTA: some View {
         Button {
             coordinator.handleBuildCustomSession()
         } label: {
-            Label("Build Custom Session", systemImage: "gear")
-                .font(DesignSystem.Typography.bodyLabel)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 14)
-                .background(DesignSystem.Colors.surface, in: RoundedRectangle(cornerRadius: 14))
-                .foregroundStyle(DesignSystem.Colors.text)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 14)
-                        .stroke(DesignSystem.Colors.border, lineWidth: 1)
-                )
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Let Me Pick")
+                    .font(DesignSystem.Typography.screenTitle)
+                    .foregroundStyle(.white)
+                Text("Tap to design your session")
+                    .font(DesignSystem.Typography.accentDescription)
+                    .foregroundStyle(.white.opacity(0.85))
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(16)
+            .background(DesignSystem.Gradients.primary, in: RoundedRectangle(cornerRadius: 16))
         }
         .buttonStyle(.plain)
+    }
+
+    // MARK: - Helpers
+
+    private func repeatLastSubtitle(for session: Session) -> String {
+        let mode = session.focusMode.localizedLabel
+        if session.sessionTimeLimitSeconds > 0 {
+            return "\(mode) \u{2022} \(session.gameMode.localizedLabel) \u{2022} \(session.sessionTimeLimitSeconds / 60) min"
+        }
+        return "\(mode) \u{2022} \(session.gameMode.localizedLabel)"
     }
 
     // MARK: - Data Loading
 
     private func loadData() async {
-        // Lightweight: just check if sessions exist + get last session
-        let recent = (try? container.sessionRepository.recentSessions(limit: 1)) ?? []
-        lastSession = recent.first
-        sessionCount = recent.isEmpty ? 0 : 1 // Only need to know new vs returning
+        // Seed last completed session from DB if coordinator doesn't have one yet
+        if coordinator.lastCompletedSession == nil {
+            let recent = (try? container.sessionRepository.recentSessions(limit: 1)) ?? []
+            if let first = recent.first {
+                coordinator.lastCompletedSession = first
+            }
+            sessionCount = recent.isEmpty ? 0 : 1
+        } else {
+            sessionCount = 1
+        }
 
         let engine = SmartPracticeEngine(
             masteryRepository: container.masteryRepository,
@@ -463,17 +465,24 @@ struct PracticeHomeView: View {
         // Yield before heavier mastery query
         await Task.yield()
         weakSpots = (try? engine.weakSpotCount()) ?? 0
+        alternativeTiles = (try? engine.alternativeSessions()) ?? []
     }
 
     private func refreshData() {
-        Task {
+        // Session count: if coordinator has a last session, we're a returning user
+        if coordinator.lastCompletedSession != nil {
+            sessionCount = 1
+        } else {
             let recent = (try? container.sessionRepository.recentSessions(limit: 1)) ?? []
-            lastSession = recent.first
-            sessionCount = recent.isEmpty ? 0 : 1
-            if let engine = smartEngine {
-                smartDescription = engine.nextModeDescription()
-                weakSpots = (try? engine.weakSpotCount()) ?? 0
+            if let first = recent.first {
+                coordinator.lastCompletedSession = first
             }
+            sessionCount = recent.isEmpty ? 0 : 1
+        }
+        if let engine = smartEngine {
+            smartDescription = engine.nextModeDescription()
+            weakSpots = (try? engine.weakSpotCount()) ?? 0
+            alternativeTiles = (try? engine.alternativeSessions()) ?? []
         }
     }
 

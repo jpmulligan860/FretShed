@@ -152,6 +152,12 @@ Estimated: 6–8 hours
 | SD.6 | Half-Sheet Session Builder — `.sheet` with `.presentationDetents`, chip-based UI, premium lock icons | ✅ |
 | SD.7 | Shed Page Layout Rewrite — Smart Practice CTA, calibration banner, compact heatmap, quick start presets, timed practice, build custom button | ✅ |
 | SD.8 | Wire Up & Integration Testing — All launch paths verified, 230 tests passing (3 pre-existing failures), no migration errors | ✅ |
+| SD.9 | Shed Page Polish — CTA label fix, remove compact heatmap, rework quick start tiles (`alternativeSessions()`), "Got Time?" timed picker | ✅ |
+| SD.10 | Onboarding Polish — Auto-advance after mic permission, baseline page top padding fix | ✅ |
+| SD.11 | Quiz Polish — sharpsAndFlats note format override (force `.both`), timed session countdown timer pill | ✅ |
+| SD.12 | Branded Launch Screen — LaunchScreen.storyboard with Woodshop colors, replaces blank UILaunchScreen | ✅ |
+| SD.13 | Repeat Last Session Tracking — coordinator-based `lastCompletedSession`, `isNewUser` fix, `sessionTimeLimitSeconds` copy on repeat | ✅ |
+| SD.14 | Repeat Last Subtitle + "Same Note" Rename — full focus mode + game mode subtitle, 2-line limit, FocusMode.singleNote label → "Same Note" | ✅ |
 
 ---
 

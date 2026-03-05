@@ -26,6 +26,7 @@
 		4B148157BFA6EBA776C958BF /* SessionSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC51F46F493695C683DED3DB /* SessionSetupView.swift */; };
 		4B5D130E35BADB2648D0E601 /* CalibrationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B90F2903BC076D7BFEF7665A /* CalibrationView.swift */; };
 		509F2DA23C4EB8FEB01F7D33 /* AudioCalibrationProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 307D70BE2E5AE3372D94B9EA /* AudioCalibrationProfile.swift */; };
+		LS02A1B2C3D4E5F6A7B8C902 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = LS01A1B2C3D4E5F6A7B8C901 /* LaunchScreen.storyboard */; };
 		5A38ACCB8262E273A762BB72 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = EA3068AF5B92B465B06046F8 /* Localizable.xcstrings */; };
 		60927EE7E18F6D291911D9A0 /* FretboardMapTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DE95D278240B6AAD1413451 /* FretboardMapTests.swift */; };
 		6228F3AEE08BA24949576161 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B249D088A3BF526B9663DD4D /* SettingsView.swift */; };
@@ -149,6 +150,7 @@
 		B90F2903BC076D7BFEF7665A /* CalibrationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalibrationView.swift; sourceTree = "<group>"; };
 		BD97CC80B02ADF5F5BAE2DAE /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		BF480B4836E1BCB9ED08BC78 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		LS01A1B2C3D4E5F6A7B8C901 /* LaunchScreen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = LaunchScreen.storyboard; sourceTree = "<group>"; };
 		BKUP02A1B2C3D4E5F6A7B8C9 /* BackupPayload.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupPayload.swift; sourceTree = "<group>"; };
 		BKUP04A1B2C3D4E5F6A7B8C9 /* BackupManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupManager.swift; sourceTree = "<group>"; };
 		C2A41CF0B30565F2D2FE92A7 /* MasteryAlgorithmTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MasteryAlgorithmTests.swift; sourceTree = "<group>"; };
@@ -374,6 +376,7 @@
 				BD97CC80B02ADF5F5BAE2DAE /* Assets.xcassets */,
 				CC01D5E6F708123456789ABC /* Fonts */,
 				BF480B4836E1BCB9ED08BC78 /* Info.plist */,
+				LS01A1B2C3D4E5F6A7B8C901 /* LaunchScreen.storyboard */,
 				EA3068AF5B92B465B06046F8 /* Localizable.xcstrings */,
 			);
 			path = Resources;
@@ -505,6 +508,7 @@
 				BB08C4D5E6F70882349BC018 /* JetBrainsMono-Bold.ttf in Resources */,
 				BB10C4D5E6F70802349BC010 /* JetBrainsMono-Medium.ttf in Resources */,
 				BB09C4D5E6F70892349BC019 /* JetBrainsMono-SemiBold.ttf in Resources */,
+				LS02A1B2C3D4E5F6A7B8C902 /* LaunchScreen.storyboard in Resources */,
 				5A38ACCB8262E273A762BB72 /* Localizable.xcstrings in Resources */,
 				BB01C4D5E6F70812349BC011 /* Montserrat-Black.ttf in Resources */,
 				BB03C4D5E6F70832349BC013 /* Montserrat-Bold.ttf in Resources */,

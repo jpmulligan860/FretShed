@@ -162,7 +162,7 @@ struct OnboardingView: View {
 
     private var baselinePage: some View {
         VStack(spacing: 0) {
-            Spacer()
+            Spacer().frame(minHeight: 90)
 
             DesignSystem.Typography.capsLabel("GETTING STARTED")
                 .padding(.bottom, DesignSystem.Spacing.sm)
@@ -360,11 +360,12 @@ struct OnboardingView: View {
     private func requestMicPermission() {
         hasRequestedMicPermission = true
         Task { @MainActor in
-            _ = await withCheckedContinuation { continuation in
+            let _ = await withCheckedContinuation { continuation in
                 AVAudioApplication.requestRecordPermission { granted in
                     continuation.resume(returning: granted)
                 }
             }
+            complete()
         }
     }
 

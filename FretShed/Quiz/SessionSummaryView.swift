@@ -121,31 +121,30 @@ public struct SessionSummaryView: View {
     // MARK: - Sub-Views
 
     private var trophyHeader: some View {
-        VStack(spacing: 6) {
-            Image(systemName: trophyIcon)
-                .font(.system(size: 56))
-                .foregroundStyle(trophyColor)
-                .symbolEffect(.bounce, value: true)
+        VStack(spacing: 8) {
+            ZStack {
+                Circle()
+                    .fill(.white.opacity(0.15))
+                    .frame(width: 80, height: 80)
+                Image(systemName: trophyIcon)
+                    .font(.system(size: 40))
+                    .foregroundStyle(.white)
+                    .symbolEffect(.bounce, value: true)
+            }
 
             Text(trophyTitle)
                 .font(DesignSystem.Typography.screenTitle)
+                .foregroundStyle(.white)
 
             Text(trophySubtitle)
-                .font(.subheadline)
-                .foregroundStyle(DesignSystem.Colors.text2)
+                .font(DesignSystem.Typography.accentDescription)
+                .foregroundStyle(.white.opacity(0.85))
                 .multilineTextAlignment(.center)
-                .padding(.horizontal, 32)
+                .padding(.horizontal, 24)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 20)
-        .background(
-            LinearGradient(
-                colors: [trophyColor.opacity(0.12), trophyColor.opacity(0.03)],
-                startPoint: .top,
-                endPoint: .bottom
-            ),
-            in: RoundedRectangle(cornerRadius: DesignSystem.Radius.xl)
-        )
+        .padding(.vertical, 24)
+        .background(DesignSystem.Gradients.primary, in: RoundedRectangle(cornerRadius: 16))
         .padding(.horizontal, 20)
     }
 
@@ -176,9 +175,8 @@ public struct SessionSummaryView: View {
         HStack(spacing: 6) {
             Image(systemName: "graduationcap.fill")
             Text(vm.session.masteryLevel.localizedLabel)
-                .fontWeight(.semibold)
         }
-        .font(.subheadline)
+        .font(DesignSystem.Typography.bodyLabel)
         .padding(.horizontal, 18)
         .padding(.vertical, 8)
         .background(masteryColor.opacity(0.15), in: Capsule())
@@ -200,12 +198,13 @@ public struct SessionSummaryView: View {
             onDone?()
         } label: {
             Text("Back to The Shed")
-                .font(.headline)
+                .font(DesignSystem.Typography.screenTitle)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 16)
-                .background(DesignSystem.Colors.cherry, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
                 .foregroundStyle(.white)
+                .background(DesignSystem.Gradients.primary, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
         }
+        .buttonStyle(.plain)
         .padding(.horizontal, 20)
     }
 
@@ -214,12 +213,17 @@ public struct SessionSummaryView: View {
             onViewProgress?()
         } label: {
             Label("View Journey", systemImage: "chart.bar.fill")
-                .font(.subheadline.weight(.semibold))
+                .font(DesignSystem.Typography.bodyLabel)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 12)
+                .foregroundStyle(DesignSystem.Colors.cherry)
+                .background(DesignSystem.Colors.surface, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
+                .overlay(
+                    RoundedRectangle(cornerRadius: DesignSystem.Radius.md)
+                        .stroke(DesignSystem.Colors.border, lineWidth: 1)
+                )
         }
-        .buttonStyle(.bordered)
-        .tint(DesignSystem.Colors.cherry)
+        .buttonStyle(.plain)
         .padding(.leading, 20)
     }
 
@@ -228,12 +232,17 @@ public struct SessionSummaryView: View {
             onRepeat?()
         } label: {
             Label("Repeat", systemImage: "arrow.counterclockwise")
-                .font(.subheadline.weight(.semibold))
+                .font(DesignSystem.Typography.bodyLabel)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 12)
+                .foregroundStyle(DesignSystem.Colors.correct)
+                .background(DesignSystem.Colors.surface, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
+                .overlay(
+                    RoundedRectangle(cornerRadius: DesignSystem.Radius.md)
+                        .stroke(DesignSystem.Colors.border, lineWidth: 1)
+                )
         }
-        .buttonStyle(.bordered)
-        .tint(DesignSystem.Colors.correct)
+        .buttonStyle(.plain)
         .padding(.trailing, 20)
     }
 
@@ -258,10 +267,7 @@ public struct SessionSummaryView: View {
             }
             .padding(16)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                DesignSystem.Colors.surface2,
-                in: RoundedRectangle(cornerRadius: 16)
-            )
+            .woodshopCard()
         }
     }
 
@@ -298,11 +304,11 @@ public struct SessionSummaryView: View {
             "\(uniquePositionCount) fretboard position\(uniquePositionCount == 1 ? "" : "s") practiced",
             systemImage: "square.grid.3x3.fill"
         )
-        .font(.caption)
+        .font(DesignSystem.Typography.smallLabel)
         .foregroundStyle(DesignSystem.Colors.text2)
         .padding(.horizontal, DesignSystem.Spacing.md)
         .padding(.vertical, DesignSystem.Spacing.xs)
-        .background(DesignSystem.Colors.surface, in: Capsule())
+        .background(DesignSystem.Colors.surface2, in: Capsule())
     }
 
     private var trophyIcon: String {
@@ -370,19 +376,24 @@ private struct StatCard: View {
     let color: Color
 
     var body: some View {
-        VStack(spacing: 4) {
-            Image(systemName: icon)
-                .font(.title3)
-                .foregroundStyle(color)
+        VStack(spacing: 6) {
+            ZStack {
+                Circle()
+                    .fill(color.opacity(0.15))
+                    .frame(width: 36, height: 36)
+                Image(systemName: icon)
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(color)
+            }
             Text(value)
-                .font(.title2.bold())
-                .monospacedDigit()
+                .font(DesignSystem.Typography.dataDisplay)
+                .foregroundStyle(DesignSystem.Colors.text)
             Text(label)
-                .font(.caption)
+                .font(DesignSystem.Typography.smallLabel)
                 .foregroundStyle(DesignSystem.Colors.text2)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 14)
-        .background(DesignSystem.Colors.surface, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
+        .woodshopCard()
     }
 }

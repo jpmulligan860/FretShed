@@ -108,7 +108,7 @@ struct MetroDroneView: View {
                 .contentTransition(.numericText())
 
             Text("BPM")
-                .font(.subheadline)
+                .font(DesignSystem.Typography.bodyLabel)
                 .foregroundStyle(DesignSystem.Colors.text2)
 
             // Slider
@@ -120,14 +120,14 @@ struct MetroDroneView: View {
                     vm.bpm = max(20, vm.bpm - 1)
                 } label: {
                     Image(systemName: "minus")
-                        .font(.title3.weight(.semibold))
+                        .font(DesignSystem.Typography.sectionHeader)
                         .frame(width: 44, height: 44)
                         .background(.ultraThinMaterial, in: Circle())
                 }
 
                 Button(action: vm.tapTempo) {
                     Text("Tap")
-                        .font(.headline)
+                        .font(DesignSystem.Typography.sectionHeader)
                         .frame(width: 80, height: 44)
                         .background(DesignSystem.Colors.cherry.opacity(0.15), in: Capsule())
                 }
@@ -136,7 +136,7 @@ struct MetroDroneView: View {
                     vm.bpm = min(300, vm.bpm + 1)
                 } label: {
                     Image(systemName: "plus")
-                        .font(.title3.weight(.semibold))
+                        .font(DesignSystem.Typography.sectionHeader)
                         .frame(width: 44, height: 44)
                         .background(.ultraThinMaterial, in: Circle())
                 }
@@ -158,7 +158,7 @@ struct MetroDroneView: View {
                     vm.isMetronomePlaying ? "Stop Metronome" : "Start Metronome",
                     systemImage: vm.isMetronomePlaying ? "stop.fill" : "play.fill"
                 )
-                .font(.headline)
+                .font(DesignSystem.Typography.sectionHeader)
                 .frame(maxWidth: .infinity, minHeight: 50)
                 .foregroundStyle(.white)
                 .background(in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
@@ -176,15 +176,15 @@ struct MetroDroneView: View {
         VStack(spacing: 6) {
             if vm.isCountingIn {
                 Text("Count In — \(vm.countInBarsRemaining)")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.orange)
+                    .font(DesignSystem.Typography.smallLabel)
+                    .foregroundStyle(DesignSystem.Colors.amber)
                     .transition(.opacity)
             }
 
             HStack(spacing: 8) {
                 ForEach(Array(vm.accents.enumerated()), id: \.offset) { index, accent in
                     let isCurrent = vm.isMetronomePlaying && vm.currentBeat == index
-                    let dotColor = vm.isCountingIn ? Color.orange : accentColor(accent)
+                    let dotColor = vm.isCountingIn ? DesignSystem.Colors.amber : accentColor(accent)
 
                     Circle()
                         .fill(isCurrent ? dotColor : dotColor.opacity(0.2))
@@ -210,7 +210,7 @@ struct MetroDroneView: View {
         switch accent {
         case .accent: return DesignSystem.Colors.amber
         case .normal: return DesignSystem.Colors.cherry
-        case .muted:  return .gray
+        case .muted:  return DesignSystem.Colors.muted
         }
     }
 
@@ -222,7 +222,7 @@ struct MetroDroneView: View {
                 // Time signature picker
                 HStack {
                     Text("Time Signature")
-                        .font(.subheadline.weight(.medium))
+                        .font(DesignSystem.Typography.bodyLabel)
                     Spacer()
                     Menu {
                         ForEach(TimeSignature.common, id: \.self) { ts in
@@ -232,7 +232,7 @@ struct MetroDroneView: View {
                         }
                     } label: {
                         Text(vm.timeSignature.label)
-                            .font(.body.weight(.semibold))
+                            .font(DesignSystem.Typography.bodyLabel)
                             .padding(.horizontal, 12)
                             .padding(.vertical, 6)
                             .background(.ultraThinMaterial, in: Capsule())
@@ -242,20 +242,20 @@ struct MetroDroneView: View {
                 // Note Division
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Note Division")
-                        .font(.subheadline.weight(.medium))
+                        .font(DesignSystem.Typography.bodyLabel)
                     HStack(spacing: 4) {
                         ForEach(NoteSubdivision.allCases, id: \.self) { div in
                             Button {
                                 vm.setSubdivision(div)
                             } label: {
                                 Text(div.label)
-                                    .font(.subheadline.weight(.semibold))
+                                    .font(DesignSystem.Typography.bodyLabel)
                                     .frame(maxWidth: .infinity, minHeight: 32)
                                     .foregroundStyle(vm.subdivision == div ? .white : .primary)
                                     .background(
                                         vm.subdivision == div
                                             ? DesignSystem.Colors.cherry
-                                            : Color.gray.opacity(0.15),
+                                            : DesignSystem.Colors.muted.opacity(0.15),
                                         in: RoundedRectangle(cornerRadius: DesignSystem.Radius.sm)
                                     )
                             }
@@ -267,7 +267,7 @@ struct MetroDroneView: View {
                 // Beat accents
                 HStack {
                     Text("Beat Accents")
-                        .font(.subheadline.weight(.medium))
+                        .font(DesignSystem.Typography.bodyLabel)
                     Spacer()
                 }
                 HStack(spacing: 8) {
@@ -284,7 +284,7 @@ struct MetroDroneView: View {
                 // Metronome volume
                 HStack(spacing: 8) {
                     Image(systemName: "speaker.fill")
-                        .font(.caption)
+                        .font(DesignSystem.Typography.smallLabel)
                         .foregroundStyle(DesignSystem.Colors.text2)
                     GradientSlider(
                         value: Binding(get: { Double(vm.metronomeVolume) },
@@ -292,7 +292,7 @@ struct MetroDroneView: View {
                         range: 0...1
                     )
                     Image(systemName: "speaker.wave.3.fill")
-                        .font(.caption)
+                        .font(DesignSystem.Typography.smallLabel)
                         .foregroundStyle(DesignSystem.Colors.text2)
                 }
             }
@@ -300,7 +300,7 @@ struct MetroDroneView: View {
         } label: {
             HStack {
                 Text("Time Signature & Accents")
-                    .font(.subheadline.weight(.medium))
+                    .font(DesignSystem.Typography.bodyLabel)
                     .foregroundStyle(DesignSystem.Colors.text)
                 infoButton { showTimeSignatureInfo = true }
             }
@@ -312,15 +312,15 @@ struct MetroDroneView: View {
         switch accent {
         case .accent:
             Text("A")
-                .font(.subheadline.weight(.bold))
+                .font(DesignSystem.Typography.bodyLabel)
                 .foregroundStyle(.white)
         case .normal:
             Text("N")
-                .font(.subheadline.weight(.semibold))
+                .font(DesignSystem.Typography.bodyLabel)
                 .foregroundStyle(.white)
         case .muted:
             Text("-")
-                .font(.subheadline.weight(.semibold))
+                .font(DesignSystem.Typography.bodyLabel)
                 .foregroundStyle(DesignSystem.Colors.text2)
         }
     }
@@ -329,7 +329,7 @@ struct MetroDroneView: View {
         switch accent {
         case .accent: return DesignSystem.Colors.amber
         case .normal: return DesignSystem.Colors.cherry
-        case .muted:  return .gray.opacity(0.3)
+        case .muted:  return DesignSystem.Colors.muted.opacity(0.3)
         }
     }
 
@@ -342,7 +342,7 @@ struct MetroDroneView: View {
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Start BPM")
-                            .font(.caption)
+                            .font(DesignSystem.Typography.smallLabel)
                             .foregroundStyle(DesignSystem.Colors.text2)
                         Stepper(
                             "\(Int(vm.speedTrainerStartBPM))",
@@ -353,7 +353,7 @@ struct MetroDroneView: View {
                     }
                     VStack(alignment: .leading, spacing: 4) {
                         Text("End BPM")
-                            .font(.caption)
+                            .font(DesignSystem.Typography.smallLabel)
                             .foregroundStyle(DesignSystem.Colors.text2)
                         Stepper(
                             "\(Int(vm.speedTrainerEndBPM))",
@@ -368,7 +368,7 @@ struct MetroDroneView: View {
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Increment")
-                            .font(.caption)
+                            .font(DesignSystem.Typography.smallLabel)
                             .foregroundStyle(DesignSystem.Colors.text2)
                         Stepper(
                             "+\(Int(vm.speedTrainerIncrement)) BPM",
@@ -379,7 +379,7 @@ struct MetroDroneView: View {
                     }
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Bars per Step")
-                            .font(.caption)
+                            .font(DesignSystem.Typography.smallLabel)
                             .foregroundStyle(DesignSystem.Colors.text2)
                         Stepper(
                             "\(vm.speedTrainerBarsPerStep)",
@@ -409,7 +409,7 @@ struct MetroDroneView: View {
                 // Count-in bars (before speed trainer starts)
                 HStack {
                     Text("Count In")
-                        .font(.subheadline.weight(.medium))
+                        .font(DesignSystem.Typography.bodyLabel)
                     Spacer()
                     Stepper(
                         vm.countInBars == 0 ? "Off" : "\(vm.countInBars) bar\(vm.countInBars == 1 ? "" : "s")",
@@ -423,8 +423,8 @@ struct MetroDroneView: View {
                 // Speed trainer status
                 if vm.isSpeedTrainerActive {
                     Text("Current: \(Int(vm.currentTrainerBPM)) BPM")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.orange)
+                        .font(DesignSystem.Typography.bodyLabel)
+                        .foregroundStyle(DesignSystem.Colors.amber)
                 }
 
                 // Start / Stop trainer
@@ -433,7 +433,7 @@ struct MetroDroneView: View {
                         vm.isSpeedTrainerActive ? "Stop Speed Trainer" : "Start Speed Trainer",
                         systemImage: vm.isSpeedTrainerActive ? "stop.fill" : "play.fill"
                     )
-                    .font(.headline)
+                    .font(DesignSystem.Typography.sectionHeader)
                     .frame(maxWidth: .infinity, minHeight: 50)
                     .foregroundStyle(.white)
                     .background(in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
@@ -462,7 +462,7 @@ struct MetroDroneView: View {
                 // Key picker
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Key")
-                        .font(.subheadline.weight(.medium))
+                        .font(DesignSystem.Typography.bodyLabel)
 
                     LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 6), spacing: 6) {
                         ForEach(MusicalNote.allCases) { note in
@@ -470,7 +470,7 @@ struct MetroDroneView: View {
                                 vm.droneKey = note
                             } label: {
                                 Text(note.sharpName)
-                                    .font(.subheadline.weight(.semibold))
+                                    .font(DesignSystem.Typography.bodyLabel)
                                     .frame(maxWidth: .infinity, minHeight: 36)
                                     .foregroundStyle(vm.droneKey == note ? .white : .primary)
                                     .background(
@@ -486,7 +486,7 @@ struct MetroDroneView: View {
                 // Octave picker
                 HStack {
                     Text("Octave")
-                        .font(.subheadline.weight(.medium))
+                        .font(DesignSystem.Typography.bodyLabel)
                     Spacer()
                     Picker("Octave", selection: $vm.droneOctave) {
                         ForEach(2...4, id: \.self) { oct in
@@ -500,7 +500,7 @@ struct MetroDroneView: View {
                 // Voicing picker
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Voicing")
-                        .font(.subheadline.weight(.medium))
+                        .font(DesignSystem.Typography.bodyLabel)
 
                     Picker("Voicing", selection: $vm.droneVoicing) {
                         ForEach(DroneVoicing.allCases, id: \.self) { voicing in
@@ -513,7 +513,7 @@ struct MetroDroneView: View {
                 // Sound picker
                 HStack {
                     Text("Sound")
-                        .font(.subheadline.weight(.medium))
+                        .font(DesignSystem.Typography.bodyLabel)
                     Spacer()
                     Picker("Sound", selection: $vm.droneSound) {
                         ForEach(DroneSound.allCases, id: \.self) { sound in
@@ -527,7 +527,7 @@ struct MetroDroneView: View {
                 // Drone volume
                 HStack(spacing: 8) {
                     Image(systemName: "speaker.fill")
-                        .font(.caption)
+                        .font(DesignSystem.Typography.smallLabel)
                         .foregroundStyle(DesignSystem.Colors.text2)
                     GradientSlider(
                         value: Binding(get: { Double(vm.droneVolume) },
@@ -535,7 +535,7 @@ struct MetroDroneView: View {
                         range: 0...1
                     )
                     Image(systemName: "speaker.wave.3.fill")
-                        .font(.caption)
+                        .font(DesignSystem.Typography.smallLabel)
                         .foregroundStyle(DesignSystem.Colors.text2)
                 }
 
@@ -545,7 +545,7 @@ struct MetroDroneView: View {
                         vm.isDronePlaying ? "Stop Drone" : "Start Drone",
                         systemImage: vm.isDronePlaying ? "stop.fill" : "play.fill"
                     )
-                    .font(.headline)
+                    .font(DesignSystem.Typography.sectionHeader)
                     .frame(maxWidth: .infinity, minHeight: 50)
                     .foregroundStyle(.white)
                     .background(in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
@@ -571,7 +571,7 @@ struct MetroDroneView: View {
     private func infoButton(action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: "info.circle")
-                .font(.caption)
+                .font(DesignSystem.Typography.smallLabel)
                 .foregroundStyle(DesignSystem.Colors.text2)
         }
     }
@@ -592,9 +592,9 @@ private struct MetroDroneInfoSheet: View {
                     ForEach(items, id: \.0) { label, description in
                         VStack(alignment: .leading, spacing: 4) {
                             Text(label)
-                                .font(.subheadline.weight(.semibold))
+                                .font(DesignSystem.Typography.bodyLabel)
                             Text(description)
-                                .font(.caption)
+                                .font(DesignSystem.Typography.smallLabel)
                                 .foregroundStyle(DesignSystem.Colors.text2)
                         }
                     }

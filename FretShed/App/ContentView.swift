@@ -91,7 +91,7 @@ struct ContentView: View {
         .fullScreenCover(isPresented: $quiz.showCalibration, onDismiss: {
             quiz.handleCalibrationDismiss()
         }) {
-            CalibrationView()
+            CalibrationView(forceNewProfile: quiz.calibrationForceNewProfile)
         }
 
         // ── Calibration gate alert ──────────────────────────────────
@@ -112,6 +112,11 @@ struct ContentView: View {
                     attemptRepository: container.attemptRepository
                 )
             }
+        }
+        .onChange(of: quiz.needsProgressReload) { _, needsReload in
+            guard needsReload else { return }
+            quiz.needsProgressReload = false
+            Task { await progressVM?.load() }
         }
     }
 
@@ -171,7 +176,7 @@ struct ContentView: View {
                             .font(.system(size: 28))
                             .symbolRenderingMode(.monochrome)
                         Text(tab.rawValue)
-                            .font(.caption2)
+                            .font(DesignSystem.Typography.smallLabel)
                     }
                     .foregroundStyle(quiz.selectedTab == tab
                                      ? DesignSystem.Colors.cherry
@@ -204,8 +209,8 @@ struct PracticeHomeView: View {
     @State private var alternativeTiles: [(session: Session, title: String, subtitle: String, icon: String)] = []
     @State private var showTimedPicker = false
     @State private var selectedTimedMinutes: Int = 5
-    @State private var calibrationBannerDismissed = false
-    @State private var activeProfileName: String?
+    @State private var allProfiles: [AudioCalibrationProfile] = []
+    @State private var rigPickerExpanded = false
 
     @AppStorage(LocalUserPreferences.Key.hasCompletedCalibration)
     private var hasCompletedCalibration = false
@@ -216,7 +221,7 @@ struct PracticeHomeView: View {
         ScrollView {
             VStack(spacing: 20) {
                 header
-                calibrationBanner
+                rigProfileCard
                 primaryCTA
                 customSessionCTA
                 quickStartSection
@@ -230,6 +235,9 @@ struct PracticeHomeView: View {
         .background(DesignSystem.Colors.background)
         .task { await loadData() }
         .onAppear { refreshData() }
+        .onChange(of: coordinator.showCalibration) { _, showing in
+            if !showing { refreshData() }
+        }
         .onChange(of: coordinator.lastCompletedSession?.id) {
             // Quiz just finished — refresh smart practice data
             if let engine = smartEngine {
@@ -251,49 +259,161 @@ struct PracticeHomeView: View {
                 .font(.custom("CrimsonPro-Italic", size: 19.5))
                 .foregroundStyle(DesignSystem.Colors.muted)
 
-            if hasCompletedCalibration, let name = activeProfileName {
-                HStack(spacing: 6) {
-                    Image(systemName: "checkmark.seal.fill")
-                        .font(.caption)
-                        .foregroundStyle(DesignSystem.Colors.correct)
-                    Text("Using: \(name)")
-                        .font(.caption)
-                        .foregroundStyle(DesignSystem.Colors.text2)
-                }
-                .padding(.top, 2)
-            }
-        }
+}
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    // MARK: - Calibration Banner
+    // MARK: - Rig Profile Card
 
-    @ViewBuilder
-    private var calibrationBanner: some View {
-        if !hasCompletedCalibration && !calibrationBannerDismissed {
-            HStack(spacing: 10) {
-                Image(systemName: "mic.badge.xmark")
-                    .foregroundStyle(DesignSystem.Colors.amber)
-                Text("Audio calibration needed")
-                    .font(DesignSystem.Typography.bodyLabel)
-                    .foregroundStyle(DesignSystem.Colors.text)
-                Spacer()
-                Button("Set Up") {
-                    coordinator.handleSetupAudio()
-                }
-                .font(DesignSystem.Typography.smallLabel)
-                .foregroundStyle(DesignSystem.Colors.cherry)
+    private var rigProfileCard: some View {
+        let activeProfile = allProfiles.first(where: \.isActive)
+
+        return Group {
+            if activeProfile == nil {
+                // Pre-calibration state
                 Button {
-                    calibrationBannerDismissed = true
+                    coordinator.handleSetupAudio()
                 } label: {
-                    Image(systemName: "xmark")
-                        .font(.caption)
-                        .foregroundStyle(DesignSystem.Colors.muted)
+                    HStack(spacing: 12) {
+                        ZStack {
+                            Circle()
+                                .fill(DesignSystem.Colors.amber.opacity(0.12))
+                                .frame(width: 44, height: 44)
+                            Image(systemName: "guitars.fill")
+                                .font(.body.weight(.semibold))
+                                .foregroundStyle(DesignSystem.Colors.amber)
+                        }
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text("Calibrate My Guitar First")
+                                .font(DesignSystem.Typography.bodyLabel)
+                                .foregroundStyle(DesignSystem.Colors.text)
+                            Text("FretShed is most accurate when you profile your rig.")
+                                .font(DesignSystem.Typography.smallLabel)
+                                .foregroundStyle(DesignSystem.Colors.muted)
+                            Text("Tap here and follow the instructions")
+                                .font(DesignSystem.Typography.smallLabel)
+                                .foregroundStyle(DesignSystem.Colors.cherry)
+                        }
+                        Spacer(minLength: 0)
+                        Image(systemName: "chevron.right")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(DesignSystem.Colors.muted)
+                    }
+                    .padding(14)
+                    .background(DesignSystem.Colors.surface, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: DesignSystem.Radius.md)
+                            .stroke(DesignSystem.Colors.border, lineWidth: 1)
+                    )
                 }
+                .buttonStyle(.plain)
+            } else {
+                // Post-calibration: show active profile with inline picker
+                VStack(spacing: 0) {
+                    // Header row
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            rigPickerExpanded.toggle()
+                        }
+                    } label: {
+                        HStack(spacing: 12) {
+                            ZStack {
+                                Circle()
+                                    .fill(DesignSystem.Colors.cherry.opacity(0.12))
+                                    .frame(width: 44, height: 44)
+                                Image(systemName: activeProfile?.guitarType?.iconName ?? "guitars.fill")
+                                    .font(.body.weight(.semibold))
+                                    .foregroundStyle(DesignSystem.Colors.cherry)
+                            }
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text("My Rig")
+                                    .font(DesignSystem.Typography.smallLabel)
+                                    .foregroundStyle(DesignSystem.Colors.muted)
+                                HStack(spacing: 6) {
+                                    Text(activeProfile?.displayName ?? "Guitar")
+                                        .font(DesignSystem.Typography.bodyLabel)
+                                        .foregroundStyle(DesignSystem.Colors.text)
+                                    Image(systemName: rigPickerExpanded ? "chevron.up" : "chevron.down")
+                                        .font(.caption2.weight(.bold))
+                                        .foregroundStyle(DesignSystem.Colors.muted)
+                                }
+                                Text("Tap to add a new guitar rig or change guitars.")
+                                    .font(DesignSystem.Typography.smallLabel)
+                                    .foregroundStyle(DesignSystem.Colors.muted)
+                            }
+                            Spacer(minLength: 0)
+                            Image(systemName: "checkmark.seal.fill")
+                                .font(.body)
+                                .foregroundStyle(DesignSystem.Colors.correct)
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .padding(14)
+
+                    // Expandable profile list
+                    if rigPickerExpanded {
+                        Divider()
+                            .overlay(DesignSystem.Colors.border)
+                            .padding(.horizontal, 14)
+
+                        VStack(spacing: 0) {
+                            ForEach(allProfiles, id: \.id) { profile in
+                                Button {
+                                    setActiveProfile(profile)
+                                    withAnimation(.easeInOut(duration: 0.2)) {
+                                        rigPickerExpanded = false
+                                    }
+                                } label: {
+                                    HStack(spacing: 10) {
+                                        Image(systemName: profile.isActive ? "checkmark.circle.fill" : "circle")
+                                            .font(.body)
+                                            .foregroundStyle(profile.isActive ? DesignSystem.Colors.cherry : DesignSystem.Colors.muted)
+                                        Text(profile.displayName)
+                                            .font(DesignSystem.Typography.bodyLabel)
+                                            .foregroundStyle(DesignSystem.Colors.text)
+                                        if let type = profile.guitarType {
+                                            Text(type.displayName)
+                                                .font(DesignSystem.Typography.smallLabel)
+                                                .foregroundStyle(DesignSystem.Colors.text2)
+                                        }
+                                        Spacer()
+                                    }
+                                    .padding(.horizontal, 14)
+                                    .padding(.vertical, 10)
+                                }
+                                .buttonStyle(.plain)
+                            }
+
+                            Divider()
+                                .overlay(DesignSystem.Colors.border)
+                                .padding(.horizontal, 14)
+
+                            Button {
+                                rigPickerExpanded = false
+                                coordinator.handleCreateNewProfile()
+                            } label: {
+                                HStack(spacing: 10) {
+                                    Image(systemName: "plus.circle")
+                                        .font(.body)
+                                        .foregroundStyle(DesignSystem.Colors.cherry)
+                                    Text("Create New Rig Profile")
+                                        .font(DesignSystem.Typography.bodyLabel)
+                                        .foregroundStyle(DesignSystem.Colors.cherry)
+                                    Spacer()
+                                }
+                                .padding(.horizontal, 14)
+                                .padding(.vertical, 10)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                }
+                .background(DesignSystem.Colors.surface, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
+                .overlay(
+                    RoundedRectangle(cornerRadius: DesignSystem.Radius.md)
+                        .stroke(DesignSystem.Colors.border, lineWidth: 1)
+                )
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
-            .background(DesignSystem.Colors.surface, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.sm))
         }
     }
 
@@ -307,13 +427,13 @@ struct PracticeHomeView: View {
                 Text(isNewUser ? "Start Practice" : "Smart Practice")
                     .font(DesignSystem.Typography.screenTitle)
                     .foregroundStyle(.white)
-                Text((isNewUser ? "START HERE" : "RECOMMENDED BASED ON YOUR PROGRESS").uppercased())
+                Text((isNewUser ? "START HERE" : "BASED ON YOUR PROGRESS").uppercased())
                     .font(DesignSystem.Typography.sectionLabel)
                     .tracking(1.5)
                     .foregroundStyle(.white)
                 Text(isNewUser
                      ? "Adaptive session based on your level"
-                     : "Next Up: \(smartDescription) \u{2022} \(weakSpots) weak spots")
+                     : "Suggested Session: \(smartDescription) \u{2022} \(weakSpots) weak spots")
                     .font(DesignSystem.Typography.accentDescription)
                     .foregroundStyle(.white.opacity(0.85))
             }
@@ -377,24 +497,27 @@ struct PracticeHomeView: View {
 
     private func presetCard(icon: String, title: String, subtitle: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 10) {
                 Image(systemName: icon)
-                    .font(.title3)
+                    .font(.body)
                     .foregroundStyle(DesignSystem.Colors.cherry)
-                Text(title)
-                    .font(DesignSystem.Typography.bodyLabel)
-                    .foregroundStyle(DesignSystem.Colors.text)
-                    .lineLimit(1)
-                Text(subtitle)
-                    .font(.caption)
-                    .foregroundStyle(DesignSystem.Colors.muted)
-                    .lineLimit(2)
+                    .frame(width: 24)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(DesignSystem.Typography.bodyLabel)
+                        .foregroundStyle(DesignSystem.Colors.text)
+                        .lineLimit(1)
+                    Text(subtitle)
+                        .font(DesignSystem.Typography.smallLabel)
+                        .foregroundStyle(DesignSystem.Colors.muted)
+                        .lineLimit(1)
+                }
             }
-            .frame(maxWidth: .infinity, minHeight: 100, alignment: .leading)
-            .padding(12)
-            .background(DesignSystem.Colors.surface, in: RoundedRectangle(cornerRadius: 14))
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(10)
+            .background(DesignSystem.Colors.surface, in: RoundedRectangle(cornerRadius: 12))
             .overlay(
-                RoundedRectangle(cornerRadius: 14)
+                RoundedRectangle(cornerRadius: 12)
                     .stroke(DesignSystem.Colors.border, lineWidth: 1)
             )
         }
@@ -462,7 +585,7 @@ struct PracticeHomeView: View {
                 Text("Let Me Pick")
                     .font(DesignSystem.Typography.screenTitle)
                     .foregroundStyle(.white)
-                Text("CHOOSE MY OWN PRACTICE SESSION")
+                Text("DESIGN A CUSTOM SESSION")
                     .font(DesignSystem.Typography.sectionLabel)
                     .tracking(1.5)
                     .foregroundStyle(.white)
@@ -515,16 +638,17 @@ struct PracticeHomeView: View {
         alternativeTiles = (try? engine.alternativeSessions()) ?? []
     }
 
-    private func loadActiveProfileName() {
-        if let profile = try? container.calibrationRepository.activeProfile() {
-            activeProfileName = profile.name ?? profile.guitarType?.displayName ?? "Calibrated"
-        } else {
-            activeProfileName = nil
-        }
+    private func loadProfiles() {
+        allProfiles = (try? container.calibrationRepository.allProfiles()) ?? []
+    }
+
+    private func setActiveProfile(_ profile: AudioCalibrationProfile) {
+        try? container.calibrationRepository.setActive(profile)
+        loadProfiles()
     }
 
     private func refreshData() {
-        loadActiveProfileName()
+        loadProfiles()
         // Session count: if coordinator has a last session, we're a returning user
         if coordinator.lastCompletedSession != nil {
             sessionCount = 1
@@ -563,10 +687,10 @@ struct StubView: View {
                 .font(.system(size: 56))
                 .foregroundStyle(DesignSystem.Colors.muted.opacity(0.5))
             Text(title)
-                .font(.title2.bold())
+                .font(DesignSystem.Typography.screenTitle)
                 .foregroundStyle(DesignSystem.Colors.text2)
             Text(subtitle)
-                .font(.subheadline)
+                .font(DesignSystem.Typography.bodyLabel)
                 .foregroundStyle(DesignSystem.Colors.muted)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 40)

@@ -57,6 +57,9 @@ struct CalibrationView: View {
     /// When true, skips tuning step (re-calibration from Settings).
     var isRecalibration: Bool = false
 
+    /// When true, always creates a new profile (never overwrites existing).
+    var forceNewProfile: Bool = false
+
     /// When set, overwrites this existing profile's calibration data (keeps name/type).
     var recalibratingProfile: AudioCalibrationProfile? = nil
 
@@ -86,7 +89,7 @@ struct CalibrationView: View {
                                 .frame(maxWidth: .infinity, alignment: .leading)
 
                             Text("Input: \(engine.detectedInputSource.displayName)")
-                                .font(.subheadline)
+                                .font(DesignSystem.Typography.bodyLabel)
                                 .foregroundStyle(DesignSystem.Colors.text2)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                         }
@@ -117,7 +120,7 @@ struct CalibrationView: View {
                         engine.cancel()
                         dismiss()
                     }
-                    .font(.body)
+                    .font(DesignSystem.Typography.bodyLabel)
                     .foregroundStyle(DesignSystem.Colors.text2)
                     .padding(.trailing, 20)
                     .padding(.top, 16)
@@ -126,7 +129,7 @@ struct CalibrationView: View {
         }
         .task {
             // Auto-detect existing active profile for overwrite (when not explicitly passed)
-            if recalibratingProfile == nil {
+            if recalibratingProfile == nil && !forceNewProfile {
                 existingActiveProfile = try? container.calibrationRepository.activeProfile()
             }
             let skipTuning = isRecalibration || recalibratingProfile != nil || existingActiveProfile != nil
@@ -201,11 +204,11 @@ struct CalibrationView: View {
                 stepIndicator(for: step, state: state)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(step.title)
-                        .font(.headline)
+                        .font(DesignSystem.Typography.sectionHeader)
                         .foregroundStyle(DesignSystem.Colors.text)
                     if state != .active {
                         Text(step.subtitle)
-                            .font(.caption)
+                            .font(DesignSystem.Typography.smallLabel)
                             .foregroundStyle(DesignSystem.Colors.text2)
                     }
                 }
@@ -234,21 +237,21 @@ struct CalibrationView: View {
                     .fill(DesignSystem.Colors.correct)
                     .frame(width: 32, height: 32)
                 Image(systemName: "checkmark")
-                    .font(.caption.weight(.bold))
+                    .font(DesignSystem.Typography.smallLabel)
                     .foregroundStyle(.white)
             case .active:
                 Circle()
                     .fill(DesignSystem.Colors.cherry)
                     .frame(width: 32, height: 32)
                 Text("\(step.rawValue)")
-                    .font(.caption.weight(.bold))
+                    .font(DesignSystem.Typography.smallLabel)
                     .foregroundStyle(.white)
             case .upcoming:
                 Circle()
                     .strokeBorder(DesignSystem.Colors.border, lineWidth: 2)
                     .frame(width: 32, height: 32)
                 Text("\(step.rawValue)")
-                    .font(.caption.weight(.bold))
+                    .font(DesignSystem.Typography.smallLabel)
                     .foregroundStyle(DesignSystem.Colors.muted)
             }
         }
@@ -297,7 +300,7 @@ struct CalibrationView: View {
             // A4 reference
             HStack(spacing: 6) {
                 Image(systemName: "tuningfork")
-                    .font(.body)
+                    .font(DesignSystem.Typography.bodyLabel)
                     .foregroundStyle(DesignSystem.Colors.text)
                 Text("A4 = 440 Hz")
                     .font(DesignSystem.Typography.bodyLabel)
@@ -309,7 +312,7 @@ struct CalibrationView: View {
                 engine.finishTuning()
             } label: {
                 Text("Done Tuning")
-                    .font(.headline)
+                    .font(DesignSystem.Typography.sectionHeader)
                     .frame(maxWidth: .infinity, minHeight: 50)
                     .foregroundStyle(.white)
                     .background(in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
@@ -369,7 +372,7 @@ struct CalibrationView: View {
         VStack(spacing: 16) {
             if case .countdown(let remaining) = engine.phase {
                 Text("Get ready\u{2026}")
-                    .font(.subheadline)
+                    .font(DesignSystem.Typography.bodyLabel)
                     .foregroundStyle(DesignSystem.Colors.text2)
 
                 Text("\(remaining)")
@@ -379,7 +382,7 @@ struct CalibrationView: View {
                     .animation(.spring(duration: 0.2), value: remaining)
 
                 Text("Stay quiet and keep your guitar still.")
-                    .font(.subheadline)
+                    .font(DesignSystem.Typography.bodyLabel)
                     .foregroundStyle(DesignSystem.Colors.text2)
                     .multilineTextAlignment(.center)
             } else {
@@ -399,7 +402,7 @@ struct CalibrationView: View {
                 .frame(width: 100, height: 100)
 
                 Text("Measuring\u{2026}")
-                    .font(.subheadline.weight(.semibold))
+                    .font(DesignSystem.Typography.bodyLabel)
                     .foregroundStyle(DesignSystem.Colors.text)
 
                 InputLevelBar(level: engine.detector.inputLevel)
@@ -453,7 +456,7 @@ struct CalibrationView: View {
                     Image(systemName: passed ? "checkmark.circle.fill" : "circle")
                         .foregroundStyle(passed ? DesignSystem.Colors.correct : DesignSystem.Colors.muted)
                     Text(CalibrationEngine.stringNames[entry.string] ?? "String \(entry.string)")
-                        .font(.subheadline)
+                        .font(DesignSystem.Typography.bodyLabel)
                         .foregroundStyle(DesignSystem.Colors.text)
                     Spacer()
                     if activeString() == entry.string {
@@ -474,13 +477,13 @@ struct CalibrationView: View {
                let note = engine.expectedNote {
                 VStack(spacing: 4) {
                     Text(engine.isFrettedPhase ? "Play 12th Fret:" : "Play:")
-                        .font(.title3)
+                        .font(DesignSystem.Typography.sectionHeader)
                         .foregroundStyle(DesignSystem.Colors.text2)
                     Text(name)
-                        .font(.title2.weight(.semibold))
+                        .font(DesignSystem.Typography.screenTitle)
                         .foregroundStyle(DesignSystem.Colors.text)
                     Text(note.sharpName)
-                        .font(.title.weight(.bold))
+                        .font(DesignSystem.Typography.screenTitle)
                         .foregroundStyle(DesignSystem.Colors.cherry)
                 }
             }
@@ -491,7 +494,7 @@ struct CalibrationView: View {
                     Image(systemName: "mic.fill")
                         .foregroundStyle(DesignSystem.Colors.correct)
                     Text("Hearing: \(detected.sharpName)")
-                        .font(.subheadline.weight(.semibold))
+                        .font(DesignSystem.Typography.bodyLabel)
                         .foregroundStyle(DesignSystem.Colors.text)
                 }
             } else {
@@ -499,7 +502,7 @@ struct CalibrationView: View {
                     Image(systemName: "mic.fill")
                         .foregroundStyle(DesignSystem.Colors.text2)
                     Text("Listening\u{2026}")
-                        .font(.subheadline)
+                        .font(DesignSystem.Typography.bodyLabel)
                         .foregroundStyle(DesignSystem.Colors.text2)
                 }
             }
@@ -527,7 +530,7 @@ struct CalibrationView: View {
                         .font(DesignSystem.Typography.subDisplay)
                         .foregroundStyle(DesignSystem.Colors.text)
                     Text("Quality")
-                        .font(.caption)
+                        .font(DesignSystem.Typography.smallLabel)
                         .foregroundStyle(DesignSystem.Colors.text2)
                 }
             }
@@ -546,7 +549,7 @@ struct CalibrationView: View {
                     saveAndClose()
                 } label: {
                     Text("Save & Close")
-                        .font(.headline)
+                        .font(DesignSystem.Typography.sectionHeader)
                         .frame(maxWidth: .infinity, minHeight: 50)
                         .foregroundStyle(.white)
                         .background(in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
@@ -569,7 +572,7 @@ struct CalibrationView: View {
                         saveAndClose()
                     } label: {
                         Text("Save Profile")
-                            .font(.headline)
+                            .font(DesignSystem.Typography.sectionHeader)
                             .frame(maxWidth: .infinity, minHeight: 50)
                             .foregroundStyle(.white)
                             .background(in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
@@ -582,7 +585,7 @@ struct CalibrationView: View {
                     showNameEntry = true
                 } label: {
                     Text("Save & Name Profile")
-                        .font(.headline)
+                        .font(DesignSystem.Typography.sectionHeader)
                         .frame(maxWidth: .infinity, minHeight: 50)
                         .foregroundStyle(.white)
                         .background(in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
@@ -610,10 +613,10 @@ struct CalibrationView: View {
                 let passed = results[entry.string] == true
                 HStack(spacing: 4) {
                     Image(systemName: passed ? "checkmark.circle.fill" : "xmark.circle.fill")
-                        .font(.caption)
+                        .font(DesignSystem.Typography.smallLabel)
                         .foregroundStyle(passed ? DesignSystem.Colors.correct : DesignSystem.Colors.wrong)
                     Text(CalibrationEngine.stringNames[entry.string] ?? "")
-                        .font(.caption)
+                        .font(DesignSystem.Typography.smallLabel)
                         .foregroundStyle(DesignSystem.Colors.text)
                 }
             }

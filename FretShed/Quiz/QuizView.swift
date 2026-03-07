@@ -134,6 +134,8 @@ public struct QuizView: View {
                                 compactPromptView
                                     .frame(maxWidth: .infinity)
 
+                                compactPlayedNoteView
+
                                 actionSection
                                     .padding(.horizontal, 12)
                                     .frame(maxWidth: 320)
@@ -165,6 +167,9 @@ public struct QuizView: View {
                                 .padding(.top, 4)
                                 .padding(.horizontal, 8)
                         }
+
+                        playedNoteCard
+                            .padding(.top, 8)
 
                         actionSection
                             .padding(.top, 10)
@@ -299,12 +304,12 @@ public struct QuizView: View {
             ? vm.tempoTimeAllowance
             : Double(vm.settings.defaultTimerDuration)
         let progress = total > 0 ? vm.timeRemaining / total : 0
-        let barColor: Color = progress > 0.5 ? .green : progress > 0.25 ? .orange : .red
+        let barColor: Color = progress > 0.5 ? DesignSystem.Colors.correct : progress > 0.25 ? DesignSystem.Colors.amber : DesignSystem.Colors.wrong
         return HStack(spacing: 6) {
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
                     Rectangle()
-                        .fill(Color(.tertiarySystemGroupedBackground))
+                        .fill(DesignSystem.Colors.surface2)
                     Rectangle()
                         .fill(barColor)
                         .frame(width: geo.size.width * progress)
@@ -317,7 +322,7 @@ public struct QuizView: View {
                 vm.isTimerMuted.toggle()
             } label: {
                 Image(systemName: vm.isTimerMuted ? "speaker.slash.fill" : "speaker.wave.2.fill")
-                    .font(.caption2)
+                    .font(DesignSystem.Typography.smallLabel)
                     .foregroundStyle(vm.isTimerMuted ? .secondary : DesignSystem.Colors.cherry)
             }
             .buttonStyle(.plain)
@@ -338,19 +343,19 @@ public struct QuizView: View {
             accuracyRing
             if vm.phase == .complete {
                 Button("Close") { onDone?() }
-                    .font(.subheadline.weight(.semibold))
+                    .font(DesignSystem.Typography.bodyLabel)
                     .foregroundStyle(DesignSystem.Colors.text2)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 6)
-                    .background(Color(.tertiarySystemGroupedBackground),
+                    .background(DesignSystem.Colors.surface2,
                                 in: Capsule())
             } else {
                 Button("End") { showEndConfirm = true }
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.red)
+                    .font(DesignSystem.Typography.bodyLabel)
+                    .foregroundStyle(DesignSystem.Colors.wrong)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 6)
-                    .background(Color(.tertiarySystemGroupedBackground),
+                    .background(DesignSystem.Colors.surface2,
                                 in: Capsule())
             }
         }
@@ -391,7 +396,7 @@ public struct QuizView: View {
                 }
             }
         }
-        .font(.caption)
+        .font(DesignSystem.Typography.smallLabel)
         .foregroundStyle(DesignSystem.Colors.text2)
         .padding(.vertical, 6)
         .frame(maxWidth: .infinity)
@@ -452,12 +457,13 @@ public struct QuizView: View {
                let chord = vm.currentChord {
                 HStack(spacing: 6) {
                     Text(chord.label)
-                        .font(.subheadline.weight(.bold))
+                        .font(DesignSystem.Typography.bodyLabel)
+                        .bold()
                         .foregroundStyle(DesignSystem.Colors.cherry)
                     Text("·")
                         .foregroundStyle(DesignSystem.Colors.text2)
                     Text(vm.currentToneLabel)
-                        .font(.subheadline)
+                        .font(DesignSystem.Typography.bodyLabel)
                         .foregroundStyle(DesignSystem.Colors.text2)
                 }
                 .padding(.bottom, 2)
@@ -500,6 +506,81 @@ public struct QuizView: View {
                 ProgressView().padding()
             }
         }
+        .padding(.vertical, 12)
+        .frame(maxWidth: .infinity)
+        .background(DesignSystem.Colors.surface)
+        .clipShape(RoundedRectangle(cornerRadius: DesignSystem.Radius.lg))
+        .overlay(
+            RoundedRectangle(cornerRadius: DesignSystem.Radius.lg)
+                .stroke(DesignSystem.Colors.border, lineWidth: 1)
+        )
+        .padding(.horizontal, 16)
+    }
+
+    private var playedNoteCard: some View {
+        Group {
+            if let played = vm.detectedNote,
+               vm.phase == .feedbackCorrect || vm.phase == .feedbackWrong {
+                let isCorrect = vm.phase == .feedbackCorrect
+                let color = isCorrect ? DesignSystem.Colors.correct : DesignSystem.Colors.wrong
+                VStack(spacing: 2) {
+                    Text("You Played:")
+                        .font(.system(size: 22, weight: .medium))
+                        .foregroundStyle(DesignSystem.Colors.text2)
+                    Text(played.displayName(format: noteFormat))
+                        .font(.system(size: 79, weight: .black, design: .rounded))
+                        .foregroundStyle(color)
+                    HStack(spacing: 6) {
+                        Image(systemName: isCorrect ? "checkmark.circle.fill" : "xmark.circle.fill")
+                        Text(isCorrect ? "Correct" : "Incorrect")
+                            .font(.system(size: 27, weight: .semibold))
+                    }
+                    .foregroundStyle(color)
+                }
+                .padding(.vertical, 12)
+                .frame(maxWidth: .infinity)
+                .background(color.opacity(0.1))
+                .clipShape(RoundedRectangle(cornerRadius: DesignSystem.Radius.lg))
+                .overlay(
+                    RoundedRectangle(cornerRadius: DesignSystem.Radius.lg)
+                        .stroke(color.opacity(0.4), lineWidth: 1)
+                )
+                .padding(.horizontal, 16)
+                .onTapGesture { vm.advanceManually() }
+                .transition(.scale.combined(with: .opacity))
+            }
+        }
+        .animation(.spring(duration: 0.25), value: vm.phase)
+    }
+
+    /// Compact "You Played" for landscape — sits between prompt and action section.
+    private var compactPlayedNoteView: some View {
+        Group {
+            if let played = vm.detectedNote,
+               vm.phase == .feedbackCorrect || vm.phase == .feedbackWrong {
+                let isCorrect = vm.phase == .feedbackCorrect
+                let color = isCorrect ? DesignSystem.Colors.correct : DesignSystem.Colors.wrong
+                HStack(spacing: 6) {
+                    Image(systemName: isCorrect ? "checkmark.circle.fill" : "xmark.circle.fill")
+                        .font(.system(size: 14))
+                    Text("Played:")
+                        .font(DesignSystem.Typography.smallLabel)
+                    Text(played.displayName(format: noteFormat))
+                        .font(.system(size: 28, weight: .black, design: .rounded))
+                }
+                .foregroundStyle(color)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .background(color.opacity(0.1))
+                .clipShape(RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
+                .overlay(
+                    RoundedRectangle(cornerRadius: DesignSystem.Radius.md)
+                        .stroke(color.opacity(0.4), lineWidth: 1)
+                )
+                .transition(.scale.combined(with: .opacity))
+            }
+        }
+        .animation(.spring(duration: 0.25), value: vm.phase)
     }
 
     /// Compact prompt for landscape — note name, string, and fret hint in a single horizontal row.
@@ -509,15 +590,16 @@ public struct QuizView: View {
                let chord = vm.currentChord {
                 VStack(spacing: 2) {
                     Text(chord.label)
-                        .font(.caption.weight(.bold))
+                        .font(DesignSystem.Typography.smallLabel)
+                        .bold()
                         .foregroundStyle(DesignSystem.Colors.cherry)
                     Text(vm.currentToneLabel)
-                        .font(.caption2)
+                        .font(DesignSystem.Typography.smallLabel)
                         .foregroundStyle(DesignSystem.Colors.text2)
                 }
             } else {
                 Text(vm.settings.tapToAnswerEnabled ? "Find:" : "Play:")
-                    .font(.subheadline.weight(.medium))
+                    .font(DesignSystem.Typography.bodyLabel)
                     .foregroundStyle(DesignSystem.Colors.text2)
             }
 
@@ -529,13 +611,13 @@ public struct QuizView: View {
                     .animation(.spring(duration: 0.3), value: q.note)
 
                 Text("Str \(q.string)")
-                    .font(.subheadline.weight(.semibold))
+                    .font(DesignSystem.Typography.bodyLabel)
                     .foregroundStyle(DesignSystem.Colors.text2)
                     .monospacedDigit()
 
                 if showFretHint {
                     Text("Fret \(q.fret)")
-                        .font(.subheadline.weight(.semibold))
+                        .font(DesignSystem.Typography.bodyLabel)
                         .foregroundStyle(DesignSystem.Colors.text2)
                         .monospacedDigit()
                 } else {
@@ -543,7 +625,7 @@ public struct QuizView: View {
                         withAnimation { showFretHint = true }
                     } label: {
                         Image(systemName: "eye")
-                            .font(.subheadline)
+                            .font(DesignSystem.Typography.bodyLabel)
                             .foregroundStyle(DesignSystem.Colors.cherry)
                     }
                     .buttonStyle(.plain)
@@ -551,6 +633,13 @@ public struct QuizView: View {
             }
         }
         .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(DesignSystem.Colors.surface)
+        .clipShape(RoundedRectangle(cornerRadius: DesignSystem.Radius.lg))
+        .overlay(
+            RoundedRectangle(cornerRadius: DesignSystem.Radius.lg)
+                .stroke(DesignSystem.Colors.border, lineWidth: 1)
+        )
     }
 
     // MARK: - Stats
@@ -578,10 +667,10 @@ public struct QuizView: View {
         let pct = vm.attemptCount > 0
             ? Double(vm.correctCount) / Double(vm.attemptCount) : 0.0
         return ZStack {
-            Circle().stroke(Color.gray.opacity(0.2), lineWidth: 3)
+            Circle().stroke(DesignSystem.Colors.muted.opacity(0.2), lineWidth: 3)
             Circle()
                 .trim(from: 0, to: pct)
-                .stroke(pct >= 0.8 ? Color.green : pct >= 0.6 ? .orange : .red,
+                .stroke(pct >= 0.8 ? DesignSystem.Colors.correct : pct >= 0.6 ? DesignSystem.Colors.amber : DesignSystem.Colors.wrong,
                         style: StrokeStyle(lineWidth: 3, lineCap: .round))
                 .rotationEffect(.degrees(-90))
             Text("\(Int(pct * 100))%")
@@ -601,12 +690,10 @@ public struct QuizView: View {
                     chordCompleteBanner(chord: chord)
                         .transition(.scale.combined(with: .opacity))
                 } else {
-                    feedbackBanner(text: correctMessage, color: .green, icon: "checkmark.circle.fill")
-                        .transition(.scale.combined(with: .opacity))
+                    EmptyView()
                 }
             case .feedbackWrong:
-                feedbackBanner(text: wrongMessage, color: .red, icon: "xmark.circle.fill")
-                    .transition(.scale.combined(with: .opacity))
+                EmptyView()
             case .active:
                 VStack(spacing: 8) {
                     if vm.settings.tapToAnswerEnabled {
@@ -622,7 +709,7 @@ public struct QuizView: View {
                             vm.skipQuestion()
                         } label: {
                             Label("Skip", systemImage: "forward.fill")
-                                .font(.subheadline.weight(.semibold))
+                                .font(DesignSystem.Typography.bodyLabel)
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 10)
                                 .background(DesignSystem.Colors.surface,
@@ -705,9 +792,6 @@ public struct QuizView: View {
         let icon: String = completedAccuracy >= 0.9 ? "trophy.fill"
             : completedAccuracy >= 0.7 ? "star.fill"
             : "hand.thumbsup.fill"
-        let tColor: Color = completedAccuracy >= 0.9 ? .yellow
-            : completedAccuracy >= 0.7 ? .orange
-            : .blue
         let title: String = {
             switch vm.session.gameMode {
             case .streak:
@@ -740,34 +824,33 @@ public struct QuizView: View {
             }
         }()
 
-        return VStack(spacing: 6) {
-            Image(systemName: icon)
-                .font(.system(size: 56))
-                .foregroundStyle(tColor)
-                .symbolEffect(.bounce, value: true)
+        return VStack(spacing: 8) {
+            ZStack {
+                Circle()
+                    .fill(.white.opacity(0.15))
+                    .frame(width: 80, height: 80)
+                Image(systemName: icon)
+                    .font(.system(size: 40))
+                    .foregroundStyle(.white)
+                    .symbolEffect(.bounce, value: true)
+            }
             Text(title)
                 .font(DesignSystem.Typography.screenTitle)
+                .foregroundStyle(.white)
             Text(subtitle)
-                .font(.subheadline)
-                .foregroundStyle(DesignSystem.Colors.text2)
+                .font(DesignSystem.Typography.accentDescription)
+                .foregroundStyle(.white.opacity(0.85))
                 .multilineTextAlignment(.center)
-                .padding(.horizontal, 32)
+                .padding(.horizontal, 24)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 20)
-        .background(
-            LinearGradient(
-                colors: [tColor.opacity(0.12), tColor.opacity(0.03)],
-                startPoint: .top,
-                endPoint: .bottom
-            ),
-            in: RoundedRectangle(cornerRadius: DesignSystem.Radius.xl)
-        )
+        .padding(.vertical, 24)
+        .background(DesignSystem.Gradients.primary, in: RoundedRectangle(cornerRadius: 16))
     }
 
     private var completedStatsGrid: some View {
-        let accColor: Color = completedAccuracy >= 0.8 ? .green
-            : completedAccuracy >= 0.6 ? .orange : .red
+        let accColor: Color = completedAccuracy >= 0.8 ? DesignSystem.Colors.correct
+            : completedAccuracy >= 0.6 ? DesignSystem.Colors.amber : DesignSystem.Colors.wrong
 
         let avgTimeLabel: String = {
             let ms = vm.averageResponseTimeMs
@@ -778,26 +861,26 @@ public struct QuizView: View {
         return LazyVGrid(columns: [.init(), .init()], spacing: 12) {
             switch vm.session.gameMode {
             case .streak:
-                CompletedStatCard(label: "Best Streak", value: "\(vm.bestStreak)🔥",        icon: "flame.fill",       color: .orange)
-                CompletedStatCard(label: "Correct",     value: "\(vm.correctCount)",         icon: "checkmark.circle", color: .green)
+                CompletedStatCard(label: "Best Streak", value: "\(vm.bestStreak)🔥",        icon: "flame.fill",       color: DesignSystem.Colors.amber)
+                CompletedStatCard(label: "Correct",     value: "\(vm.correctCount)",         icon: "checkmark.circle", color: DesignSystem.Colors.correct)
                 CompletedStatCard(label: "Accuracy",    value: "\(Int(completedAccuracy * 100))%", icon: "target", color: accColor)
-                CompletedStatCard(label: "Questions",   value: "\(vm.attemptCount)",         icon: "list.number",      color: .blue)
+                CompletedStatCard(label: "Questions",   value: "\(vm.attemptCount)",         icon: "list.number",      color: DesignSystem.Colors.cherry)
             case .timed:
                 CompletedStatCard(label: "Accuracy",    value: "\(Int(completedAccuracy * 100))%", icon: "target",          color: accColor)
-                CompletedStatCard(label: "Avg Time",    value: avgTimeLabel,                       icon: "clock.fill",      color: .cyan)
-                CompletedStatCard(label: "Best Streak", value: "\(vm.bestStreak)🔥",              icon: "flame",           color: .orange)
-                CompletedStatCard(label: "Correct",     value: "\(vm.correctCount)",               icon: "checkmark.circle", color: .green)
+                CompletedStatCard(label: "Avg Time",    value: avgTimeLabel,                       icon: "clock.fill",      color: DesignSystem.Colors.honey)
+                CompletedStatCard(label: "Best Streak", value: "\(vm.bestStreak)🔥",              icon: "flame",           color: DesignSystem.Colors.amber)
+                CompletedStatCard(label: "Correct",     value: "\(vm.correctCount)",               icon: "checkmark.circle", color: DesignSystem.Colors.correct)
             case .tempo:
-                CompletedStatCard(label: "Best Streak", value: "\(vm.bestStreak)🔥",        icon: "flame.fill",       color: .orange)
+                CompletedStatCard(label: "Best Streak", value: "\(vm.bestStreak)🔥",        icon: "flame.fill",       color: DesignSystem.Colors.amber)
                 CompletedStatCard(label: "Fastest",     value: String(format: "%.1fs", vm.tempoTimeAllowance),
-                                                                                              icon: "bolt.fill",        color: .yellow)
+                                                                                              icon: "bolt.fill",        color: DesignSystem.Colors.honey)
                 CompletedStatCard(label: "Accuracy",    value: "\(Int(completedAccuracy * 100))%", icon: "target", color: accColor)
-                CompletedStatCard(label: "Questions",   value: "\(vm.attemptCount)",         icon: "list.number",      color: .blue)
+                CompletedStatCard(label: "Questions",   value: "\(vm.attemptCount)",         icon: "list.number",      color: DesignSystem.Colors.cherry)
             default:
                 CompletedStatCard(label: "Accuracy",    value: "\(Int(completedAccuracy * 100))%", icon: "target", color: accColor)
-                CompletedStatCard(label: "Questions",   value: "\(vm.attemptCount)",         icon: "list.number",      color: .blue)
-                CompletedStatCard(label: "Best Streak", value: "\(vm.bestStreak)🔥",        icon: "flame",            color: .orange)
-                CompletedStatCard(label: "Correct",     value: "\(vm.correctCount)",         icon: "checkmark.circle", color: .green)
+                CompletedStatCard(label: "Questions",   value: "\(vm.attemptCount)",         icon: "list.number",      color: DesignSystem.Colors.cherry)
+                CompletedStatCard(label: "Best Streak", value: "\(vm.bestStreak)🔥",        icon: "flame",            color: DesignSystem.Colors.amber)
+                CompletedStatCard(label: "Correct",     value: "\(vm.correctCount)",         icon: "checkmark.circle", color: DesignSystem.Colors.correct)
             }
         }
     }
@@ -807,9 +890,8 @@ public struct QuizView: View {
         return HStack(spacing: 6) {
             Image(systemName: "graduationcap.fill")
             Text(vm.session.masteryLevel.localizedLabel)
-                .fontWeight(.semibold)
         }
-        .font(.subheadline)
+        .font(DesignSystem.Typography.bodyLabel)
         .padding(.horizontal, 18)
         .padding(.vertical, 8)
         .background(mColor.opacity(0.15), in: Capsule())
@@ -822,11 +904,11 @@ public struct QuizView: View {
                 onDone?()
             } label: {
                 Text("Back to The Shed")
-                    .font(.headline)
+                    .font(DesignSystem.Typography.screenTitle)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 16)
-                    .background(DesignSystem.Colors.cherry, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
                     .foregroundStyle(.white)
+                    .background(DesignSystem.Gradients.primary, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
             }
             .buttonStyle(.plain)
             .padding(.horizontal, 20)
@@ -836,34 +918,44 @@ public struct QuizView: View {
                     onViewProgress?()
                 } label: {
                     Label("View Journey", systemImage: "chart.bar.fill")
-                        .font(.subheadline.weight(.semibold))
+                        .font(DesignSystem.Typography.bodyLabel)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 12)
+                        .foregroundStyle(DesignSystem.Colors.cherry)
+                        .background(DesignSystem.Colors.surface, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: DesignSystem.Radius.md)
+                                .stroke(DesignSystem.Colors.border, lineWidth: 1)
+                        )
                 }
-                .buttonStyle(.bordered)
-                .tint(DesignSystem.Colors.cherry)
+                .buttonStyle(.plain)
                 .padding(.leading, 20)
 
                 Button {
                     onRepeat?()
                 } label: {
                     Label("Repeat", systemImage: "arrow.counterclockwise")
-                        .font(.subheadline.weight(.semibold))
+                        .font(DesignSystem.Typography.bodyLabel)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 12)
+                        .foregroundStyle(DesignSystem.Colors.correct)
+                        .background(DesignSystem.Colors.surface, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: DesignSystem.Radius.md)
+                                .stroke(DesignSystem.Colors.border, lineWidth: 1)
+                        )
                 }
-                .buttonStyle(.bordered)
-                .tint(DesignSystem.Colors.correct)
+                .buttonStyle(.plain)
                 .padding(.trailing, 20)
             }
 
             if vm.wasDiscarded {
                 Label("Session deleted", systemImage: "trash")
-                    .font(.caption)
+                    .font(DesignSystem.Typography.smallLabel)
                     .foregroundStyle(DesignSystem.Colors.text2)
             } else {
                 Label("Session saved to Journey", systemImage: "checkmark.circle")
-                    .font(.caption)
+                    .font(DesignSystem.Typography.smallLabel)
                     .foregroundStyle(DesignSystem.Colors.text2)
             }
         }
@@ -878,7 +970,7 @@ public struct QuizView: View {
                         vm.submit(detectedNote: q.note)
                     } label: {
                         Label("Correct", systemImage: "checkmark")
-                            .font(.subheadline.weight(.semibold))
+                            .font(DesignSystem.Typography.bodyLabel)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 13)
                             .background(DesignSystem.Colors.cherry,
@@ -892,18 +984,18 @@ public struct QuizView: View {
                         vm.submit(detectedNote: wrong)
                     } label: {
                         Label("Wrong", systemImage: "xmark")
-                            .font(.subheadline.weight(.semibold))
+                            .font(DesignSystem.Typography.bodyLabel)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 13)
                             .background(DesignSystem.Colors.surface,
                                         in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
-                            .foregroundStyle(.red)
+                            .foregroundStyle(DesignSystem.Colors.wrong)
                     }
                     .buttonStyle(.plain)
                 }
             }
             Text("Tap Correct if you played it right, Wrong if you didn't.")
-                .font(.caption)
+                .font(DesignSystem.Typography.smallLabel)
                 .foregroundStyle(DesignSystem.Colors.text2)
                 .multilineTextAlignment(.center)
         }
@@ -916,7 +1008,7 @@ public struct QuizView: View {
                 Image(systemName: "hand.tap.fill")
                     .foregroundStyle(DesignSystem.Colors.cherry)
                 Text("Tap the fretboard where you think this note is.")
-                    .font(.subheadline)
+                    .font(DesignSystem.Typography.bodyLabel)
                     .foregroundStyle(DesignSystem.Colors.text2)
             }
             .frame(maxWidth: .infinity)
@@ -938,15 +1030,15 @@ public struct QuizView: View {
             } else {
                 HStack(spacing: 8) {
                     Image(systemName: detector.isRunning ? "mic.fill" : "mic.slash.fill")
-                        .foregroundStyle(detector.isRunning ? .green : .secondary)
+                        .foregroundStyle(detector.isRunning ? DesignSystem.Colors.correct : .secondary)
                     if let note = detector.detectedNote {
                         Text("Hearing: \(note.displayName(format: noteFormat))")
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(.primary)
+                            .font(DesignSystem.Typography.bodyLabel)
+                            .foregroundStyle(DesignSystem.Colors.text)
                             .contentTransition(.numericText())
                     } else {
                         Text(detector.isRunning ? "Listening…" : "Microphone unavailable")
-                            .font(.subheadline)
+                            .font(DesignSystem.Typography.bodyLabel)
                             .foregroundStyle(DesignSystem.Colors.text2)
                     }
                 }
@@ -965,10 +1057,10 @@ public struct QuizView: View {
     private var micPermissionDeniedBanner: some View {
         VStack(spacing: 8) {
             Label("Microphone access required", systemImage: "mic.slash.fill")
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.red)
+                .font(DesignSystem.Typography.bodyLabel)
+                .foregroundStyle(DesignSystem.Colors.wrong)
             Text("FretShed needs the microphone to hear the notes you play.")
-                .font(.caption)
+                .font(DesignSystem.Typography.smallLabel)
                 .foregroundStyle(DesignSystem.Colors.text2)
                 .multilineTextAlignment(.center)
             Button {
@@ -977,7 +1069,7 @@ public struct QuizView: View {
                 }
             } label: {
                 Label("Open Settings", systemImage: "gear")
-                    .font(.subheadline.weight(.semibold))
+                    .font(DesignSystem.Typography.bodyLabel)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 10)
                     .background(DesignSystem.Colors.cherry,
@@ -988,24 +1080,24 @@ public struct QuizView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(14)
-        .background(Color.red.opacity(0.08),
+        .background(DesignSystem.Colors.wrong.opacity(0.08),
                     in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
     }
 
     private var audioFailureBanner: some View {
         VStack(spacing: 8) {
             Label("Audio detection unavailable", systemImage: "speaker.slash.fill")
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.orange)
+                .font(DesignSystem.Typography.bodyLabel)
+                .foregroundStyle(DesignSystem.Colors.amber)
             Text("Unable to start the microphone. Try restarting the app.")
-                .font(.caption)
+                .font(DesignSystem.Typography.smallLabel)
                 .foregroundStyle(DesignSystem.Colors.text2)
                 .multilineTextAlignment(.center)
             Button {
                 vm.advanceManually()
             } label: {
                 Text("Skip Question")
-                    .font(.subheadline.weight(.semibold))
+                    .font(DesignSystem.Typography.bodyLabel)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 10)
                     .background(DesignSystem.Colors.surface,
@@ -1016,7 +1108,7 @@ public struct QuizView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(14)
-        .background(Color.orange.opacity(0.08),
+        .background(DesignSystem.Colors.amber.opacity(0.08),
                     in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
     }
 
@@ -1024,24 +1116,24 @@ public struct QuizView: View {
         let noteNames = chord.tones.map { $0.displayName(format: noteFormat) }
         return VStack(spacing: 4) {
             HStack(spacing: 6) {
-                Image(systemName: "checkmark.circle.fill").font(.subheadline)
-                Text(chord.label).font(.subheadline.weight(.bold))
+                Image(systemName: "checkmark.circle.fill").font(DesignSystem.Typography.bodyLabel)
+                Text(chord.label).font(DesignSystem.Typography.bodyLabel).bold()
             }
-            .foregroundStyle(.green)
+            .foregroundStyle(DesignSystem.Colors.correct)
             Text(noteNames.joined(separator: " \u{2013} "))
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.primary)
+                .font(DesignSystem.Typography.bodyLabel)
+                .foregroundStyle(DesignSystem.Colors.text)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 12)
-        .background(Color.green.opacity(0.12), in: RoundedRectangle(cornerRadius: 12))
+        .background(DesignSystem.Colors.correct.opacity(0.12), in: RoundedRectangle(cornerRadius: 12))
         .onTapGesture { vm.advanceManually() }
     }
 
     private func feedbackBanner(text: String, color: Color, icon: String) -> some View {
         HStack(spacing: 12) {
-            Image(systemName: icon).font(.title)
-            Text(text).font(.title2.weight(.bold))
+            Image(systemName: icon).font(DesignSystem.Typography.sectionHeader)
+            Text(text).font(DesignSystem.Typography.screenTitle)
         }
         .foregroundStyle(color)
         .frame(maxWidth: .infinity)
@@ -1057,7 +1149,7 @@ public struct QuizView: View {
                     vm.submit(detectedNote: q.note)
                 } label: {
                     Label("Correct", systemImage: "checkmark")
-                        .font(.subheadline.weight(.semibold))
+                        .font(DesignSystem.Typography.bodyLabel)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 13)
                         .background(DesignSystem.Colors.cherry, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
@@ -1069,12 +1161,12 @@ public struct QuizView: View {
                     vm.submit(detectedNote: wrong)
                 } label: {
                     Label("Wrong", systemImage: "xmark")
-                        .font(.subheadline.weight(.semibold))
+                        .font(DesignSystem.Typography.bodyLabel)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 13)
-                        .background(Color(.secondarySystemGroupedBackground),
-                                    in: RoundedRectangle(cornerRadius: 12))
-                        .foregroundStyle(.red)
+                        .background(DesignSystem.Colors.surface,
+                                    in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
+                        .foregroundStyle(DesignSystem.Colors.wrong)
                 }
             }
         }
@@ -1156,9 +1248,9 @@ public struct QuizView: View {
         let icon: String = pct >= 0.9 ? "trophy.fill"
             : pct >= 0.7 ? "target"
             : "hand.thumbsup.fill"
-        let tColor: Color = pct >= 0.9 ? .yellow
-            : pct >= 0.7 ? .orange
-            : .blue
+        let tColor: Color = pct >= 0.9 ? DesignSystem.Colors.honey
+            : pct >= 0.7 ? DesignSystem.Colors.amber
+            : DesignSystem.Colors.cherry
 
         return VStack(spacing: 6) {
             Image(systemName: icon)
@@ -1264,8 +1356,8 @@ public struct QuizView: View {
     /// Quick stats row: Attempts + Best Streak.
     private var assessmentQuickStats: some View {
         LazyVGrid(columns: [.init(), .init()], spacing: 12) {
-            CompletedStatCard(label: "Attempts", value: "\(vm.attemptCount)", icon: "list.number", color: .blue)
-            CompletedStatCard(label: "Best Streak", value: "\(vm.bestStreak)🔥", icon: "flame.fill", color: .orange)
+            CompletedStatCard(label: "Attempts", value: "\(vm.attemptCount)", icon: "list.number", color: DesignSystem.Colors.cherry)
+            CompletedStatCard(label: "Best Streak", value: "\(vm.bestStreak)🔥", icon: "flame.fill", color: DesignSystem.Colors.amber)
         }
     }
 
@@ -1282,12 +1374,17 @@ public struct QuizView: View {
             }
         } label: {
             Label("Send Diagnostic Report", systemImage: "arrow.up.doc")
-                .font(.subheadline.weight(.semibold))
+                .font(DesignSystem.Typography.bodyLabel)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 12)
+                .foregroundStyle(DesignSystem.Colors.amber)
+                .background(DesignSystem.Colors.surface, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
+                .overlay(
+                    RoundedRectangle(cornerRadius: DesignSystem.Radius.md)
+                        .stroke(DesignSystem.Colors.border, lineWidth: 1)
+                )
         }
-        .buttonStyle(.bordered)
-        .tint(DesignSystem.Colors.amber)
+        .buttonStyle(.plain)
     }
 
     // MARK: - Assessment Helpers
@@ -1333,8 +1430,8 @@ public struct QuizView: View {
 
     private var promptColor: Color {
         switch vm.phase {
-        case .feedbackCorrect: return .green
-        case .feedbackWrong:   return .red
+        case .feedbackCorrect: return DesignSystem.Colors.correct
+        case .feedbackWrong:   return DesignSystem.Colors.wrong
         default:               return .primary
         }
     }
@@ -1358,20 +1455,25 @@ private struct CompletedStatCard: View {
     let color: Color
 
     var body: some View {
-        VStack(spacing: 4) {
-            Image(systemName: icon)
-                .font(.title3)
-                .foregroundStyle(color)
+        VStack(spacing: 6) {
+            ZStack {
+                Circle()
+                    .fill(color.opacity(0.15))
+                    .frame(width: 36, height: 36)
+                Image(systemName: icon)
+                    .font(DesignSystem.Typography.bodyLabel)
+                    .foregroundStyle(color)
+            }
             Text(value)
-                .font(.title2.bold())
-                .monospacedDigit()
+                .font(DesignSystem.Typography.dataDisplay)
+                .foregroundStyle(DesignSystem.Colors.text)
             Text(label)
-                .font(.caption)
+                .font(DesignSystem.Typography.smallLabel)
                 .foregroundStyle(DesignSystem.Colors.text2)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 14)
-        .background(DesignSystem.Colors.surface, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
+        .woodshopCard()
     }
 }
 

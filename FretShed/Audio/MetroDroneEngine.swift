@@ -60,6 +60,9 @@ private func droneRenderBlock(
             state.phase0 = 0
             state.phase1 = 0
             state.phase2 = 0
+            state.warmPhase0 = 0
+            state.warmPhase1 = 0
+            state.warmPhase2 = 0
             state.lfoPhase = 0
             state.lpfState = 0
             state.needsPhaseReset = false
@@ -88,6 +91,16 @@ private func droneRenderBlock(
         let inc2 = twoPi * f2 / sampleRate
 
         let detuneFactor = 1.0011552453009332 // pow(2.0, 2.0/1200.0) — +2 cents, precomputed
+        let warmDetuneFactor = 1.004050       // pow(2.0, 7.0/1200.0) — +7 cents for audible chorus
+
+        // Warm detuned oscillator state (always on)
+        let warmGainVal = state.warmGain
+        var wp0 = state.warmPhase0
+        var wp1 = state.warmPhase1
+        var wp2 = state.warmPhase2
+        let wInc0 = twoPi * f0 * warmDetuneFactor / sampleRate
+        let wInc1 = twoPi * f1 * warmDetuneFactor / sampleRate
+        let wInc2 = twoPi * f2 * warmDetuneFactor / sampleRate
         let chorusFactor = 1.002              // +3.5 cents — piano chorus detune
         let inharmonicity = 0.0003            // B coefficient for piano wire stiffness
         let lfoInc = twoPi * state.lfoRateHz / sampleRate
@@ -170,6 +183,24 @@ private func droneRenderBlock(
                 if p2 > twoPi { p2 -= twoPi }
             }
 
+            // Advance warm phases (always, to avoid click on toggle)
+            var warmSample: Double = 0
+            if voices >= 1 {
+                warmSample += sin(wp0)
+                wp0 += wInc0
+                if wp0 > twoPi { wp0 -= twoPi }
+            }
+            if voices >= 2 {
+                warmSample += sin(wp1)
+                wp1 += wInc1
+                if wp1 > twoPi { wp1 -= twoPi }
+            }
+            if voices >= 3 {
+                warmSample += sin(wp2)
+                wp2 += wInc2
+                if wp2 > twoPi { wp2 -= twoPi }
+            }
+
             // Normalize (account for additional harmonic energy in rich/piano mode)
             let vCount = Double(max(voices, 1))
             let normalizer: Double
@@ -179,6 +210,9 @@ private func droneRenderBlock(
             default: normalizer = vCount         // pure
             }
             sample /= normalizer
+
+            // Mix warm detuned oscillator AFTER normalizer so it isn't crushed
+            sample += (warmSample / vCount) * Double(warmGainVal)
 
             // Apply 1-pole LPF in rich/piano mode to soften harsh high partials
             var outSample = Float(sample)
@@ -209,6 +243,9 @@ private func droneRenderBlock(
         state.phase0 = p0
         state.phase1 = p1
         state.phase2 = p2
+        state.warmPhase0 = wp0
+        state.warmPhase1 = wp1
+        state.warmPhase2 = wp2
         state.fadeGain = fadeGain
         state.lfoPhase = lfoPhase
         state.lpfState = lpfState
@@ -270,6 +307,8 @@ final class MetroDroneEngine {
     private var clickPlayer: AVAudioPlayerNode?
     private var cuePlayer: AVAudioPlayerNode?
     private var droneSourceNode: AVAudioSourceNode?
+    private var droneMixer: AVAudioMixerNode?
+    private var droneReverb: AVAudioUnitReverb?
 
     // MARK: Click Buffers
 
@@ -314,10 +353,13 @@ final class MetroDroneEngine {
         /// LFO rate in Hz. Default 1.5 Hz (free-running).
         /// Set to BPM/60 when metronome is playing to sync the LFO
         /// amplitude wobble with the beat.
-        var lfoRateHz: Double = 1.5
+        var lfoRateHz: Double = 0.9
         /// When true, the render block resets lfoPhase to 0 so the
         /// LFO peak aligns with the metronome beat.
         var needsLFOPhaseReset: Bool = false
+
+        // Warm effect — always on
+        var warmGain: Float = 0.45  // mix level for detuned oscillator (relative to dry)
 
         // Render — written by audio thread only
         var phase0: Double = 0
@@ -326,6 +368,10 @@ final class MetroDroneEngine {
         var fadeGain: Float = 0.0
         var lfoPhase: Double = 0
         var lpfState: Float = 0
+        // Warm detuned oscillator phases (audio thread only)
+        var warmPhase0: Double = 0
+        var warmPhase1: Double = 0
+        var warmPhase2: Double = 0
 
         // 50ms fade at 44100 Hz
         let fadeIncrement: Float = 1.0 / Float(44_100.0 * 0.05)
@@ -374,12 +420,24 @@ final class MetroDroneEngine {
         let renderBlock = droneRenderBlock(state: droneState, sampleRate: Self.sampleRate)
         let srcNode = AVAudioSourceNode(format: monoFormat, renderBlock: renderBlock)
         eng.attach(srcNode)
-        eng.connect(srcNode, to: eng.mainMixerNode, format: monoFormat)
+
+        // Drone sub-mixer + reverb: srcNode → droneMixer → droneReverb → mainMixer
+        let mixer = AVAudioMixerNode()
+        eng.attach(mixer)
+        let reverb = AVAudioUnitReverb()
+        reverb.loadFactoryPreset(.smallRoom)
+        reverb.wetDryMix = 25  // subtle room ambience, always on
+        eng.attach(reverb)
+        eng.connect(srcNode, to: mixer, format: monoFormat)
+        eng.connect(mixer, to: reverb, format: monoFormat)
+        eng.connect(reverb, to: eng.mainMixerNode, format: monoFormat)
 
         self.engine = eng
         self.clickPlayer = player
         self.cuePlayer = cue
         self.droneSourceNode = srcNode
+        self.droneMixer = mixer
+        self.droneReverb = reverb
 
         // Build click buffers (noise + tonal synthesis)
         accentBuffer = makeClickBuffer(
@@ -438,12 +496,16 @@ final class MetroDroneEngine {
         cuePlayer?.stop()
         engine?.stop()
         if let srcNode = droneSourceNode { engine?.detach(srcNode) }
+        if let mixer = droneMixer { engine?.detach(mixer) }
+        if let reverb = droneReverb { engine?.detach(reverb) }
         if let player = clickPlayer { engine?.detach(player) }
         if let cue = cuePlayer { engine?.detach(cue) }
         engine = nil
         clickPlayer = nil
         cuePlayer = nil
         droneSourceNode = nil
+        droneMixer = nil
+        droneReverb = nil
         accentBuffer = nil
         normalBuffer = nil
         subClickBuffer = nil
@@ -472,15 +534,11 @@ final class MetroDroneEngine {
         clickPlayer?.stop()
         cuePlayer?.stop()
         engine?.stop()
-        if let srcNode = droneSourceNode {
-            engine?.detach(srcNode)
-        }
-        if let player = clickPlayer {
-            engine?.detach(player)
-        }
-        if let cue = cuePlayer {
-            engine?.detach(cue)
-        }
+        if let srcNode = droneSourceNode { engine?.detach(srcNode) }
+        if let mixer = droneMixer { engine?.detach(mixer) }
+        if let reverb = droneReverb { engine?.detach(reverb) }
+        if let player = clickPlayer { engine?.detach(player) }
+        if let cue = cuePlayer { engine?.detach(cue) }
         NotificationCenter.default.removeObserver(
             self,
             name: AVAudioSession.routeChangeNotification,
@@ -490,6 +548,8 @@ final class MetroDroneEngine {
         clickPlayer = nil
         cuePlayer = nil
         droneSourceNode = nil
+        droneMixer = nil
+        droneReverb = nil
         accentBuffer = nil
         normalBuffer = nil
         subClickBuffer = nil
@@ -705,10 +765,17 @@ final class MetroDroneEngine {
         volume: Float
     ) {
         guard isDronePlaying else { return }
-        let oldVoiceCount = droneState.voiceCount
-        let intervals = voicing.intervals
-        applyDroneConfig(key: key, octave: octave, voicing: voicing, sound: sound, volume: volume,
-                         resetPhases: intervals.count != oldVoiceCount)
+        // Crossfade: fade out → apply new config → fade back in
+        // This eliminates clicks/pops when switching voicing or sound
+        droneState.targetFadeGain = 0.0
+        Task { [weak self] in
+            try? await Task.sleep(for: .milliseconds(60))
+            guard let self else { return }
+            let resetPhases = voicing.intervals.count != self.droneState.voiceCount
+            self.applyDroneConfig(key: key, octave: octave, voicing: voicing, sound: sound,
+                                  volume: volume, resetPhases: resetPhases)
+            self.droneState.targetFadeGain = 1.0
+        }
     }
 
     func updateDroneVolume(_ volume: Float) {
@@ -719,7 +786,7 @@ final class MetroDroneEngine {
     /// `bpm / 60.0` so the LFO wobble syncs with the beat. When the
     /// metronome stops, pass `nil` to revert to the default 1.5 Hz.
     func updateDroneLFORate(bpm: Double?) {
-        droneState.lfoRateHz = bpm.map { $0 / 60.0 } ?? 1.5
+        droneState.lfoRateHz = bpm.map { $0 / 60.0 } ?? 0.9
         // Reset phase so LFO peak aligns with the beat
         if bpm != nil {
             droneState.needsLFOPhaseReset = true

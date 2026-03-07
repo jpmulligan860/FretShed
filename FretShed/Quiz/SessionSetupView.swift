@@ -51,19 +51,26 @@ public struct SessionSetupView: View {
     }
 
     public var body: some View {
-        NavigationStack {
+        VStack(spacing: 0) {
+            // Custom header matching app-wide style
+            HStack {
+                Text("My Custom Session")
+                    .font(DesignSystem.Typography.screenTitle)
+                    .foregroundStyle(DesignSystem.Colors.text)
+                Spacer()
+                Button("Cancel") { dismiss() }
+                    .font(DesignSystem.Typography.bodyLabel)
+                    .foregroundStyle(DesignSystem.Colors.cherry)
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 16)
+            .padding(.bottom, 8)
+
             Group {
                 if isWide {
                     wideLayout
                 } else {
                     compactLayout
-                }
-            }
-            .navigationTitle("New Session")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Cancel") { dismiss() }
                 }
             }
             .sheet(isPresented: $showPracticeModeInfo) {
@@ -84,6 +91,7 @@ public struct SessionSetupView: View {
                 }
             }
         }
+        .background(DesignSystem.Colors.background)
     }
 
     // MARK: - Compact Layout (portrait iPhone)
@@ -91,58 +99,65 @@ public struct SessionSetupView: View {
     private var compactLayout: some View {
         VStack(spacing: 0) {
             ScrollView {
-                VStack(spacing: 0) {
-                    gameModeSection
-                        .padding(.top, 20)
-
-                    Divider().padding(.vertical, 16)
-
-                    sessionLengthSection
-
-                    Divider().padding(.vertical, 16)
-
-                    focusModeSection
-
-                    Divider().padding(.vertical, 16)
-
-                    if selectedFocusMode == .singleString {
-                        stringPickerSection
-                        Divider().padding(.vertical, 16)
+                VStack(spacing: 16) {
+                    // Practice Mode card
+                    VStack(spacing: 12) {
+                        gameModeSection
+                        sessionLengthSection
                     }
+                    .padding(.vertical, 16)
+                    .woodshopCard()
+                    .padding(.horizontal, 20)
 
-                    if selectedFocusMode == .singleNote {
-                        notePickerSection
-                        Divider().padding(.vertical, 16)
-                    }
+                    // Focus Mode card
+                    VStack(spacing: 12) {
+                        focusModeSection
 
-                    if selectedFocusMode == .fretboardPosition {
-                        fretPickerSection
-                        Divider().padding(.vertical, 16)
-                    }
-
-                    if selectedFocusMode == .chordProgression {
-                        chordProgressionSection
-                        Divider().padding(.vertical, 16)
-                    }
-
-                    if isCircleMode {
-                        circleConstraintSection
-                        Divider().padding(.vertical, 16)
-
-                        if circleConstraint == .strings {
+                        if selectedFocusMode == .singleString {
                             stringPickerSection
-                            Divider().padding(.vertical, 16)
                         }
 
-                        if circleConstraint == .position {
+                        if selectedFocusMode == .singleNote {
+                            notePickerSection
+                        }
+
+                        if selectedFocusMode == .fretboardPosition {
                             fretPickerSection
-                            Divider().padding(.vertical, 16)
+                        }
+
+                        if selectedFocusMode == .chordProgression {
+                            chordProgressionSection
+                        }
+
+                        if isCircleMode {
+                            circleConstraintSection
+
+                            if circleConstraint == .strings {
+                                stringPickerSection
+                            }
+
+                            if circleConstraint == .position {
+                                fretPickerSection
+                            }
                         }
                     }
+                    .padding(.vertical, 16)
+                    .woodshopCard()
+                    .padding(.horizontal, 20)
 
-                    descriptionCard
-                        .animation(.easeInOut(duration: 0.2), value: selectedFocusMode)
+                    // Summary
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Your Custom Session:")
+                            .font(DesignSystem.Typography.sectionHeader)
+                            .foregroundStyle(DesignSystem.Colors.text)
+                            .padding(.horizontal, 20)
+
+                        descriptionCard
+                    }
+                    .animation(.easeInOut(duration: 0.2), value: selectedFocusMode)
                 }
+                .padding(.top, 20)
+                .padding(.bottom, 16)
             }
 
             startButton
@@ -156,58 +171,65 @@ public struct SessionSetupView: View {
         HStack(alignment: .top, spacing: 0) {
             // Left column: mode pickers
             ScrollView {
-                VStack(spacing: 0) {
-                    gameModeSection
-                        .padding(.top, 20)
-
-                    Divider().padding(.vertical, 16)
-
-                    sessionLengthSection
-
-                    Divider().padding(.vertical, 16)
-
-                    focusModeSection
-
-                    Divider().padding(.vertical, 16)
-
-                    if selectedFocusMode == .singleString {
-                        stringPickerSection
-                        Divider().padding(.vertical, 16)
+                VStack(spacing: 16) {
+                    // Practice Mode card
+                    VStack(spacing: 12) {
+                        gameModeSection
+                        sessionLengthSection
                     }
+                    .padding(.vertical, 16)
+                    .woodshopCard()
+                    .padding(.horizontal, 20)
 
-                    if selectedFocusMode == .singleNote {
-                        notePickerSection
-                        Divider().padding(.vertical, 16)
-                    }
+                    // Focus Mode card
+                    VStack(spacing: 12) {
+                        focusModeSection
 
-                    if selectedFocusMode == .fretboardPosition {
-                        fretPickerSection
-                        Divider().padding(.vertical, 16)
-                    }
-
-                    if selectedFocusMode == .chordProgression {
-                        chordProgressionSection
-                        Divider().padding(.vertical, 16)
-                    }
-
-                    if isCircleMode {
-                        circleConstraintSection
-                        Divider().padding(.vertical, 16)
-
-                        if circleConstraint == .strings {
+                        if selectedFocusMode == .singleString {
                             stringPickerSection
-                            Divider().padding(.vertical, 16)
                         }
 
-                        if circleConstraint == .position {
+                        if selectedFocusMode == .singleNote {
+                            notePickerSection
+                        }
+
+                        if selectedFocusMode == .fretboardPosition {
                             fretPickerSection
-                            Divider().padding(.vertical, 16)
+                        }
+
+                        if selectedFocusMode == .chordProgression {
+                            chordProgressionSection
+                        }
+
+                        if isCircleMode {
+                            circleConstraintSection
+
+                            if circleConstraint == .strings {
+                                stringPickerSection
+                            }
+
+                            if circleConstraint == .position {
+                                fretPickerSection
+                            }
                         }
                     }
+                    .padding(.vertical, 16)
+                    .woodshopCard()
+                    .padding(.horizontal, 20)
 
-                    descriptionCard
-                        .animation(.easeInOut(duration: 0.2), value: selectedFocusMode)
+                    // Summary
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Your Custom Session:")
+                            .font(DesignSystem.Typography.sectionHeader)
+                            .foregroundStyle(DesignSystem.Colors.text)
+                            .padding(.horizontal, 20)
+
+                        descriptionCard
+                    }
+                    .animation(.easeInOut(duration: 0.2), value: selectedFocusMode)
                 }
+                .padding(.top, 20)
+                .padding(.bottom, 16)
             }
             .frame(maxWidth: .infinity)
 
@@ -236,7 +258,7 @@ public struct SessionSetupView: View {
                     showFocusModeInfo = true
                 } label: {
                     Image(systemName: "questionmark.circle")
-                        .font(.caption)
+                        .font(DesignSystem.Typography.smallLabel)
                         .foregroundStyle(DesignSystem.Colors.text2)
                 }
             }
@@ -275,7 +297,7 @@ public struct SessionSetupView: View {
                     showPracticeModeInfo = true
                 } label: {
                     Image(systemName: "questionmark.circle")
-                        .font(.caption)
+                        .font(DesignSystem.Typography.smallLabel)
                         .foregroundStyle(DesignSystem.Colors.text2)
                 }
             }
@@ -296,26 +318,70 @@ public struct SessionSetupView: View {
     }
 
     private var descriptionCard: some View {
-        HStack(spacing: 12) {
-            Image(systemName: focusModeIcon(selectedFocusMode))
-                .font(.title2)
-                .foregroundStyle(DesignSystem.Colors.cherry)
-                .frame(width: 36)
+        VStack(spacing: 0) {
+            summaryRow(label: "Practice Mode", value: selectedGameMode.localizedLabel)
+            summaryDivider
+            summaryRow(label: "Questions", value: "\(sessionLength)")
+            summaryDivider
+            summaryRow(label: "Focus", value: selectedFocusMode.localizedLabel)
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text(selectedFocusMode.localizedLabel)
-                    .font(.subheadline.weight(.semibold))
-                Text(focusModeDescription(selectedFocusMode))
-                    .font(.caption)
-                    .foregroundStyle(DesignSystem.Colors.text2)
+            if selectedFocusMode == .singleString {
+                summaryDivider
+                summaryRow(label: "Strings", value: selectedStrings.sorted().map { "Str \($0)" }.joined(separator: ", "))
             }
-            Spacer()
+
+            if selectedFocusMode == .singleNote {
+                summaryDivider
+                summaryRow(label: "Note", value: selectedNote.displayName(format: .sharps))
+            }
+
+            if selectedFocusMode == .fretboardPosition {
+                summaryDivider
+                let frets = selectedFrets.sorted()
+                summaryRow(label: "Frets", value: frets.isEmpty ? "None" : "Frets \(frets.first!)–\(frets.last!)")
+            }
+
+            if selectedFocusMode == .chordProgression {
+                summaryDivider
+                let progName: String = {
+                    guard let idx = selectedPresetIndex,
+                          ChordProgression.presets.indices.contains(idx) else { return "Custom" }
+                    return ChordProgression.presets[idx].name
+                }()
+                summaryRow(label: "Progression", value: "\(progressionKey.displayName(format: .sharps)) \(progName)")
+            }
+
+            if isCircleMode {
+                summaryDivider
+                summaryRow(label: "Constraint", value: circleConstraint.label)
+            }
         }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 12)
+        .padding(.vertical, 8)
         .background(DesignSystem.Colors.surface,
                     in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
+        .overlay(
+            RoundedRectangle(cornerRadius: DesignSystem.Radius.md)
+                .stroke(DesignSystem.Colors.border, lineWidth: 1)
+        )
         .padding(.horizontal, 20)
+    }
+
+    private func summaryRow(label: String, value: String) -> some View {
+        HStack {
+            Text(label)
+                .font(DesignSystem.Typography.smallLabel)
+                .foregroundStyle(DesignSystem.Colors.text2)
+            Spacer()
+            Text(value)
+                .font(DesignSystem.Typography.bodyLabel)
+                .foregroundStyle(DesignSystem.Colors.text)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
+    }
+
+    private var summaryDivider: some View {
+        Divider().padding(.horizontal, 16)
     }
 
     private var isCircleMode: Bool {
@@ -346,7 +412,7 @@ public struct SessionSetupView: View {
             HStack {
                 Image(systemName: "play.fill")
                 Text("Start Practice")
-                    .fontWeight(.semibold)
+                    .font(DesignSystem.Typography.bodyLabel)
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 16)
@@ -367,7 +433,7 @@ public struct SessionSetupView: View {
                 Button("All") {
                     selectedStrings = [1, 2, 3, 4, 5, 6]
                 }
-                .font(.caption.weight(.semibold))
+                .font(DesignSystem.Typography.smallLabel)
                 .foregroundStyle(DesignSystem.Colors.cherry)
             }
             .padding(.horizontal, 20)
@@ -387,9 +453,9 @@ public struct SessionSetupView: View {
                     } label: {
                         VStack(spacing: 2) {
                             Text("\(string)")
-                                .font(.subheadline.weight(isSelected ? .semibold : .regular))
+                                .font(DesignSystem.Typography.bodyLabel)
                             Text(Self.stringNoteName(string))
-                                .font(.caption2.weight(.semibold))
+                                .font(DesignSystem.Typography.smallLabel)
                                 .foregroundStyle(isSelected ? .white.opacity(0.8) : .secondary)
                         }
                         .frame(maxWidth: .infinity)
@@ -408,7 +474,7 @@ public struct SessionSetupView: View {
 
             // Summary label showing which strings are active
             Text(selectedStringsSummary)
-                .font(.caption)
+                .font(DesignSystem.Typography.smallLabel)
                 .foregroundStyle(DesignSystem.Colors.text2)
                 .padding(.horizontal, 20)
                 .animation(.easeInOut(duration: 0.2), value: selectedStrings)
@@ -449,8 +515,7 @@ public struct SessionSetupView: View {
                             selectedNote = note
                         } label: {
                             Text(note.displayName(format: .sharps))
-                                .font(.subheadline)
-                                .fontWeight(selectedNote == note ? .semibold : .regular)
+                                .font(DesignSystem.Typography.bodyLabel)
                                 .padding(.horizontal, 14)
                                 .padding(.vertical, 8)
                                 .background(
@@ -480,14 +545,14 @@ public struct SessionSetupView: View {
                     if sessionLength > 5 { sessionLength -= 1 }
                 } label: {
                     Image(systemName: "minus.circle.fill")
-                        .font(.title2)
+                        .font(DesignSystem.Typography.screenTitle)
                         .foregroundStyle(sessionLength > 5 ? DesignSystem.Colors.cherry : .secondary)
                 }
                 .buttonStyle(.plain)
                 .disabled(sessionLength <= 5)
 
                 Text("\(sessionLength) questions")
-                    .font(.subheadline.weight(.semibold))
+                    .font(DesignSystem.Typography.bodyLabel)
                     .monospacedDigit()
                     .frame(minWidth: 110)
                     .multilineTextAlignment(.center)
@@ -496,7 +561,7 @@ public struct SessionSetupView: View {
                     if sessionLength < 100 { sessionLength += 1 }
                 } label: {
                     Image(systemName: "plus.circle.fill")
-                        .font(.title2)
+                        .font(DesignSystem.Typography.screenTitle)
                         .foregroundStyle(sessionLength < 100 ? DesignSystem.Colors.cherry : .secondary)
                 }
                 .buttonStyle(.plain)
@@ -506,7 +571,7 @@ public struct SessionSetupView: View {
             .animation(.easeInOut(duration: 0.15), value: sessionLength)
 
             Text(sessionLengthHint)
-                .font(.caption)
+                .font(DesignSystem.Typography.smallLabel)
                 .foregroundStyle(DesignSystem.Colors.muted)
                 .padding(.horizontal, 20)
         }
@@ -527,10 +592,10 @@ public struct SessionSetupView: View {
                     .foregroundStyle(DesignSystem.Colors.text2)
                 Spacer()
                 Button("Open") { selectedFrets = Set(0...4) }
-                    .font(.caption.weight(.semibold))
+                    .font(DesignSystem.Typography.smallLabel)
                     .foregroundStyle(DesignSystem.Colors.cherry)
                 Button("All") { selectedFrets = Set(0...12) }
-                    .font(.caption.weight(.semibold))
+                    .font(DesignSystem.Typography.smallLabel)
                     .foregroundStyle(DesignSystem.Colors.cherry)
             }
             .padding(.horizontal, 20)
@@ -550,13 +615,13 @@ public struct SessionSetupView: View {
                         } label: {
                             VStack(spacing: 2) {
                                 Text(fret == 0 ? "Open" : "\(fret)")
-                                    .font(.subheadline.weight(isSelected ? .semibold : .regular))
+                                    .font(DesignSystem.Typography.bodyLabel)
                                     .monospacedDigit()
                                 if fret > 0 {
                                     // Position marker dot indicator
                                     Circle()
                                         .fill(Self.isMarkerFret(fret)
-                                              ? (isSelected ? Color.white.opacity(0.7) : DesignSystem.Colors.cherry.opacity(0.5))
+                                              ? (isSelected ? DesignSystem.Colors.text.opacity(0.7) : DesignSystem.Colors.cherry.opacity(0.5))
                                               : Color.clear)
                                         .frame(width: 5, height: 5)
                                 } else {
@@ -580,7 +645,7 @@ public struct SessionSetupView: View {
             }
 
             Text(selectedFretsSummary)
-                .font(.caption)
+                .font(DesignSystem.Typography.smallLabel)
                 .foregroundStyle(DesignSystem.Colors.text2)
                 .padding(.horizontal, 20)
                 .animation(.easeInOut(duration: 0.2), value: selectedFrets)
@@ -622,7 +687,7 @@ public struct SessionSetupView: View {
                     showChordProgressionInfo = true
                 } label: {
                     Image(systemName: "questionmark.circle")
-                        .font(.caption)
+                        .font(DesignSystem.Typography.smallLabel)
                         .foregroundStyle(DesignSystem.Colors.text2)
                 }
             }
@@ -631,7 +696,7 @@ public struct SessionSetupView: View {
             // Key picker
             VStack(alignment: .leading, spacing: 6) {
                 Text("Key")
-                    .font(.caption)
+                    .font(DesignSystem.Typography.smallLabel)
                     .foregroundStyle(DesignSystem.Colors.text2)
                     .padding(.horizontal, 20)
                 ScrollView(.horizontal, showsIndicators: false) {
@@ -641,7 +706,7 @@ public struct SessionSetupView: View {
                                 progressionKey = note
                             } label: {
                                 Text(note.sharpName)
-                                    .font(.subheadline.weight(progressionKey == note ? .semibold : .regular))
+                                    .font(DesignSystem.Typography.bodyLabel)
                                     .padding(.horizontal, 12)
                                     .padding(.vertical, 7)
                                     .background(
@@ -661,7 +726,7 @@ public struct SessionSetupView: View {
             // Chord Tones picker
             VStack(alignment: .leading, spacing: 6) {
                 Text("Chord Tones")
-                    .font(.caption)
+                    .font(DesignSystem.Typography.smallLabel)
                     .foregroundStyle(DesignSystem.Colors.text2)
                     .padding(.horizontal, 20)
                 ScrollView(.horizontal, showsIndicators: false) {
@@ -671,7 +736,7 @@ public struct SessionSetupView: View {
                                 chordToneSelection = selection
                             } label: {
                                 Text(selection.label)
-                                    .font(.subheadline.weight(chordToneSelection == selection ? .semibold : .regular))
+                                    .font(DesignSystem.Typography.bodyLabel)
                                     .padding(.horizontal, 12)
                                     .padding(.vertical, 7)
                                     .background(
@@ -692,7 +757,7 @@ public struct SessionSetupView: View {
             VStack(alignment: .leading, spacing: 6) {
                 HStack {
                     Text("Position")
-                        .font(.caption)
+                        .font(DesignSystem.Typography.smallLabel)
                         .foregroundStyle(DesignSystem.Colors.text2)
                     Spacer()
                     Toggle("", isOn: $chordPositionEnabled)
@@ -708,7 +773,7 @@ public struct SessionSetupView: View {
             // String group constraint
             VStack(alignment: .leading, spacing: 6) {
                 Text("String Group")
-                    .font(.caption)
+                    .font(DesignSystem.Typography.smallLabel)
                     .foregroundStyle(DesignSystem.Colors.text2)
                     .padding(.horizontal, 20)
                 ScrollView(.horizontal, showsIndicators: false) {
@@ -719,7 +784,7 @@ public struct SessionSetupView: View {
                                 chordStringGroup = option.strings
                             } label: {
                                 Text(option.label)
-                                    .font(.subheadline.weight(isSelected ? .semibold : .regular))
+                                    .font(DesignSystem.Typography.bodyLabel)
                                     .padding(.horizontal, 12)
                                     .padding(.vertical, 7)
                                     .background(
@@ -744,7 +809,7 @@ public struct SessionSetupView: View {
                     } label: {
                         VStack(alignment: .leading, spacing: 2) {
                             Text(preset.name)
-                                .font(.caption.weight(selectedPresetIndex == idx ? .semibold : .regular))
+                                .font(DesignSystem.Typography.smallLabel)
                                 .lineLimit(1)
                                 .minimumScaleFactor(0.8)
                             Text(preset.transposed(toKey: progressionKey).shortDescription)
@@ -772,7 +837,7 @@ public struct SessionSetupView: View {
                 } label: {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Custom")
-                            .font(.caption.weight(selectedPresetIndex == nil ? .semibold : .regular))
+                            .font(DesignSystem.Typography.smallLabel)
                         Text("Build your own")
                             .font(.system(size: 9))
                             .foregroundStyle(selectedPresetIndex == nil ? .white.opacity(0.8) : .secondary)
@@ -824,7 +889,7 @@ public struct SessionSetupView: View {
                         customProgression.chords.removeLast()
                     } label: {
                         Image(systemName: "minus.circle.fill")
-                            .foregroundStyle(.red)
+                            .foregroundStyle(DesignSystem.Colors.wrong)
                     }
                     .buttonStyle(.plain)
                 }
@@ -986,11 +1051,10 @@ private struct FocusModeChip: View {
         Button(action: onTap) {
             HStack(spacing: 4) {
                 Text(mode.localizedLabel)
-                    .font(.subheadline)
-                    .fontWeight(isSelected ? .semibold : .regular)
+                    .font(DesignSystem.Typography.bodyLabel)
                 if isPremium {
                     Image(systemName: "lock.fill")
-                        .font(.caption2)
+                        .font(DesignSystem.Typography.smallLabel)
                         .foregroundStyle(isSelected ? .white.opacity(0.7) : DesignSystem.Colors.muted)
                 }
             }
@@ -1029,20 +1093,20 @@ private struct PracticeModeInfoSheet: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
                     Text("Choose how you want to be challenged during your practice session.")
-                        .font(.subheadline)
+                        .font(DesignSystem.Typography.bodyLabel)
                         .foregroundStyle(DesignSystem.Colors.text2)
 
                     ForEach(modes, id: \.0) { name, icon, color, desc in
                         HStack(alignment: .top, spacing: 12) {
                             Image(systemName: icon)
-                                .font(.title3)
+                                .font(DesignSystem.Typography.sectionHeader)
                                 .foregroundStyle(color)
                                 .frame(width: 28, height: 28)
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(name)
-                                    .font(.subheadline.weight(.semibold))
+                                    .font(DesignSystem.Typography.bodyLabel)
                                 Text(desc)
-                                    .font(.caption)
+                                    .font(DesignSystem.Typography.smallLabel)
                                     .foregroundStyle(DesignSystem.Colors.text2)
                             }
                         }
@@ -1075,7 +1139,7 @@ private struct ChordProgressionInfoSheet: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
                     Text("Chord Progression mode trains you to find chord tones on the fretboard by drilling through each chord in your chosen progression.")
-                        .font(.subheadline)
+                        .font(DesignSystem.Typography.bodyLabel)
                         .foregroundStyle(DesignSystem.Colors.text2)
 
                     infoBlock(
@@ -1114,7 +1178,7 @@ private struct ChordProgressionInfoSheet: View {
                     )
 
                     Text("Tip: Try different keys to practice the same shapes in new positions on the neck.")
-                        .font(.caption)
+                        .font(DesignSystem.Typography.smallLabel)
                         .foregroundStyle(DesignSystem.Colors.muted)
                         .padding(.top, 4)
                 }
@@ -1136,14 +1200,14 @@ private struct ChordProgressionInfoSheet: View {
     private func infoBlock(title: String, icon: String, color: Color, text: String) -> some View {
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: icon)
-                .font(.title3)
+                .font(DesignSystem.Typography.sectionHeader)
                 .foregroundStyle(color)
                 .frame(width: 28, height: 28)
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.subheadline.weight(.semibold))
+                    .font(DesignSystem.Typography.bodyLabel)
                 Text(text)
-                    .font(.caption)
+                    .font(DesignSystem.Typography.smallLabel)
                     .foregroundStyle(DesignSystem.Colors.text2)
             }
         }
@@ -1180,20 +1244,20 @@ private struct FocusModeInfoSheet: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
                     Text("Focus modes determine which notes are presented during your practice session.")
-                        .font(.subheadline)
+                        .font(DesignSystem.Typography.bodyLabel)
                         .foregroundStyle(DesignSystem.Colors.text2)
 
                     ForEach(modes, id: \.0) { name, icon, color, desc in
                         HStack(alignment: .top, spacing: 12) {
                             Image(systemName: icon)
-                                .font(.title3)
+                                .font(DesignSystem.Typography.sectionHeader)
                                 .foregroundStyle(color)
                                 .frame(width: 28, height: 28)
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(name)
-                                    .font(.subheadline.weight(.semibold))
+                                    .font(DesignSystem.Typography.bodyLabel)
                                 Text(desc)
-                                    .font(.caption)
+                                    .font(DesignSystem.Typography.smallLabel)
                                     .foregroundStyle(DesignSystem.Colors.text2)
                             }
                         }
@@ -1225,8 +1289,7 @@ private struct GameModeChip: View {
     var body: some View {
         Button(action: onTap) {
             Text(mode.localizedLabel)
-                .font(.subheadline)
-                .fontWeight(isSelected ? .semibold : .regular)
+                .font(DesignSystem.Typography.bodyLabel)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 10)
                 .background(

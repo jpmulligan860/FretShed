@@ -48,6 +48,7 @@ final class QuizLaunchCoordinator {
     // MARK: Calibration
 
     var showCalibration = false
+    var calibrationForceNewProfile = false
     var showCalibrationGate = false
 
     // MARK: Last Completed Session
@@ -55,6 +56,10 @@ final class QuizLaunchCoordinator {
     /// The most recently completed session — updated when any quiz finishes.
     /// PracticeHomeView reads this for the "Repeat Last" tile and seeds it from DB on first load.
     var lastCompletedSession: Session?
+
+    /// Set to true after a quiz ends so the progress tab reloads fresh data.
+    /// ContentView observes this and triggers a reload on ProgressViewModel.
+    var needsProgressReload = false
 
     // MARK: Internal
 
@@ -157,6 +162,7 @@ final class QuizLaunchCoordinator {
         }
         lastCompletedSession = vm.session
         activeQuizVM = nil
+        needsProgressReload = true
     }
 
     func handleViewProgress(vm: QuizViewModel) {
@@ -167,6 +173,7 @@ final class QuizLaunchCoordinator {
         lastCompletedSession = vm.session
         activeQuizVM = nil
         selectedTab = .progress
+        needsProgressReload = true
     }
 
     func handleQuizRepeat(vm: QuizViewModel) {
@@ -217,6 +224,12 @@ final class QuizLaunchCoordinator {
     }
 
     func handleSetupAudio() {
+        calibrationForceNewProfile = false
+        showCalibration = true
+    }
+
+    func handleCreateNewProfile() {
+        calibrationForceNewProfile = true
         showCalibration = true
     }
 

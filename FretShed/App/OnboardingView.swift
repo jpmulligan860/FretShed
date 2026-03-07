@@ -1,22 +1,18 @@
 // OnboardingView.swift
 // FretShed — App Layer
 //
-// First-launch onboarding: 4 screens.
+// First-launch onboarding: 3 screens.
 //   0 — Welcome
 //   1 — How it works
 //   2 — Baseline selection ("Where are you at?")
-//   3 — Mic permission (explain WHY before triggering system prompt)
 //
-// The audio test screen was removed — the full Audio Calibration flow
-// (accessible from the Practice tab's "Do This First" card) provides a
-// better first-run audio experience with noise measurement and per-string
-// detection testing.
+// Microphone permission is deferred to calibration (when the mic is first needed).
+// Notification permission is disabled for now (NotificationScheduler exists but is not called).
 //
 // Wired via FretShedApp: shown as fullScreenCover when !hasCompletedOnboarding.
 // Setting hasCompletedOnboarding = true (via @AppStorage) dismisses the cover.
 
 import SwiftUI
-import AVFoundation
 
 struct OnboardingView: View {
 
@@ -24,10 +20,9 @@ struct OnboardingView: View {
     private var hasCompletedOnboarding: Bool = false
 
     @State private var currentPage = 0
-    @State private var hasRequestedMicPermission = false
     @State private var selectedBaseline: BaselineLevel?
 
-    private let pageCount = 4
+    private let pageCount = 3
 
     var body: some View {
         ZStack {
@@ -37,12 +32,11 @@ struct OnboardingView: View {
                 welcomePage.tag(0)
                 howItWorksPage.tag(1)
                 baselinePage.tag(2)
-                micPermissionPage.tag(3)
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
             .animation(.easeInOut(duration: 0.3), value: currentPage)
 
-            // ── Top chrome: page dots + skip ────────────────────────
+            // Top chrome: page dots + skip
             VStack {
                 ZStack {
                     pageIndicator
@@ -52,13 +46,13 @@ struct OnboardingView: View {
                         HStack {
                             Spacer()
                             Button("Skip") { complete() }
-                                .font(.subheadline.weight(.semibold))
-                                .foregroundStyle(DesignSystem.Colors.text2)
+                                .font(DesignSystem.Typography.bodyLabel)
+                                .foregroundStyle(DesignSystem.Colors.muted)
                         }
                     }
                 }
                 .padding(.top, 60)
-                .padding(.horizontal, 20)
+                .padding(.horizontal, 24)
 
                 Spacer()
             }
@@ -86,25 +80,38 @@ struct OnboardingView: View {
         VStack(spacing: 0) {
             Spacer()
 
-            Image(systemName: "guitars.fill")
-                .font(.system(size: 80))
-                .foregroundStyle(DesignSystem.Colors.cherry)
-                .padding(.bottom, DesignSystem.Spacing.lg)
+            VStack(spacing: DesignSystem.Spacing.lg) {
+                Image(systemName: "guitars.fill")
+                    .font(.system(size: 72))
+                    .foregroundStyle(DesignSystem.Gradients.sunburst)
 
-            Text("Welcome to\nFretShed")
-                .font(DesignSystem.Typography.display)
-                .multilineTextAlignment(.center)
-                .padding(.bottom, DesignSystem.Spacing.sm)
+                VStack(spacing: DesignSystem.Spacing.sm) {
+                    Text("Welcome to")
+                        .font(DesignSystem.Typography.mediumTitle)
+                        .foregroundStyle(DesignSystem.Colors.text)
 
-            Text("The guitar trainer that actually\ngets your notes right.")
-                .font(.title3)
-                .foregroundStyle(DesignSystem.Colors.text2)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, DesignSystem.Spacing.xl)
+                    Text("FretShed")
+                        .font(DesignSystem.Typography.display)
+                        .foregroundStyle(DesignSystem.Gradients.sunburst)
+                }
+
+                Text("The guitar trainer that actually\ngets your notes right.")
+                    .font(DesignSystem.Typography.tagline)
+                    .foregroundStyle(DesignSystem.Colors.text2)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, DesignSystem.Spacing.lg)
+            }
+            .padding(DesignSystem.Spacing.xl)
+            .background(DesignSystem.Colors.surface, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.xl))
+            .overlay(
+                RoundedRectangle(cornerRadius: DesignSystem.Radius.xl)
+                    .stroke(DesignSystem.Colors.border, lineWidth: 1)
+            )
+            .padding(.horizontal, 24)
 
             Spacer()
 
-            primaryButton("Get Started") {
+            onboardingButton("Get Started") {
                 withAnimation { currentPage = 1 }
             }
             .padding(.bottom, 48)
@@ -115,43 +122,67 @@ struct OnboardingView: View {
 
     private var howItWorksPage: some View {
         VStack(spacing: 0) {
-            Spacer()
+            Spacer().frame(height: 90)
+
+            DesignSystem.Typography.capsLabel("ABOUT FRETSHED")
+                .padding(.bottom, DesignSystem.Spacing.sm)
 
             Text("How it works")
                 .font(DesignSystem.Typography.subDisplay)
-                .padding(.bottom, DesignSystem.Spacing.xl)
+                .foregroundStyle(DesignSystem.Colors.text)
+                .padding(.bottom, DesignSystem.Spacing.lg)
 
-            VStack(spacing: DesignSystem.Spacing.lg) {
+            VStack(spacing: 0) {
                 featureRow(
                     icon: "tuningfork",
                     color: DesignSystem.Colors.cherry,
-                    title: "Flexible Fretboard Trainer:",
+                    title: "Flexible Fretboard Trainer",
                     subtitle: "FretShed listens and instantly identifies if you played the right note."
                 )
+
+                Divider()
+                    .overlay(DesignSystem.Colors.border)
+                    .padding(.horizontal, DesignSystem.Spacing.md)
+
                 featureRow(
                     icon: "slider.horizontal.3",
                     color: DesignSystem.Colors.amber,
                     title: "Great Practice Tools",
-                    subtitle: "FretShed's Tuner, Metronome, Speed Trainer and Drones keep practice interesting."
+                    subtitle: "Tuner, Metronome, Speed Trainer and Drones keep practice interesting."
                 )
+
+                Divider()
+                    .overlay(DesignSystem.Colors.border)
+                    .padding(.horizontal, DesignSystem.Spacing.md)
+
                 featureRow(
                     icon: "brain",
-                    color: DesignSystem.Colors.amber,
-                    title: "Adaptive learning",
-                    subtitle: "FretShed learns the notes you find hardest and helps you overcome your weak spots."
+                    color: DesignSystem.Colors.honey,
+                    title: "Adaptive Learning",
+                    subtitle: "FretShed learns the notes you find hardest and targets your weak spots."
                 )
+
+                Divider()
+                    .overlay(DesignSystem.Colors.border)
+                    .padding(.horizontal, DesignSystem.Spacing.md)
+
                 featureRow(
                     icon: "chart.bar.fill",
                     color: DesignSystem.Colors.gold,
-                    title: "Track your progress",
-                    subtitle: "Tons of stats, a fretboard heatmap and graphs show your mastery across all areas of the fretboard."
+                    title: "Track Your Progress",
+                    subtitle: "Stats, heatmaps and graphs show your mastery across the entire fretboard."
                 )
             }
-            .padding(.horizontal, DesignSystem.Spacing.xl)
+            .background(DesignSystem.Colors.surface, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.lg))
+            .overlay(
+                RoundedRectangle(cornerRadius: DesignSystem.Radius.lg)
+                    .stroke(DesignSystem.Colors.border, lineWidth: 1)
+            )
+            .padding(.horizontal, 24)
 
             Spacer()
 
-            primaryButton("Next") {
+            onboardingButton("Next") {
                 withAnimation { currentPage = 2 }
             }
             .padding(.bottom, 48)
@@ -162,16 +193,17 @@ struct OnboardingView: View {
 
     private var baselinePage: some View {
         VStack(spacing: 0) {
-            Spacer().frame(minHeight: 90)
+            Spacer().frame(height: 90)
 
             DesignSystem.Typography.capsLabel("GETTING STARTED")
                 .padding(.bottom, DesignSystem.Spacing.sm)
 
             Text("Where are you at?")
                 .font(DesignSystem.Typography.subDisplay)
+                .foregroundStyle(DesignSystem.Colors.text)
                 .padding(.bottom, DesignSystem.Spacing.xs)
 
-            Text("This helps FretShed focus your practice on what you actually need.")
+            Text("This helps FretShed focus your practice\non what you actually need.")
                 .font(DesignSystem.Typography.tagline)
                 .foregroundStyle(DesignSystem.Colors.text2)
                 .multilineTextAlignment(.center)
@@ -183,10 +215,10 @@ struct OnboardingView: View {
                     baselineOption(level)
                 }
             }
-            .padding(.horizontal, DesignSystem.Spacing.xl)
+            .padding(.horizontal, 24)
 
-            Text("Don't worry about getting it perfect — FretShed adapts as you play.")
-                .font(.caption)
+            Text("Don't worry about getting it perfect —\nFretShed adapts as you play.")
+                .font(DesignSystem.Typography.accentDescription)
                 .foregroundStyle(DesignSystem.Colors.muted)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, DesignSystem.Spacing.xl)
@@ -194,9 +226,9 @@ struct OnboardingView: View {
 
             Spacer()
 
-            primaryGradientButton("Continue", disabled: selectedBaseline == nil) {
+            onboardingButton("Let's Go!", disabled: selectedBaseline == nil) {
                 selectedBaseline?.save()
-                withAnimation { currentPage = 3 }
+                complete()
             }
             .padding(.bottom, 48)
         }
@@ -211,14 +243,14 @@ struct OnboardingView: View {
         } label: {
             HStack(spacing: DesignSystem.Spacing.sm) {
                 Text(level.emoji)
-                    .font(.title2)
+                    .font(DesignSystem.Typography.screenTitle)
                     .frame(width: 36)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(level.title)
                         .font(DesignSystem.Typography.bodyLabel)
                         .foregroundStyle(DesignSystem.Colors.text)
                     Text(level.description)
-                        .font(.caption)
+                        .font(DesignSystem.Typography.smallLabel)
                         .foregroundStyle(DesignSystem.Colors.text2)
                         .lineLimit(2)
                 }
@@ -236,138 +268,59 @@ struct OnboardingView: View {
             )
             .overlay(
                 RoundedRectangle(cornerRadius: DesignSystem.Radius.md)
-                    .stroke(isSelected ? DesignSystem.Colors.cherry : DesignSystem.Colors.border, lineWidth: isSelected ? 2 : 1)
+                    .stroke(isSelected ? DesignSystem.Colors.cherry : DesignSystem.Colors.border,
+                            lineWidth: isSelected ? 2 : 1)
             )
         }
         .buttonStyle(.plain)
     }
 
-    // MARK: - Screen 3: Mic permission
+    // MARK: - Reusable Components
 
-    private var micPermissionPage: some View {
-        VStack(spacing: 0) {
-            Spacer()
-
-            Image(systemName: "mic.fill")
-                .font(.system(size: 64))
-                .foregroundStyle(DesignSystem.Colors.cherry)
-                .padding(.bottom, DesignSystem.Spacing.lg)
-
-            Text("Allow Microphone\nAccess")
-                .font(DesignSystem.Typography.mediumTitle)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, DesignSystem.Spacing.xl)
-                .padding(.bottom, DesignSystem.Spacing.sm)
-
-            Text("FretShed uses your microphone to hear the notes you play — no audio is stored or sent anywhere.")
-                .font(.body)
-                .foregroundStyle(DesignSystem.Colors.text2)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, DesignSystem.Spacing.xl)
-                .padding(.bottom, DesignSystem.Spacing.xl)
-
-            VStack(alignment: .leading, spacing: DesignSystem.Spacing.md) {
-                permissionBullet(icon: "lock.shield.fill",
-                                 text: "Audio never leaves your device")
-                permissionBullet(icon: "wifi.slash",
-                                 text: "No internet connection required")
-                permissionBullet(icon: "gear",
-                                 text: "Change this any time in Settings")
-            }
-            .padding(.horizontal, 40)
-
-            Spacer()
-
-            if hasRequestedMicPermission {
-                primaryButton("Let's Go!") {
-                    complete()
-                }
-                .padding(.bottom, 48)
-            } else {
-                primaryButton("Grant Microphone Access") {
-                    requestMicPermission()
-                }
-                .padding(.bottom, 48)
-            }
-        }
-    }
-
-    // MARK: - Reusable components
-
-    private func primaryButton(_ title: String, action: @escaping () -> Void) -> some View {
+    private func onboardingButton(_ title: String, disabled: Bool = false, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text(title)
-                .font(.headline)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, DesignSystem.Spacing.md)
-                .background(DesignSystem.Colors.cherry,
-                            in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
-                .foregroundStyle(.white)
-        }
-        .buttonStyle(.plain)
-        .padding(.horizontal, DesignSystem.Spacing.xl)
-    }
-
-    private func primaryGradientButton(_ title: String, disabled: Bool = false, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Text(title)
-                .font(.headline)
+                .font(DesignSystem.Typography.bodyLabel)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, DesignSystem.Spacing.md)
                 .background(
                     disabled ? AnyShapeStyle(DesignSystem.Colors.surface2)
                              : AnyShapeStyle(DesignSystem.Gradients.primary),
-                    in: RoundedRectangle(cornerRadius: 16)
+                    in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md)
                 )
                 .foregroundStyle(disabled ? DesignSystem.Colors.muted : .white)
         }
         .buttonStyle(.plain)
         .disabled(disabled)
-        .padding(.horizontal, DesignSystem.Spacing.xl)
+        .padding(.horizontal, 24)
     }
 
     private func featureRow(icon: String, color: Color,
                             title: String, subtitle: String) -> some View {
         HStack(alignment: .top, spacing: DesignSystem.Spacing.md) {
-            Image(systemName: icon)
-                .font(.title2)
-                .foregroundStyle(color)
-                .frame(width: 36)
+            ZStack {
+                Circle()
+                    .fill(color.opacity(0.12))
+                    .frame(width: 40, height: 40)
+                Image(systemName: icon)
+                    .font(DesignSystem.Typography.bodyLabel)
+                    .foregroundStyle(color)
+            }
             VStack(alignment: .leading, spacing: DesignSystem.Spacing.xs) {
-                Text(title).font(.headline)
+                Text(title)
+                    .font(DesignSystem.Typography.bodyLabel)
+                    .foregroundStyle(DesignSystem.Colors.text)
                 Text(subtitle)
-                    .font(.subheadline)
+                    .font(DesignSystem.Typography.accentDescription)
                     .foregroundStyle(DesignSystem.Colors.text2)
             }
+            Spacer(minLength: 0)
         }
-    }
-
-    private func permissionBullet(icon: String, text: String) -> some View {
-        HStack(spacing: DesignSystem.Spacing.sm) {
-            Image(systemName: icon)
-                .font(.body)
-                .foregroundStyle(DesignSystem.Colors.cherry)
-                .frame(width: 24)
-            Text(text)
-                .font(.subheadline)
-                .foregroundStyle(DesignSystem.Colors.text2)
-            Spacer()
-        }
+        .padding(.horizontal, DesignSystem.Spacing.md)
+        .padding(.vertical, DesignSystem.Spacing.md)
     }
 
     // MARK: - Actions
-
-    private func requestMicPermission() {
-        hasRequestedMicPermission = true
-        Task { @MainActor in
-            let _ = await withCheckedContinuation { continuation in
-                AVAudioApplication.requestRecordPermission { granted in
-                    continuation.resume(returning: granted)
-                }
-            }
-            complete()
-        }
-    }
 
     private func complete() {
         hasCompletedOnboarding = true

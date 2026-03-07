@@ -100,7 +100,9 @@ public struct SettingsView: View {
             audioSetupSection
             quizSection(settings: settings)
             dataSection
+            #if DEBUG
             debugSection
+            #endif
             licensesSection
         }
         .listSectionSpacing(16)
@@ -126,41 +128,38 @@ public struct SettingsView: View {
             SettingsInfoSheet(
                 title: "Display",
                 items: [
-                    ("Note Names", "Choose between sharp (A#) or flat (Bb) notation."),
-                    ("Fretboard Hand", "Flip the fretboard display for left-handed players."),
-                    ("Default Fret Count", "Number of frets shown on the fretboard (12, 21, 22, or 24)."),
-                    ("Appearance", "App color scheme: follow system setting, or force light/dark.")
+                    ("Note Names", "Choose sharp (A#), flat (Bb), or both (A#/Bb) notation throughout the app."),
+                    ("Fretboard Hand", "Flip the fretboard orientation for left-handed players."),
+                    ("Default Fret Count", "Number of frets displayed on the fretboard (12, 21, 22, or 24). Also affects heatmap coverage."),
+                    ("Appearance", "App color scheme: follow your system setting, or force light or dark mode.")
                 ]
             )
         }
         .sheet(isPresented: $showAudioInfo) {
             SettingsInfoSheet(
-                title: "Audio",
+                title: "Detection & Input",
                 items: [
-                    ("Detection Sensitivity", "How certain the pitch detector must be before accepting a note. Higher = fewer false detections but requires cleaner playing."),
-                    ("Note Hold Time", "How long a note must be held before it's accepted. Prevents fleeting detections from triggering wrong answers."),
-                    ("Force Built-In Microphone", "Always use the iPhone mic even when an external audio device is connected."),
-                    ("Tap Testing Mode", "Disable microphone detection and use Correct/Wrong buttons instead. Use this to test yourself when you don't have your guitar handy."),
-                    ("Tap To Answer", "Tap directly on the fretboard to choose your answer instead of playing a note. For best results, use landscape orientation with Default Fret Count set to 12 so the fretboard positions are large enough to tap accurately."),
-                    ("Response Sounds", "Play a sound effect on correct and incorrect answers."),
-                    ("Response Sound Volume", "Volume level for correct/incorrect sound effects."),
-                    ("Metronome in Quiz", "Play a countdown tick during timed quiz sessions."),
-                    ("Metronome Volume", "Volume level for the countdown tick.")
+                    ("Detection Sensitivity", "How confident the pitch detector must be before accepting a note. Higher values reduce false detections but require cleaner playing. Most users won't need to change this — calibration handles it."),
+                    ("Note Hold Time", "Minimum time a note must ring before it's accepted. Prevents brief, accidental sounds from triggering an answer."),
+                    ("Tap Testing Mode", "Replaces audio detection with Correct/Wrong buttons on screen. Useful for practicing note recognition without your guitar."),
+                    ("Tap To Answer", "Tap fretboard positions to answer instead of playing notes. Best in landscape with fret count set to 12 so positions are large enough to tap."),
+                    ("Response Sounds", "Play a sound cue on correct and incorrect answers."),
+                    ("Response Sound Volume", "Volume level for correct/incorrect sound cues."),
+                    ("Countdown Tick", "Play a metronome tick during the countdown in Timed and Tempo practice modes."),
+                    ("Countdown Tick Volume", "Volume level for the countdown tick sound.")
                 ]
             )
         }
         .sheet(isPresented: $showQuizDefaultsInfo) {
             SettingsInfoSheet(
-                title: "Quiz Defaults",
+                title: "Quiz Behavior",
                 items: [
-                    ("Default Focus Mode", "The starting focus mode when launching a new session. Choose a default from the dropdown list"),
-                    ("String Selection", "Which string should be pre-selected for Single String mode."),
-                    ("Note Highlighting", "How target notes are shown: always visible, revealed after playing, or show all positions."),
-                    ("Note Acceptance", "Accept the correct note on any string, or require the exact string shown."),
-                    ("Timer Duration", "Seconds per question in Timed mode."),
-                    ("Session Length", "Number of questions per session (except Streak mode)."),
-                    ("Hint Timeout", "Seconds before the fret hint is automatically shown."),
-                    ("Set Mastery Threshold", "Accuracy percentage needed to mark a cell as mastered.")
+                    ("Default Practice Mode", "The default practice mode for new sessions: Relaxed (no timer), Timed (countdown per question), Streak (consecutive correct), or Tempo (progressive speed)."),
+                    ("Note Highlighting", "How target notes appear on the fretboard: one position only, all positions at once, or revealed after you play."),
+                    ("Note Acceptance", "Accept the correct note played on any string, or require it on the exact string shown."),
+                    ("Timer Duration", "Seconds allowed per question in Timed and Tempo modes. In Tempo mode, this is the starting duration that decreases with each correct answer."),
+                    ("Session Length", "Number of questions per session. Does not apply to Streak mode, which continues until you get one wrong."),
+                    ("Hint Timeout", "Seconds before the fret number hint is automatically revealed during a question.")
                 ]
             )
         }
@@ -168,9 +167,9 @@ public struct SettingsView: View {
             SettingsInfoSheet(
                 title: "Data",
                 items: [
-                    ("Back Up Data", "Exports all sessions, attempts, mastery scores, settings, and calibration profile to a JSON file in the Documents folder."),
-                    ("Restore from Backup", "Imports a previously exported backup file. Replaces all current data with the backup contents."),
-                    ("Delete All Data", "Permanently removes all session history, mastery scores, and attempts. This cannot be undone.")
+                    ("Back Up Data", "Exports all sessions, attempts, mastery scores, settings, and calibration profiles to a JSON file. The file is saved to your Documents folder and accessible via the Files app."),
+                    ("Restore from Backup", "Imports a previously exported backup file. This replaces all current data — sessions, mastery scores, calibration profiles, and settings — with the backup contents."),
+                    ("Delete All Data", "Permanently removes all session history, mastery scores, and attempts. Calibration profiles and settings are kept. This cannot be undone.")
                 ]
             )
         }
@@ -254,11 +253,6 @@ public struct SettingsView: View {
                 )
             }
 
-            Toggle("Force Built-In Microphone", isOn: Binding(
-                get: { settings.forceBuiltInMic },
-                set: { settings.forceBuiltInMic = $0; save(settings) }
-            ))
-
             Toggle("Tap Testing Mode", isOn: Binding(
                 get: { settings.tapModeEnabled },
                 set: {
@@ -303,7 +297,7 @@ public struct SettingsView: View {
                 .transition(.opacity.combined(with: .move(edge: .top)))
             }
 
-            Toggle("Metronome in Quiz", isOn: Binding(
+            Toggle("Countdown Tick", isOn: Binding(
                 get: { settings.isMetronomeEnabled },
                 set: { settings.isMetronomeEnabled = $0; save(settings) }
             ))
@@ -311,7 +305,7 @@ public struct SettingsView: View {
             if settings.isMetronomeEnabled {
                 VStack(alignment: .leading, spacing: 4) {
                     HStack {
-                        Text("Metronome Volume")
+                        Text("Countdown Tick Volume")
                         Spacer()
                         Text(String(format: "%.0f%%", settings.metronomeVolume * 100))
                             .foregroundStyle(DesignSystem.Colors.text2)
@@ -331,11 +325,11 @@ public struct SettingsView: View {
 
         } header: {
             HStack {
-                DesignSystem.Typography.capsLabel("Audio")
+                DesignSystem.Typography.capsLabel("Detection & Input")
                 infoButton { showAudioInfo = true }
             }
         } footer: {
-            Text("Higher confidence reduces false notes. Longer hold duration prevents fleeting detections from registering. Tap Testing Mode disables the microphone and lets you self-assess by tapping Correct or Wrong. Tap To Answer lets you tap the fretboard directly to identify note positions.")
+            Text("Detection settings are tuned by calibration — most users won't need to adjust them. Tap modes let you practice without a guitar.")
         }
         .listRowBackground(DesignSystem.Colors.surface)
         .animation(.easeInOut(duration: 0.2), value: settings.correctSoundEnabled)
@@ -443,6 +437,13 @@ public struct SettingsView: View {
                     }
                 }
 
+                if let s = settings {
+                    Toggle("Force Built-In Microphone", isOn: Binding(
+                        get: { s.forceBuiltInMic },
+                        set: { s.forceBuiltInMic = $0; save(s) }
+                    ))
+                }
+
                 // Add New Profile button
                 Button {
                     recalibratingProfile = nil
@@ -489,7 +490,7 @@ public struct SettingsView: View {
             if let profile = recalibratingProfile {
                 CalibrationView(isRecalibration: true, recalibratingProfile: profile)
             } else {
-                CalibrationView(isRecalibration: hasCompletedCalibration)
+                CalibrationView(isRecalibration: hasCompletedCalibration, forceNewProfile: hasCompletedCalibration)
             }
         }
         .sheet(isPresented: $showAudioSetupInfo) {
@@ -498,7 +499,8 @@ public struct SettingsView: View {
                 items: [
                     ("Calibration Profiles", "Each profile stores calibration data for a specific guitar and input source. You can have multiple profiles and switch between them."),
                     ("Input Gain Trim", "Fine-tune the input sensitivity for the active profile. Increase if notes aren't being detected; decrease if you're getting false detections."),
-                    ("Noise Gate Trim", "Adjust the noise gate threshold for the active profile. Increase in noisy environments; decrease in quiet ones.")
+                    ("Noise Gate Trim", "Adjust the noise gate threshold for the active profile. Increase in noisy environments; decrease in quiet ones."),
+                    ("Force Built-In Microphone", "Always use the iPhone's built-in mic, even when an external audio interface or headset is connected. Useful if your interface isn't providing a clean signal.")
                 ]
             )
         }
@@ -538,17 +540,17 @@ public struct SettingsView: View {
     private func profileRow(_ profile: AudioCalibrationProfile) -> some View {
         HStack(spacing: 12) {
             Image(systemName: profile.guitarType?.iconName ?? "guitars")
-                .font(.title3)
+                .font(DesignSystem.Typography.sectionHeader)
                 .foregroundStyle(profile.isActive ? DesignSystem.Colors.cherry : DesignSystem.Colors.text2)
                 .frame(width: 28)
 
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 6) {
                     Text(profile.displayName)
-                        .font(.subheadline.weight(.semibold))
+                        .font(DesignSystem.Typography.bodyLabel)
                     if profile.isActive {
                         Text("Active")
-                            .font(.caption2.weight(.bold))
+                            .font(DesignSystem.Typography.smallLabel)
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)
                             .background(DesignSystem.Colors.correct.opacity(0.2), in: Capsule())
@@ -567,7 +569,7 @@ public struct SettingsView: View {
                         Text("\(Int(profile.signalQualityScore * 100))%")
                     }
                 }
-                .font(.caption)
+                .font(DesignSystem.Typography.smallLabel)
                 .foregroundStyle(DesignSystem.Colors.text2)
             }
 
@@ -595,21 +597,12 @@ public struct SettingsView: View {
 
     private func quizSection(settings: UserSettings) -> some View {
         Section {
-            Picker("Default Focus Mode", selection: Binding(
+            Picker("Default Practice Mode", selection: Binding(
                 get: { settings.defaultGameMode },
                 set: { settings.defaultGameMode = $0; save(settings) }
             )) {
                 ForEach(GameMode.allCases, id: \.self) { mode in
                     Text(mode.localizedLabel).tag(mode)
-                }
-            }
-
-            Picker("String Selection", selection: Binding(
-                get: { settings.defaultStringOrdering },
-                set: { settings.defaultStringOrdering = $0; save(settings) }
-            )) {
-                ForEach(StringOrdering.allCases, id: \.self) { order in
-                    Text(order.localizedLabel).tag(order)
                 }
             }
 
@@ -684,26 +677,9 @@ public struct SettingsView: View {
                 )
             }
 
-            VStack(alignment: .leading, spacing: 4) {
-                HStack {
-                    Text("Set Mastery Threshold")
-                    Spacer()
-                    Text(String(format: "%.0f%%", settings.masteryThreshold * 100))
-                        .foregroundStyle(DesignSystem.Colors.text2)
-                        .monospacedDigit()
-                }
-                GradientSlider(
-                    value: Binding(
-                        get: { settings.masteryThreshold },
-                        set: { settings.masteryThreshold = $0; save(settings) }
-                    ),
-                    range: 0.70...0.99,
-                    step: 0.05
-                )
-            }
         } header: {
             HStack {
-                DesignSystem.Typography.capsLabel("Quiz Defaults")
+                DesignSystem.Typography.capsLabel("Quiz Behavior")
                 infoButton { showQuizDefaultsInfo = true }
             }
         }
@@ -808,7 +784,7 @@ public struct SettingsView: View {
                         .foregroundStyle(DesignSystem.Colors.correct)
                     Spacer()
                     Text("18 sessions")
-                        .font(.caption)
+                        .font(DesignSystem.Typography.smallLabel)
                         .foregroundStyle(DesignSystem.Colors.muted)
                 }
 
@@ -827,7 +803,7 @@ public struct SettingsView: View {
 
             if !seedStatusMessage.isEmpty {
                 Text(seedStatusMessage)
-                    .font(.caption)
+                    .font(DesignSystem.Typography.smallLabel)
                     .foregroundStyle(DesignSystem.Colors.muted)
             }
         } header: {
@@ -864,25 +840,25 @@ public struct SettingsView: View {
         Section {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Montserrat")
-                    .font(.subheadline.weight(.semibold))
+                    .font(DesignSystem.Typography.bodyLabel)
                 Text("Designed by Julieta Ulanovsky. Licensed under the SIL Open Font License.")
-                    .font(.caption)
+                    .font(DesignSystem.Typography.smallLabel)
                     .foregroundStyle(DesignSystem.Colors.text2)
             }
 
             VStack(alignment: .leading, spacing: 4) {
                 Text("Crimson Pro")
-                    .font(.subheadline.weight(.semibold))
+                    .font(DesignSystem.Typography.bodyLabel)
                 Text("Designed by Jacques Le Bailly. Licensed under the SIL Open Font License.")
-                    .font(.caption)
+                    .font(DesignSystem.Typography.smallLabel)
                     .foregroundStyle(DesignSystem.Colors.text2)
             }
 
             VStack(alignment: .leading, spacing: 4) {
                 Text("JetBrains Mono")
-                    .font(.subheadline.weight(.semibold))
+                    .font(DesignSystem.Typography.bodyLabel)
                 Text("Designed by JetBrains. Licensed under the Apache License 2.0.")
-                    .font(.caption)
+                    .font(DesignSystem.Typography.smallLabel)
                     .foregroundStyle(DesignSystem.Colors.text2)
             }
         } header: {
@@ -943,9 +919,10 @@ public struct SettingsView: View {
             try? await Task.sleep(for: .milliseconds(300))
             settings = try? container.settingsRepository.loadSettings()
         }
-        if let s = settings {
-            NotificationScheduler.shared.sync(settings: s)
-        }
+        // Notifications disabled for now — uncomment when ready to ship reminders
+        // if let s = settings {
+        //     NotificationScheduler.shared.sync(settings: s)
+        // }
     }
 
     private func save(_ settings: UserSettings) {
@@ -981,7 +958,7 @@ public struct SettingsView: View {
     private func infoButton(action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: "info.circle")
-                .font(.caption)
+                .font(DesignSystem.Typography.smallLabel)
                 .foregroundStyle(DesignSystem.Colors.text2)
         }
     }
@@ -1002,9 +979,9 @@ private struct SettingsInfoSheet: View {
                     ForEach(items, id: \.0) { label, description in
                         VStack(alignment: .leading, spacing: 4) {
                             Text(label)
-                                .font(.subheadline.weight(.semibold))
+                                .font(DesignSystem.Typography.bodyLabel)
                             Text(description)
-                                .font(.caption)
+                                .font(DesignSystem.Typography.smallLabel)
                                 .foregroundStyle(DesignSystem.Colors.text2)
                         }
                     }

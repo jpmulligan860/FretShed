@@ -113,10 +113,10 @@ struct SessionDetailView: View {
 
             HStack(spacing: 6) {
                 Text(session.focusMode.localizedLabel)
-                    .font(.title3.bold())
+                    .font(DesignSystem.Typography.sectionHeader)
                 if session.isAdaptive {
                     Image(systemName: "brain")
-                        .font(.subheadline)
+                        .font(DesignSystem.Typography.bodyLabel)
                         .foregroundStyle(DesignSystem.Colors.gold)
                 }
             }
@@ -126,7 +126,7 @@ struct SessionDetailView: View {
                 Text("·")
                 Text(durationLabel(session.duration))
             }
-            .font(.subheadline)
+            .font(DesignSystem.Typography.bodyLabel)
             .foregroundStyle(DesignSystem.Colors.text2)
         }
     }
@@ -209,13 +209,13 @@ private struct SessionStatCard: View {
     var body: some View {
         VStack(spacing: 4) {
             Image(systemName: icon)
-                .font(.title3)
+                .font(DesignSystem.Typography.sectionHeader)
                 .foregroundStyle(color)
             Text(value)
                 .font(DesignSystem.Typography.screenTitle)
                 .monospacedDigit()
             Text(label)
-                .font(.caption)
+                .font(DesignSystem.Typography.smallLabel)
                 .foregroundStyle(DesignSystem.Colors.text2)
         }
         .frame(maxWidth: .infinity)

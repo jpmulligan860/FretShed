@@ -177,7 +177,7 @@ public struct ProgressTabView: View {
                                         showDeleteAllConfirm = true
                                     } label: {
                                         Text("Delete All Sessions")
-                                            .font(.caption.weight(.semibold))
+                                            .font(DesignSystem.Typography.smallLabel)
                                             .foregroundStyle(DesignSystem.Colors.wrong)
                                     }
                                     .frame(maxWidth: .infinity, alignment: .center)
@@ -238,8 +238,8 @@ public struct ProgressTabView: View {
             ProgressInfoSheet(
                 title: "Avg Response Time",
                 items: [
-                    ("What it shows", "Your average time to answer correctly in timed quiz sessions, tracked over the last 30 days."),
-                    ("How it's calculated", "Only correct answers from timed sessions are included. Incorrect answers and timeouts are excluded. A lower time means faster note recognition.")
+                    ("What it shows", "Your average time to answer correctly, tracked over the last 30 days of practice."),
+                    ("How it's calculated", "Only correct answers are included. Incorrect answers and timeouts are excluded. A lower time means faster note recognition.")
                 ]
             )
         }
@@ -293,7 +293,7 @@ public struct ProgressTabView: View {
                 Text("Could not load progress")
                     .font(DesignSystem.Typography.screenTitle)
                 Text("Something went wrong loading your data. Pull down to try again.")
-                    .font(.subheadline)
+                    .font(DesignSystem.Typography.bodyLabel)
                     .foregroundStyle(DesignSystem.Colors.text2)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 32)
@@ -313,7 +313,7 @@ public struct ProgressTabView: View {
                 Text("No progress yet")
                     .font(DesignSystem.Typography.screenTitle)
                 Text("Complete your first session to start tracking your fretboard mastery.")
-                    .font(.subheadline)
+                    .font(DesignSystem.Typography.bodyLabel)
                     .foregroundStyle(DesignSystem.Colors.text2)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 32)
@@ -322,7 +322,7 @@ public struct ProgressTabView: View {
                 NotificationCenter.default.post(name: .showPracticeTab, object: nil)
             } label: {
                 Text("Start Practicing")
-                    .font(.headline)
+                    .font(DesignSystem.Typography.sectionHeader)
                     .frame(maxWidth: 240)
                     .padding(.vertical, 14)
                     .background(DesignSystem.Colors.cherry,
@@ -342,9 +342,10 @@ public struct ProgressTabView: View {
                 Image(systemName: "flame.fill")
                     .foregroundStyle(DesignSystem.Colors.amber)
                 Text("\(vm.currentStreak)")
-                    .font(.headline.weight(.bold).monospacedDigit())
+                    .font(DesignSystem.Typography.sectionHeader)
+                    .monospacedDigit()
                 Text(vm.currentStreak == 1 ? "day" : "day streak")
-                    .font(.subheadline)
+                    .font(DesignSystem.Typography.bodyLabel)
                     .foregroundStyle(DesignSystem.Colors.text2)
             }
             Spacer()
@@ -395,7 +396,7 @@ public struct ProgressTabView: View {
                       : "line.3.horizontal.decrease.circle")
                 Text(activeFilterLabel)
             }
-            .font(.subheadline)
+            .font(DesignSystem.Typography.bodyLabel)
             .foregroundStyle(DesignSystem.Colors.cherry)
         }
     }
@@ -407,7 +408,7 @@ public struct ProgressTabView: View {
             Text(vm.todayFilter
                  ? "No sessions recorded today"
                  : "No \(vm.focusModeFilter?.localizedLabel ?? vm.gameModeFilter?.localizedLabel ?? "") sessions recorded")
-                .font(.subheadline)
+                .font(DesignSystem.Typography.bodyLabel)
                 .foregroundStyle(DesignSystem.Colors.text2)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -423,7 +424,7 @@ public struct ProgressTabView: View {
             Image(systemName: "calendar.badge.clock")
                 .foregroundStyle(DesignSystem.Colors.muted)
             Text("No sessions recorded yet")
-                .font(.subheadline)
+                .font(DesignSystem.Typography.bodyLabel)
                 .foregroundStyle(DesignSystem.Colors.text2)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -602,15 +603,15 @@ public struct ProgressTabView: View {
                             value: String, color: Color) -> some View {
         HStack(spacing: 8) {
             Image(systemName: icon)
-                .font(.caption)
+                .font(DesignSystem.Typography.smallLabel)
                 .foregroundStyle(color)
                 .frame(width: 16)
             Text(label)
-                .font(.caption)
+                .font(DesignSystem.Typography.smallLabel)
                 .foregroundStyle(DesignSystem.Colors.text2)
             Spacer()
             Text(value)
-                .font(.caption.weight(.semibold))
+                .font(DesignSystem.Typography.smallLabel)
         }
     }
 
@@ -623,7 +624,7 @@ public struct ProgressTabView: View {
     private func infoButton(action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: "info.circle")
-                .font(.caption)
+                .font(DesignSystem.Typography.smallLabel)
                 .foregroundStyle(DesignSystem.Colors.text2)
         }
     }
@@ -635,7 +636,7 @@ public struct ProgressTabView: View {
                 showMasteryInfo = true
             } label: {
                 Image(systemName: "questionmark.circle")
-                    .font(.caption)
+                    .font(DesignSystem.Typography.smallLabel)
                     .foregroundStyle(DesignSystem.Colors.text2)
             }
         }
@@ -683,7 +684,7 @@ private struct SessionRow: View {
     var body: some View {
         HStack(spacing: 12) {
             Image(systemName: modeIcon(session.focusMode))
-                .font(.title3)
+                .font(DesignSystem.Typography.sectionHeader)
                 .foregroundStyle(modeColor(session.focusMode))
                 .frame(width: 36, height: 36)
                 .background(modeColor(session.focusMode).opacity(0.1),
@@ -692,15 +693,15 @@ private struct SessionRow: View {
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 4) {
                     Text(session.focusMode.localizedLabel)
-                        .font(.subheadline.weight(.semibold))
+                        .font(DesignSystem.Typography.bodyLabel)
                     if session.gameMode == .timed {
                         Image(systemName: "clock.fill")
-                            .font(.caption)
+                            .font(DesignSystem.Typography.smallLabel)
                             .foregroundStyle(DesignSystem.Colors.amber)
                     }
                     if session.isAdaptive {
                         Image(systemName: "brain")
-                            .font(.caption)
+                            .font(DesignSystem.Typography.smallLabel)
                             .foregroundStyle(DesignSystem.Colors.gold)
                     }
                 }
@@ -709,7 +710,7 @@ private struct SessionRow: View {
                     Text("·")
                     Text(durationLabel(session.duration))
                 }
-                .font(.caption)
+                .font(DesignSystem.Typography.smallLabel)
                 .foregroundStyle(DesignSystem.Colors.text2)
             }
 
@@ -717,16 +718,16 @@ private struct SessionRow: View {
 
             VStack(alignment: .trailing, spacing: 2) {
                 Text("\(Int(session.accuracyPercent))%")
-                    .font(.subheadline.weight(.bold))
+                    .font(DesignSystem.Typography.bodyLabel)
                     .foregroundStyle(accuracyColor(session.accuracyPercent))
                 Text("\(session.correctCount)/\(session.attemptCount)")
-                    .font(.caption)
+                    .font(DesignSystem.Typography.smallLabel)
                     .foregroundStyle(DesignSystem.Colors.text2)
                     .monospacedDigit()
             }
 
             Image(systemName: "chevron.right")
-                .font(.caption.weight(.semibold))
+                .font(DesignSystem.Typography.smallLabel)
                 .foregroundStyle(DesignSystem.Colors.muted)
         }
         .padding(.horizontal, 16)
@@ -795,7 +796,7 @@ private struct MasteryInfoSheet: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
                     Text("Each cell on the heatmap represents a specific note on a specific string. Colors show four stages: struggling (red), learning (amber), proficient (green), and mastered (gold). A cell turns gold once you reach 90% accuracy with at least 15 attempts.")
-                        .font(.subheadline)
+                        .font(DesignSystem.Typography.bodyLabel)
                         .foregroundStyle(DesignSystem.Colors.text2)
 
                     ForEach(levels, id: \.0) { name, color, range, desc in
@@ -805,21 +806,21 @@ private struct MasteryInfoSheet: View {
                                 .frame(width: 28, height: 28)
                             VStack(alignment: .leading, spacing: 2) {
                                 HStack {
-                                    Text(name).font(.subheadline.weight(.semibold))
+                                    Text(name).font(DesignSystem.Typography.bodyLabel)
                                     Spacer()
                                     Text(range)
-                                        .font(.caption)
+                                        .font(DesignSystem.Typography.smallLabel)
                                         .foregroundStyle(DesignSystem.Colors.text2)
                                 }
                                 Text(desc)
-                                    .font(.caption)
+                                    .font(DesignSystem.Typography.smallLabel)
                                     .foregroundStyle(DesignSystem.Colors.text2)
                             }
                         }
                     }
 
                     Text("Tap any cell on the heatmap to see detailed stats and recent attempts for that note.")
-                        .font(.caption)
+                        .font(DesignSystem.Typography.smallLabel)
                         .foregroundStyle(DesignSystem.Colors.muted)
                         .padding(.top, 4)
                 }
@@ -854,9 +855,9 @@ private struct ProgressInfoSheet: View {
                     ForEach(items, id: \.0) { label, description in
                         VStack(alignment: .leading, spacing: 4) {
                             Text(label)
-                                .font(.subheadline.weight(.semibold))
+                                .font(DesignSystem.Typography.bodyLabel)
                             Text(description)
-                                .font(.caption)
+                                .font(DesignSystem.Typography.smallLabel)
                                 .foregroundStyle(DesignSystem.Colors.text2)
                         }
                     }

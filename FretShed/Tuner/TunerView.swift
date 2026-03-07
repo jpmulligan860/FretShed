@@ -10,6 +10,7 @@
 // FretShed — Presentation Layer (Phase 5)
 
 import SwiftUI
+import AVFoundation
 
 // MARK: - TunerView
 
@@ -118,6 +119,11 @@ public struct TunerView: View {
             .task {
                 detector.sustainMode = true
                 await applySettings()
+                // Only start if mic permission already granted — don't trigger
+                // the system prompt here. Mic permission is first requested
+                // during audio calibration.
+                let status = AVAudioApplication.shared.recordPermission
+                guard status == .granted else { return }
                 try? await detector.start()
             }
             .onDisappear {
@@ -188,26 +194,36 @@ public struct TunerView: View {
                         .foregroundStyle(DesignSystem.Colors.text)
                         .contentTransition(.numericText())
                 }
-            } else if let err = detector.error, case .microphonePermissionDenied = err {
-                Image(systemName: "mic.slash.fill")
+            } else if !detector.isRunning && AVAudioApplication.shared.recordPermission != .granted {
+                Image(systemName: AVAudioApplication.shared.recordPermission == .denied ? "mic.slash.fill" : "mic.fill")
                     .font(.system(size: 36))
-                    .foregroundStyle(DesignSystem.Colors.wrong.opacity(0.7))
-                Text("Microphone access required")
+                    .foregroundStyle(AVAudioApplication.shared.recordPermission == .denied
+                                    ? DesignSystem.Colors.wrong.opacity(0.7)
+                                    : DesignSystem.Colors.muted)
+                Text(AVAudioApplication.shared.recordPermission == .denied
+                     ? "Microphone access required"
+                     : "Run Audio Calibration first")
                     .font(DesignSystem.Typography.bodyLabel)
                     .foregroundStyle(DesignSystem.Colors.text)
-                Button {
-                    if let url = URL(string: UIApplication.openSettingsURLString) {
-                        UIApplication.shared.open(url)
+                if AVAudioApplication.shared.recordPermission == .denied {
+                    Button {
+                        if let url = URL(string: UIApplication.openSettingsURLString) {
+                            UIApplication.shared.open(url)
+                        }
+                    } label: {
+                        Label("Open Settings", systemImage: "gear")
+                            .font(DesignSystem.Typography.smallLabel)
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 6)
+                            .background(DesignSystem.Colors.cherry.opacity(0.12), in: Capsule())
+                            .foregroundStyle(DesignSystem.Colors.cherry)
                     }
-                } label: {
-                    Label("Open Settings", systemImage: "gear")
+                    .buttonStyle(.plain)
+                } else {
+                    Text("The tuner will be available after setup.")
                         .font(DesignSystem.Typography.smallLabel)
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 6)
-                        .background(DesignSystem.Colors.cherry.opacity(0.12), in: Capsule())
-                        .foregroundStyle(DesignSystem.Colors.cherry)
+                        .foregroundStyle(DesignSystem.Colors.muted)
                 }
-                .buttonStyle(.plain)
             } else {
                 Text("–")
                     .font(DesignSystem.Typography.noteDisplay)
@@ -237,7 +253,7 @@ public struct TunerView: View {
     private var controls: some View {
         HStack(spacing: 6) {
             Image(systemName: "tuningfork")
-                .font(.body)
+                .font(DesignSystem.Typography.bodyLabel)
                 .foregroundStyle(DesignSystem.Colors.text)
             Text("A4 = 440 Hz")
                 .font(DesignSystem.Typography.bodyLabel)
@@ -416,11 +432,11 @@ private final class StrobeAnimator: @unchecked Sendable {
 struct CentsScale: View {
     var body: some View {
         HStack {
-            Text("-50¢").font(.callout.weight(.medium)).foregroundStyle(DesignSystem.Colors.text)
+            Text("-50¢").font(DesignSystem.Typography.bodyLabel).foregroundStyle(DesignSystem.Colors.text)
             Spacer()
-            Text("0").font(.callout.weight(.bold)).foregroundStyle(DesignSystem.Colors.correct)
+            Text("0").font(DesignSystem.Typography.bodyLabel).foregroundStyle(DesignSystem.Colors.correct)
             Spacer()
-            Text("+50¢").font(.callout.weight(.medium)).foregroundStyle(DesignSystem.Colors.text)
+            Text("+50¢").font(DesignSystem.Typography.bodyLabel).foregroundStyle(DesignSystem.Colors.text)
         }
     }
 }
@@ -447,15 +463,15 @@ struct InputLevelBar: View {
                     let redEnd = max(fillWidth - width * 0.85, 0)
 
                     if greenEnd > 0 {
-                        Color.green
+                        DesignSystem.Colors.correct
                             .frame(width: greenEnd)
                     }
                     if yellowEnd > 0 {
-                        Color.yellow
+                        DesignSystem.Colors.honey
                             .frame(width: yellowEnd)
                     }
                     if redEnd > 0 {
-                        Color.red
+                        DesignSystem.Colors.wrong
                             .frame(width: redEnd)
                     }
                 }
@@ -464,12 +480,12 @@ struct InputLevelBar: View {
                 // Labels
                 if level < 0.05 {
                     Text("Audio Level")
-                        .font(.caption.weight(.semibold))
+                        .font(DesignSystem.Typography.smallLabel)
                         .foregroundStyle(.secondary)
                         .frame(maxWidth: .infinity)
                 } else if level > 0.95 {
                     Text("CLIP")
-                        .font(.caption.weight(.bold))
+                        .font(DesignSystem.Typography.smallLabel)
                         .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)
                 }

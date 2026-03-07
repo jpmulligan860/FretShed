@@ -34,7 +34,7 @@ struct CellDetailSheet: View {
                         .font(DesignSystem.Typography.quizNote)
                         .foregroundStyle(levelColor)
                     Text(Self.stringNames[detail.string] ?? "String \(detail.string)")
-                        .font(.subheadline)
+                        .font(DesignSystem.Typography.bodyLabel)
                         .foregroundStyle(DesignSystem.Colors.text2)
                 }
                 .padding(.top, 8)
@@ -55,7 +55,7 @@ struct CellDetailSheet: View {
                                      label: "Best streak: \(s.bestStreakCount)", color: DesignSystem.Colors.amber)
                         } else {
                             Text("Not attempted yet")
-                                .font(.subheadline)
+                                .font(DesignSystem.Typography.bodyLabel)
                                 .foregroundStyle(DesignSystem.Colors.muted)
                         }
                     }
@@ -67,11 +67,11 @@ struct CellDetailSheet: View {
                     VStack(alignment: .leading, spacing: 6) {
                         HStack {
                             Text("Accuracy")
-                                .font(.caption)
+                                .font(DesignSystem.Typography.smallLabel)
                                 .foregroundStyle(DesignSystem.Colors.text2)
                             Spacer()
                             Text("\(Int(masteryValue * 100))%")
-                                .font(.caption.weight(.semibold))
+                                .font(DesignSystem.Typography.smallLabel)
                                 .foregroundStyle(levelColor)
                         }
                         GeometryReader { geo in
@@ -124,10 +124,10 @@ struct CellDetailSheet: View {
     private func badgeRow(icon: String, label: String, color: Color) -> some View {
         HStack(spacing: 6) {
             Image(systemName: icon)
-                .font(.caption)
+                .font(DesignSystem.Typography.smallLabel)
                 .foregroundStyle(color)
                 .frame(width: 14)
-            Text(label).font(.subheadline)
+            Text(label).font(DesignSystem.Typography.bodyLabel)
         }
     }
 }
@@ -173,29 +173,30 @@ private struct AttemptRow: View {
             Image(systemName: attempt.wasCorrect
                   ? "checkmark.circle.fill" : "xmark.circle.fill")
                 .foregroundStyle(attempt.wasCorrect ? DesignSystem.Colors.correct : DesignSystem.Colors.wrong)
-                .font(.title3)
+                .font(DesignSystem.Typography.sectionHeader)
                 .frame(width: 28)
 
             VStack(alignment: .leading, spacing: 2) {
                 if let played = attempt.playedNote, !attempt.wasCorrect {
                     Text("Played \(played.displayName(format: noteFormat))")
-                        .font(.subheadline)
+                        .font(DesignSystem.Typography.bodyLabel)
                 } else if attempt.wasCorrect {
-                    Text("Correct").font(.subheadline)
+                    Text("Correct").font(DesignSystem.Typography.bodyLabel)
                 } else {
                     Text("Timeout / miss")
-                        .font(.subheadline)
+                        .font(DesignSystem.Typography.bodyLabel)
                         .foregroundStyle(DesignSystem.Colors.muted)
                 }
                 Text(attempt.timestamp, style: .relative)
-                    .font(.caption)
+                    .font(DesignSystem.Typography.smallLabel)
                     .foregroundStyle(DesignSystem.Colors.muted)
             }
 
             Spacer()
 
             Text("\(attempt.responseTimeMs) ms")
-                .font(.caption.monospacedDigit())
+                .font(DesignSystem.Typography.smallLabel)
+                .monospacedDigit()
                 .foregroundStyle(DesignSystem.Colors.text2)
         }
         .padding(.horizontal, 14)

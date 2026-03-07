@@ -271,6 +271,12 @@ Full analysis: `FretShed_Competitive_Analysis.md` in Claude.ai project files.
 - `PracticeHomeView`: Complete rewrite — Smart Practice CTA, calibration banner, dynamic presets, timed practice, "Build Custom Session"
 - Shed polish (SD.9–SD.14): CTA label fix, removed compact heatmap from Shed, `alternativeSessions()` quick start tiles, "Got Time?" timed picker, onboarding auto-advance after mic permission, sharpsAndFlats note format override, quiz countdown timer pill, branded LaunchScreen.storyboard, Repeat Last session tracking via coordinator, Repeat Last subtitle (focus mode + game mode + time), "Single Note" renamed to "Same Note"
 
+**Design System Sweep (Mar 2026) — COMPLETE.** Replaced all remaining system fonts/colors with DesignSystem tokens across 16 files. Restyled quiz results with Woodshop cards. Added "You Played" card with color-coded note feedback during quiz. Wrapped prompt in card. Session Setup restyled with custom header + full summary card.
+
+**Settings Reorganization (Mar 2026) — COMPLETE.** Removed dead settings (String Selection — never consumed, Set Mastery Threshold — hardcoded in MasteryLevel). Renamed sections: Audio → Detection & Input, Quiz Defaults → Quiz Behavior. Moved Force Built-In Mic to Audio Setup. Renamed "Metronome in Quiz" → "Countdown Tick". Fixed "Default Focus Mode" mislabel → "Default Practice Mode". Gated Developer section behind `#if DEBUG`. Updated all info sheet copy for accuracy.
+
+**Journey Reload Fix (Mar 2026) — FIXED.** Added `needsProgressReload` flag on QuizLaunchCoordinator + `.onChange` in ContentView to explicitly reload ProgressViewModel after quiz ends. Root cause: `.onAppear` unreliable under ZStack overlay architecture.
+
 **Next task:** Phase 4 (Monetization).
 
 **Quiz Presentation Architecture (current — ZStack overlay + QuizLaunchCoordinator):**

@@ -18,7 +18,7 @@ enum AppTab: String, CaseIterable {
     case progress   = "Journey"
     case tuner      = "Tuner"
     case metroDrone = "Tempo"
-    case settings   = "Setup"
+    case settings   = "Settings"
 
     var icon: String {
         switch self {
@@ -48,7 +48,6 @@ final class QuizLaunchCoordinator {
     // MARK: Calibration
 
     var showCalibration = false
-    var showCalibrationTuner = false
     var showCalibrationGate = false
 
     // MARK: Last Completed Session
@@ -138,16 +137,14 @@ final class QuizLaunchCoordinator {
         }
     }
 
-    /// Called when CalibrationTunerView dismisses.
-    func handleCalibrationTunerDismiss() {
+    /// Called when CalibrationView dismisses.
+    func handleCalibrationDismiss() {
         guard hasCompletedCalibration else { return }
         if let vm = gatedQuizVM {
             gatedQuizVM = nil
             launchQuiz(vm: vm)
         } else {
-            Task { @MainActor in
-                showSetup = true
-            }
+            selectedTab = .practice
         }
     }
 
@@ -189,7 +186,7 @@ final class QuizLaunchCoordinator {
     // MARK: Calibration Gate Actions
 
     func handleCalibrateNow() {
-        showCalibrationTuner = true
+        showCalibration = true
     }
 
     func handleUseTapModeFromGate() {
@@ -220,7 +217,7 @@ final class QuizLaunchCoordinator {
     }
 
     func handleSetupAudio() {
-        showCalibrationTuner = true
+        showCalibration = true
     }
 
     func handleUseTapModeFromHome() {

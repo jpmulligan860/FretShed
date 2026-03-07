@@ -63,26 +63,38 @@ public struct SettingsView: View {
 
     public var body: some View {
         NavigationStack {
-            Group {
-                if let settings {
-                    form(settings: settings)
-                } else {
-                    ProgressView("Loading…")
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                }
-            }
-            .navigationTitle("Setup")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbarBackground(.visible, for: .navigationBar)
+            settingsBody
+                .toolbar(.hidden, for: .navigationBar)
         }
         .task { await loadSettings() }
+    }
+
+    @ViewBuilder
+    private var settingsBody: some View {
+        if let settings {
+            form(settings: settings)
+        } else {
+            ZStack {
+                DesignSystem.Colors.background.ignoresSafeArea()
+                ProgressView("Loading…")
+            }
+        }
     }
 
     // MARK: - Form
 
     @ViewBuilder
     private func form(settings: UserSettings) -> some View {
-        Form {
+        VStack(spacing: 0) {
+            Text("Settings")
+                .font(DesignSystem.Typography.screenTitle)
+                .foregroundStyle(DesignSystem.Colors.text)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 20)
+                .padding(.top, 16)
+                .padding(.bottom, 12)
+
+            Form {
             displaySection
             audioSection(settings: settings)
             audioSetupSection
@@ -91,6 +103,8 @@ public struct SettingsView: View {
             debugSection
             licensesSection
         }
+        .listSectionSpacing(16)
+        .scrollContentBackground(.hidden)
         .tint(DesignSystem.Colors.amber)
         .alert("Delete All Data?", isPresented: $showDeleteWarning1) {
             Button("Continue with Delete", role: .destructive) {
@@ -160,7 +174,9 @@ public struct SettingsView: View {
                 ]
             )
         }
-    }
+        } // VStack
+        .background(DesignSystem.Colors.background)
+    } // form()
 
     // MARK: - Display Section
 
@@ -194,6 +210,7 @@ public struct SettingsView: View {
                 infoButton { showDisplayInfo = true }
             }
         }
+        .listRowBackground(DesignSystem.Colors.surface)
     }
 
     // MARK: - Audio Section
@@ -320,6 +337,7 @@ public struct SettingsView: View {
         } footer: {
             Text("Higher confidence reduces false notes. Longer hold duration prevents fleeting detections from registering. Tap Testing Mode disables the microphone and lets you self-assess by tapping Correct or Wrong. Tap To Answer lets you tap the fretboard directly to identify note positions.")
         }
+        .listRowBackground(DesignSystem.Colors.surface)
         .animation(.easeInOut(duration: 0.2), value: settings.correctSoundEnabled)
         .animation(.easeInOut(duration: 0.2), value: settings.isMetronomeEnabled)
     }
@@ -464,6 +482,7 @@ public struct SettingsView: View {
         } footer: {
             Text("Calibration profiles store audio settings per guitar. The active profile is used for note detection in quizzes.")
         }
+        .listRowBackground(DesignSystem.Colors.surface)
         .fullScreenCover(isPresented: $showCalibration, onDismiss: {
             reloadProfiles()
         }) {
@@ -688,6 +707,7 @@ public struct SettingsView: View {
                 infoButton { showQuizDefaultsInfo = true }
             }
         }
+        .listRowBackground(DesignSystem.Colors.surface)
     }
 
     // MARK: - Data Management Section
@@ -729,6 +749,7 @@ public struct SettingsView: View {
         } footer: {
             Text("Back up your sessions, mastery scores, and settings to a JSON file. Restore replaces all current data with the backup.")
         }
+        .listRowBackground(DesignSystem.Colors.surface)
         .fileImporter(
             isPresented: $showFileImporter,
             allowedContentTypes: [UTType.json],
@@ -814,6 +835,7 @@ public struct SettingsView: View {
         } footer: {
             Text("Seeds 18 dummy sessions (3 per focus mode) with ~65% accuracy for UI testing. Remove before TestFlight.")
         }
+        .listRowBackground(DesignSystem.Colors.surface)
         .alert("Seed Test Data?", isPresented: $showSeedConfirmation) {
             Button("Seed") {
                 TestDataSeeder.seed(container: container)
@@ -866,6 +888,7 @@ public struct SettingsView: View {
         } header: {
             DesignSystem.Typography.capsLabel("Licenses")
         }
+        .listRowBackground(DesignSystem.Colors.surface)
     }
 
     // MARK: - Helpers

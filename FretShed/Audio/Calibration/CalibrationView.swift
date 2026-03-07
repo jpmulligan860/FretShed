@@ -1,18 +1,49 @@
 // CalibrationView.swift
 // FretShed — Audio Layer
 //
-// 4-screen TabView(.page) calibration flow:
-//   0 — Welcome   (explanation, detected input source, "Start" button)
-//   1 — Silence   ("Stay quiet for 3 seconds", live level bar, progress ring)
-//   2 — Strings   ("Play String N (note)", live detection, checkmarks)
-//   3 — Results   (quality score, per-string checkmarks, profile naming)
+// Single-page stepped calibration flow:
+//   Step 1 — Tune Your Guitar (embedded tuner, "Done Tuning" button)
+//   Step 2 — Measure Background Noise (4s countdown → 6s measurement)
+//   Step 3 — Open String Test (play each open string)
+//   Step 4 — 12th Fret Test (play each string at 12th fret)
+//   Step 5 — Save Profile (quality score, naming, save)
 //
-// New profiles: "Save & Name Profile" → inline name field + guitar type picker → "Save Profile"
-// Re-calibration (recalibratingProfile != nil): overwrites calibration data, keeps name/type.
+// Each step is a card. Completed steps show a green checkmark.
+// The active step's card is expanded to show its content.
 //
 // Presented as .fullScreenCover from ContentView or SettingsView.
 
 import SwiftUI
+
+// MARK: - CalibrationStep
+
+private enum CalibrationStep: Int, CaseIterable {
+    case tuning = 1
+    case measuringNoise = 2
+    case openStrings = 3
+    case frettedStrings = 4
+    case saveProfile = 5
+
+    var title: String {
+        switch self {
+        case .tuning:        return "Tune Your Guitar"
+        case .measuringNoise: return "Measure Background Noise"
+        case .openStrings:   return "Open String Test"
+        case .frettedStrings: return "12th Fret Test"
+        case .saveProfile:   return "Save Profile"
+        }
+    }
+
+    var subtitle: String {
+        switch self {
+        case .tuning:        return "Make sure your guitar is in tune before we begin."
+        case .measuringNoise: return "We'll listen to your room's background noise."
+        case .openStrings:   return "Play each open string when prompted."
+        case .frettedStrings: return "Play each note at the 12th fret when prompted."
+        case .saveProfile:   return "Name your profile and save."
+        }
+    }
+}
 
 // MARK: - CalibrationView
 
@@ -20,10 +51,10 @@ struct CalibrationView: View {
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.appContainer) private var container
-    @State private var engine = CalibrationEngine()
-    @State private var currentPage: Int = 0
 
-    /// When true, skips the welcome screen (re-calibration from Settings).
+    @State private var engine = CalibrationEngine()
+
+    /// When true, skips tuning step (re-calibration from Settings).
     var isRecalibration: Bool = false
 
     /// When set, overwrites this existing profile's calibration data (keeps name/type).
@@ -32,143 +63,348 @@ struct CalibrationView: View {
     @State private var profileName: String = ""
     @State private var selectedGuitarType: GuitarType = .electric
     @State private var showNameEntry: Bool = false
+    @State private var existingActiveProfile: AudioCalibrationProfile? = nil
+
+    @AppStorage(LocalUserPreferences.Key.noteNameFormat)
+    private var noteFormatRaw: String = LocalUserPreferences.Default.noteNameFormat
+    private var noteFormat: NoteNameFormat {
+        NoteNameFormat(rawValue: noteFormatRaw) ?? .sharps
+    }
+
+    @State private var displayCents: Double = 0
 
     var body: some View {
         NavigationStack {
-            TabView(selection: $currentPage) {
-                welcomeScreen.tag(0)
-                silenceScreen.tag(1)
-                stringScreen.tag(2)
-                resultsScreen.tag(3)
-            }
-            .tabViewStyle(.page(indexDisplayMode: .never))
-            .animation(.easeInOut(duration: 0.3), value: currentPage)
-            .navigationTitle("Audio Calibration")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    if engine.phase != .complete {
-                        Button("Cancel") {
-                            engine.cancel()
-                            dismiss()
+            ScrollViewReader { proxy in
+                ScrollView {
+                    VStack(spacing: 20) {
+                        // Header
+                        VStack(spacing: 6) {
+                            Text("Audio Calibration")
+                                .font(DesignSystem.Typography.screenTitle)
+                                .foregroundStyle(DesignSystem.Colors.text)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+
+                            Text("Input: \(engine.detectedInputSource.displayName)")
+                                .font(.subheadline)
+                                .foregroundStyle(DesignSystem.Colors.text2)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+
+                        // Step cards
+                        ForEach(visibleSteps, id: \.rawValue) { step in
+                            stepCard(for: step)
+                                .id(step)
+                        }
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.top, 16)
+                    .padding(.bottom, 32)
+                }
+                .onChange(of: currentStep) { _, newStep in
+                    if let step = newStep {
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            proxy.scrollTo(step, anchor: .top)
                         }
                     }
                 }
             }
-            .interactiveDismissDisabled()
-        }
-        .task {
-            // Detect input source immediately so the welcome screen
-            // shows the correct device name (e.g. "USB Audio Interface").
-            engine.detectInputSource()
-
-            if isRecalibration || recalibratingProfile != nil {
-                engine = CalibrationEngine(isRecalibration: true)
-                engine.detectInputSource()
-                currentPage = 1
-                await engine.startSilenceMeasurement()
+            .background(DesignSystem.Colors.background)
+            .toolbar(.hidden, for: .navigationBar)
+            .overlay(alignment: .topTrailing) {
+                if engine.phase != .complete {
+                    Button("Cancel") {
+                        engine.cancel()
+                        dismiss()
+                    }
+                    .font(.body)
+                    .foregroundStyle(DesignSystem.Colors.text2)
+                    .padding(.trailing, 20)
+                    .padding(.top, 16)
+                }
             }
         }
-        .onChange(of: engine.phase) { _, newPhase in
-            switch newPhase {
-            case .welcome:
-                currentPage = 0
-            case .measuringNoise:
-                currentPage = 1
-            case .testingString, .testingFretted:
-                currentPage = 2
-            case .complete:
-                currentPage = 3
+        .task {
+            // Auto-detect existing active profile for overwrite (when not explicitly passed)
+            if recalibratingProfile == nil {
+                existingActiveProfile = try? container.calibrationRepository.activeProfile()
+            }
+            let skipTuning = isRecalibration || recalibratingProfile != nil || existingActiveProfile != nil
+            if skipTuning {
+                engine = CalibrationEngine(isRecalibration: true)
+                engine.detectInputSource()
+                engine.finishTuning()
+            } else {
+                engine.detectInputSource()
+                await engine.startTuning()
             }
         }
         .onDisappear {
             engine.cancel()
         }
-    }
-
-    // MARK: - Screen 0: Welcome
-
-    private var welcomeScreen: some View {
-        VStack(spacing: 24) {
-            Spacer()
-
-            Image(systemName: "waveform.badge.mic")
-                .font(.system(size: 72))
-                .foregroundStyle(DesignSystem.Colors.cherry)
-
-            Text("Audio Calibration")
-                .font(DesignSystem.Typography.screenTitle)
-
-            Text("This process measures your environment's noise level and tests detection across your guitar. It takes about a minute.")
-                .font(.body)
-                .foregroundStyle(DesignSystem.Colors.text2)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 32)
-
-            VStack(spacing: 8) {
-                Label("Detected Input:", systemImage: "mic.fill")
-                    .font(.subheadline.weight(.semibold))
-                Text(engine.detectedInputSource.displayName)
-                    .font(.subheadline)
-                    .foregroundStyle(DesignSystem.Colors.text2)
+        .onChange(of: engine.detector.detectedNote) { oldNote, newNote in
+            if newNote != nil && oldNote == nil {
+                displayCents = engine.detector.centsDeviation
             }
-            .padding()
-            .background(DesignSystem.Colors.surface, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
-
-            Spacer()
-
-            Button {
-                Task { await engine.startSilenceMeasurement() }
-            } label: {
-                Text("Start Calibration")
-                    .font(.headline)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
-                    .background(DesignSystem.Colors.cherry, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
-                    .foregroundStyle(.white)
-            }
-            .buttonStyle(.plain)
-            .padding(.horizontal, 20)
-            .padding(.bottom, 32)
+        }
+        .onChange(of: engine.detector.centsDeviation) { _, newCents in
+            guard engine.detector.detectedNote != nil else { return }
+            let alpha = 0.1 + 0.3 * min(engine.detector.inputLevel, 1.0)
+            displayCents = alpha * newCents + (1.0 - alpha) * displayCents
         }
     }
 
-    // MARK: - Screen 1: Silence Measurement
+    // MARK: - Current Step
 
-    private var silenceScreen: some View {
-        VStack(spacing: 24) {
-            Spacer()
+    private var currentStep: CalibrationStep? {
+        switch engine.phase {
+        case .welcome, .tuning:
+            return .tuning
+        case .countdown, .measuringNoise:
+            return .measuringNoise
+        case .testingString:
+            return .openStrings
+        case .testingFretted:
+            return .frettedStrings
+        case .complete:
+            return .saveProfile
+        }
+    }
 
-            // Progress ring
-            ZStack {
-                Circle()
-                    .stroke(DesignSystem.Colors.surface2, lineWidth: 6)
-                Circle()
-                    .trim(from: 0, to: noiseProgress)
-                    .stroke(DesignSystem.Colors.cherry, style: StrokeStyle(lineWidth: 6, lineCap: .round))
-                    .rotationEffect(.degrees(-90))
-                    .animation(.linear(duration: 0.1), value: noiseProgress)
-                Image(systemName: "waveform.path")
-                    .font(.system(size: 32))
-                    .foregroundStyle(DesignSystem.Colors.cherry)
+    private var visibleSteps: [CalibrationStep] {
+        if isRecalibration || recalibratingProfile != nil || existingActiveProfile != nil {
+            // Skip tuning for re-calibration
+            return CalibrationStep.allCases.filter { $0 != .tuning }
+        }
+        return CalibrationStep.allCases
+    }
+
+    private func stepState(for step: CalibrationStep) -> StepState {
+        guard let current = currentStep else { return .upcoming }
+        if step.rawValue < current.rawValue { return .complete }
+        if step == current { return .active }
+        return .upcoming
+    }
+
+    private enum StepState {
+        case upcoming, active, complete
+    }
+
+    // MARK: - Step Card
+
+    @ViewBuilder
+    private func stepCard(for step: CalibrationStep) -> some View {
+        let state = stepState(for: step)
+        VStack(spacing: 0) {
+            // Card header
+            HStack(spacing: 12) {
+                stepIndicator(for: step, state: state)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(step.title)
+                        .font(.headline)
+                        .foregroundStyle(DesignSystem.Colors.text)
+                    if state != .active {
+                        Text(step.subtitle)
+                            .font(.caption)
+                            .foregroundStyle(DesignSystem.Colors.text2)
+                    }
+                }
+                Spacer()
             }
-            .frame(width: 100, height: 100)
+            .padding()
 
-            Text("Measuring Silence")
-                .font(DesignSystem.Typography.screenTitle)
+            // Expanded content for active step
+            if state == .active {
+                Divider()
+                    .padding(.horizontal)
 
-            Text("Stay quiet for a few seconds.\nKeep your guitar still and don't play.")
-                .font(.body)
-                .foregroundStyle(DesignSystem.Colors.text2)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 32)
+                stepContent(for: step)
+                    .padding()
+            }
+        }
+        .background(DesignSystem.Colors.surface, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.lg))
+        .animation(.easeInOut(duration: 0.3), value: state == .active)
+    }
 
-            // Live input level bar
+    private func stepIndicator(for step: CalibrationStep, state: StepState) -> some View {
+        ZStack {
+            switch state {
+            case .complete:
+                Circle()
+                    .fill(DesignSystem.Colors.correct)
+                    .frame(width: 32, height: 32)
+                Image(systemName: "checkmark")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(.white)
+            case .active:
+                Circle()
+                    .fill(DesignSystem.Colors.cherry)
+                    .frame(width: 32, height: 32)
+                Text("\(step.rawValue)")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(.white)
+            case .upcoming:
+                Circle()
+                    .strokeBorder(DesignSystem.Colors.border, lineWidth: 2)
+                    .frame(width: 32, height: 32)
+                Text("\(step.rawValue)")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(DesignSystem.Colors.muted)
+            }
+        }
+    }
+
+    // MARK: - Step Content
+
+    @ViewBuilder
+    private func stepContent(for step: CalibrationStep) -> some View {
+        switch step {
+        case .tuning:
+            tuningContent
+        case .measuringNoise:
+            noiseContent
+        case .openStrings:
+            openStringContent
+        case .frettedStrings:
+            frettedStringContent
+        case .saveProfile:
+            saveProfileContent
+        }
+    }
+
+    // MARK: - Step 1: Tuning
+
+    private var tuningContent: some View {
+        VStack(spacing: 16) {
+            // Note header
+            tunerNoteHeader
+
+            // Needle display
+            NeedleDisplay(cents: displayCents,
+                          isActive: engine.detector.detectedNote != nil)
+                .animation(.easeInOut(duration: 0.15), value: displayCents)
+
+            // Cents readout
+            tunerCentsReadout
+
+            // Cents scale
+            CentsScale()
+                .padding(.horizontal, 4)
+
+            // Input level
             InputLevelBar(level: engine.detector.inputLevel)
-                .frame(height: 28)
-                .padding(.horizontal, 32)
 
-            Spacer()
+            // A4 reference
+            HStack(spacing: 6) {
+                Image(systemName: "tuningfork")
+                    .font(.body)
+                    .foregroundStyle(DesignSystem.Colors.text)
+                Text("A4 = 440 Hz")
+                    .font(DesignSystem.Typography.bodyLabel)
+                    .foregroundStyle(DesignSystem.Colors.text)
+            }
+
+            // Done tuning button
+            Button {
+                engine.finishTuning()
+            } label: {
+                Text("Done Tuning")
+                    .font(.headline)
+                    .frame(maxWidth: .infinity, minHeight: 50)
+                    .foregroundStyle(.white)
+                    .background(in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
+                    .backgroundStyle(DesignSystem.Gradients.primary)
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    private var tunerNoteHeader: some View {
+        VStack(spacing: 6) {
+            if let note = engine.detector.detectedNote {
+                Text(note.displayName(format: noteFormat))
+                    .font(DesignSystem.Typography.noteDisplay)
+                    .foregroundStyle(tuningColor)
+                    .contentTransition(.numericText())
+                    .animation(.spring(duration: 0.2), value: note)
+
+                if let freq = engine.detector.detectedFrequency {
+                    Text(String(format: "%.1f Hz", freq))
+                        .font(DesignSystem.Typography.centsDisplay)
+                        .foregroundStyle(DesignSystem.Colors.text)
+                        .contentTransition(.numericText())
+                }
+            } else {
+                Text("\u{2013}")
+                    .font(DesignSystem.Typography.noteDisplay)
+                    .foregroundStyle(DesignSystem.Colors.muted)
+                Text(engine.detector.isRunning ? "Play a note\u{2026}" : "Starting\u{2026}")
+                    .font(DesignSystem.Typography.bodyLabel)
+                    .foregroundStyle(DesignSystem.Colors.text2)
+            }
+        }
+        .frame(height: 110)
+    }
+
+    private var tunerCentsReadout: some View {
+        let c = displayCents
+        let sign = c >= 0 ? "+" : ""
+        return Text("\(sign)\(Int(c.rounded())) \u{00A2}")
+            .font(DesignSystem.Typography.subDisplay)
+            .foregroundStyle(tuningColor)
+            .contentTransition(.numericText())
+            .opacity(engine.detector.detectedNote != nil ? 1 : 0)
+    }
+
+    private var tuningColor: Color {
+        DesignSystem.Colors.tuningColor(
+            centsDeviation: engine.detector.centsDeviation,
+            isActive: engine.detector.detectedNote != nil
+        )
+    }
+
+    // MARK: - Step 2: Noise Measurement
+
+    private var noiseContent: some View {
+        VStack(spacing: 16) {
+            if case .countdown(let remaining) = engine.phase {
+                Text("Get ready\u{2026}")
+                    .font(.subheadline)
+                    .foregroundStyle(DesignSystem.Colors.text2)
+
+                Text("\(remaining)")
+                    .font(.system(size: 64, weight: .bold, design: .rounded))
+                    .foregroundStyle(DesignSystem.Colors.cherry)
+                    .contentTransition(.numericText())
+                    .animation(.spring(duration: 0.2), value: remaining)
+
+                Text("Stay quiet and keep your guitar still.")
+                    .font(.subheadline)
+                    .foregroundStyle(DesignSystem.Colors.text2)
+                    .multilineTextAlignment(.center)
+            } else {
+                // Progress ring
+                ZStack {
+                    Circle()
+                        .stroke(DesignSystem.Colors.surface2, lineWidth: 6)
+                    Circle()
+                        .trim(from: 0, to: noiseProgress)
+                        .stroke(DesignSystem.Colors.cherry, style: StrokeStyle(lineWidth: 6, lineCap: .round))
+                        .rotationEffect(.degrees(-90))
+                        .animation(.linear(duration: 0.1), value: noiseProgress)
+                    Image(systemName: "waveform.path")
+                        .font(.system(size: 32))
+                        .foregroundStyle(DesignSystem.Colors.cherry)
+                }
+                .frame(width: 100, height: 100)
+
+                Text("Measuring\u{2026}")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(DesignSystem.Colors.text)
+
+                InputLevelBar(level: engine.detector.inputLevel)
+                    .frame(height: 28)
+            }
         }
     }
 
@@ -179,131 +415,106 @@ struct CalibrationView: View {
         return 0
     }
 
-    // MARK: - Screen 2: String Testing
+    // MARK: - Step 3: Open Strings
 
-    private var stringScreen: some View {
-        VStack(spacing: 20) {
-            Spacer()
+    private var openStringContent: some View {
+        VStack(spacing: 16) {
+            stringPromptAndDetection
+            stringChecklist(
+                entries: CalibrationEngine.openStringNotes,
+                results: engine.stringResults,
+                activeString: { if case .testingString(let n) = engine.phase { return n }; return nil }
+            )
+        }
+    }
 
-            if engine.isFrettedPhase {
-                Text("12th Fret Test")
-                    .font(DesignSystem.Typography.screenTitle)
+    // MARK: - Step 4: Fretted Strings
 
-                Text("Now play the same strings at the 12th fret.\nThe 12th fret is where the double dots are.")
-                    .font(.body)
-                    .foregroundStyle(DesignSystem.Colors.text2)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 32)
-            } else {
-                Text("Open String Test")
-                    .font(DesignSystem.Typography.screenTitle)
+    private var frettedStringContent: some View {
+        VStack(spacing: 16) {
+            stringPromptAndDetection
+            stringChecklist(
+                entries: CalibrationEngine.frettedStringNotes,
+                results: engine.frettedStringResults,
+                activeString: { if case .testingFretted(let n) = engine.phase { return n }; return nil }
+            )
+        }
+    }
 
-                Text("Play each open string when prompted.\nHold until the checkmark appears.")
-                    .font(.body)
-                    .foregroundStyle(DesignSystem.Colors.text2)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 32)
+    private func stringChecklist(
+        entries: [(string: Int, note: MusicalNote)],
+        results: [Int: Bool],
+        activeString: @escaping () -> Int?
+    ) -> some View {
+        VStack(spacing: 6) {
+            ForEach(entries, id: \.string) { entry in
+                let passed = results[entry.string] == true
+                HStack(spacing: 8) {
+                    Image(systemName: passed ? "checkmark.circle.fill" : "circle")
+                        .foregroundStyle(passed ? DesignSystem.Colors.correct : DesignSystem.Colors.muted)
+                    Text(CalibrationEngine.stringNames[entry.string] ?? "String \(entry.string)")
+                        .font(.subheadline)
+                        .foregroundStyle(DesignSystem.Colors.text)
+                    Spacer()
+                    if activeString() == entry.string {
+                        ProgressView()
+                            .controlSize(.small)
+                    }
+                }
             }
+        }
+    }
 
+    // MARK: - Shared String Prompt
+
+    private var stringPromptAndDetection: some View {
+        VStack(spacing: 12) {
             // Current string prompt
             if let name = engine.currentStringName,
                let note = engine.expectedNote {
-                VStack(spacing: 8) {
+                VStack(spacing: 4) {
                     Text(engine.isFrettedPhase ? "Play 12th Fret:" : "Play:")
-                        .font(.subheadline)
+                        .font(.title3)
                         .foregroundStyle(DesignSystem.Colors.text2)
                     Text(name)
-                        .font(DesignSystem.Typography.subDisplay)
+                        .font(.title2.weight(.semibold))
+                        .foregroundStyle(DesignSystem.Colors.text)
                     Text(note.sharpName)
-                        .font(DesignSystem.Typography.quizNote)
+                        .font(.title.weight(.bold))
                         .foregroundStyle(DesignSystem.Colors.cherry)
                 }
-                .padding()
             }
 
-            // Live detection display
+            // Live detection
             if let detected = engine.detector.detectedNote {
-                HStack(spacing: 8) {
+                HStack(spacing: 6) {
                     Image(systemName: "mic.fill")
                         .foregroundStyle(DesignSystem.Colors.correct)
                     Text("Hearing: \(detected.sharpName)")
                         .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(DesignSystem.Colors.text)
                 }
             } else {
-                HStack(spacing: 8) {
+                HStack(spacing: 6) {
                     Image(systemName: "mic.fill")
                         .foregroundStyle(DesignSystem.Colors.text2)
-                    Text("Listening...")
+                    Text("Listening\u{2026}")
                         .font(.subheadline)
                         .foregroundStyle(DesignSystem.Colors.text2)
                 }
             }
 
-            // Input level bar
+            // Input level
             InputLevelBar(level: engine.detector.inputLevel)
                 .frame(height: 22)
-                .padding(.horizontal, 32)
-
-            // Per-string checkmarks — combined open + fretted
-            stringChecklist
-                .padding(.horizontal, 32)
-
-            Spacer()
         }
-        .animation(.easeInOut(duration: 0.3), value: engine.isFrettedPhase)
     }
 
-    private var stringChecklist: some View {
-        HStack(alignment: .top, spacing: 16) {
-            // Open strings column
-            VStack(spacing: 6) {
-                DesignSystem.Typography.capsLabel("OPEN STRINGS")
-                    .foregroundStyle(DesignSystem.Colors.text)
-                ForEach(CalibrationEngine.openStringNotes, id: \.string) { entry in
-                    HStack(spacing: 6) {
-                        Image(systemName: engine.stringResults[entry.string] == true ? "checkmark.circle.fill" : "circle")
-                            .foregroundStyle(engine.stringResults[entry.string] == true ? .green : .secondary)
-                        Text(CalibrationEngine.stringNames[entry.string] ?? "String \(entry.string)")
-                            .font(.subheadline)
-                        Spacer()
-                        if case .testingString(let num) = engine.phase, num == entry.string {
-                            ProgressView()
-                                .controlSize(.small)
-                        }
-                    }
-                }
-            }
+    // MARK: - Step 5: Save Profile
 
-            // 12th fret column
-            VStack(spacing: 6) {
-                DesignSystem.Typography.capsLabel("12TH FRET")
-                    .foregroundStyle(DesignSystem.Colors.text)
-                ForEach(CalibrationEngine.frettedStringNotes, id: \.string) { entry in
-                    HStack(spacing: 6) {
-                        Image(systemName: engine.frettedStringResults[entry.string] == true ? "checkmark.circle.fill" : "circle")
-                            .foregroundStyle(engine.frettedStringResults[entry.string] == true ? .green : .secondary)
-                        Text(CalibrationEngine.stringNames[entry.string] ?? "String \(entry.string)")
-                            .font(.subheadline)
-                        Spacer()
-                        if case .testingFretted(let num) = engine.phase, num == entry.string {
-                            ProgressView()
-                                .controlSize(.small)
-                        }
-                    }
-                }
-            }
-        }
-        .padding()
-        .background(DesignSystem.Colors.surface, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
-    }
-
-    // MARK: - Screen 3: Results
-
-    private var resultsScreen: some View {
-        VStack(spacing: 24) {
-            Spacer()
-
-            // Quality score ring
+    private var saveProfileContent: some View {
+        VStack(spacing: 16) {
+            // Quality score
             ZStack {
                 Circle()
                     .stroke(DesignSystem.Colors.surface2, lineWidth: 8)
@@ -314,79 +525,38 @@ struct CalibrationView: View {
                 VStack(spacing: 2) {
                     Text("\(Int(engine.signalQualityScore * 100))%")
                         .font(DesignSystem.Typography.subDisplay)
+                        .foregroundStyle(DesignSystem.Colors.text)
                     Text("Quality")
                         .font(.caption)
                         .foregroundStyle(DesignSystem.Colors.text2)
                 }
             }
-            .frame(width: 120, height: 120)
+            .frame(width: 100, height: 100)
 
-            Text("Calibration Complete")
-                .font(DesignSystem.Typography.screenTitle)
-
-            Text("Input: \(engine.detectedInputSource.displayName)")
-                .font(.subheadline)
-                .foregroundStyle(DesignSystem.Colors.text2)
-
-            // Per-string results — open + fretted side by side
+            // String results summary
             HStack(alignment: .top, spacing: 16) {
-                // Open strings column
-                VStack(spacing: 6) {
-                    DesignSystem.Typography.capsLabel("OPEN STRINGS")
-                        .foregroundStyle(DesignSystem.Colors.text)
-                    ForEach(CalibrationEngine.openStringNotes, id: \.string) { entry in
-                        HStack(spacing: 6) {
-                            Image(systemName: engine.stringResults[entry.string] == true ? "checkmark.circle.fill" : "xmark.circle.fill")
-                                .foregroundStyle(engine.stringResults[entry.string] == true ? DesignSystem.Colors.correct : DesignSystem.Colors.wrong)
-                            Text(CalibrationEngine.stringNames[entry.string] ?? "String \(entry.string)")
-                                .font(.subheadline)
-                            Spacer()
-                        }
-                    }
-                }
-
-                // 12th fret column
-                VStack(spacing: 6) {
-                    DesignSystem.Typography.capsLabel("12TH FRET")
-                        .foregroundStyle(DesignSystem.Colors.text)
-                    ForEach(CalibrationEngine.frettedStringNotes, id: \.string) { entry in
-                        HStack(spacing: 6) {
-                            Image(systemName: engine.frettedStringResults[entry.string] == true ? "checkmark.circle.fill" : "xmark.circle.fill")
-                                .foregroundStyle(engine.frettedStringResults[entry.string] == true ? DesignSystem.Colors.correct : DesignSystem.Colors.wrong)
-                            Text(CalibrationEngine.stringNames[entry.string] ?? "String \(entry.string)")
-                                .font(.subheadline)
-                            Spacer()
-                        }
-                    }
-                }
+                resultsSummaryColumn("OPEN", entries: CalibrationEngine.openStringNotes, results: engine.stringResults)
+                resultsSummaryColumn("12TH FRET", entries: CalibrationEngine.frettedStringNotes, results: engine.frettedStringResults)
+                Spacer()
             }
-            .padding()
-            .background(DesignSystem.Colors.surface, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
-            .padding(.horizontal, 32)
 
-            Spacer()
-
-            if recalibratingProfile != nil {
-                // Re-calibrating an existing profile — skip naming, just save
+            // Profile naming / save
+            if recalibratingProfile != nil || existingActiveProfile != nil {
                 Button {
                     saveAndClose()
                 } label: {
                     Text("Save & Close")
                         .font(.headline)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 16)
-                        .background(DesignSystem.Colors.cherry, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
+                        .frame(maxWidth: .infinity, minHeight: 50)
                         .foregroundStyle(.white)
+                        .background(in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
+                        .backgroundStyle(DesignSystem.Gradients.primary)
                 }
                 .buttonStyle(.plain)
-                .padding(.horizontal, 20)
-                .padding(.bottom, 32)
             } else if showNameEntry {
-                // Naming UI
-                VStack(spacing: 16) {
+                VStack(spacing: 12) {
                     TextField("Profile Name (e.g. Strat, Acoustic)", text: $profileName)
                         .textFieldStyle(.roundedBorder)
-                        .padding(.horizontal, 20)
 
                     Picker("Guitar Type", selection: $selectedGuitarType) {
                         ForEach(GuitarType.allCases, id: \.self) { type in
@@ -394,36 +564,31 @@ struct CalibrationView: View {
                         }
                     }
                     .pickerStyle(.segmented)
-                    .padding(.horizontal, 20)
 
                     Button {
                         saveAndClose()
                     } label: {
                         Text("Save Profile")
                             .font(.headline)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 16)
-                            .background(DesignSystem.Colors.cherry, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
+                            .frame(maxWidth: .infinity, minHeight: 50)
                             .foregroundStyle(.white)
+                            .background(in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
+                            .backgroundStyle(DesignSystem.Gradients.primary)
                     }
                     .buttonStyle(.plain)
-                    .padding(.horizontal, 20)
                 }
-                .padding(.bottom, 32)
             } else {
                 Button {
                     showNameEntry = true
                 } label: {
                     Text("Save & Name Profile")
                         .font(.headline)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 16)
-                        .background(DesignSystem.Colors.cherry, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
+                        .frame(maxWidth: .infinity, minHeight: 50)
                         .foregroundStyle(.white)
+                        .background(in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
+                        .backgroundStyle(DesignSystem.Gradients.primary)
                 }
                 .buttonStyle(.plain)
-                .padding(.horizontal, 20)
-                .padding(.bottom, 32)
             }
         }
     }
@@ -434,41 +599,63 @@ struct CalibrationView: View {
         return DesignSystem.Colors.wrong
     }
 
+    private func resultsSummaryColumn(
+        _ label: String,
+        entries: [(string: Int, note: MusicalNote)],
+        results: [Int: Bool]
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            DesignSystem.Typography.capsLabel(label)
+            ForEach(entries, id: \.string) { entry in
+                let passed = results[entry.string] == true
+                HStack(spacing: 4) {
+                    Image(systemName: passed ? "checkmark.circle.fill" : "xmark.circle.fill")
+                        .font(.caption)
+                        .foregroundStyle(passed ? DesignSystem.Colors.correct : DesignSystem.Colors.wrong)
+                    Text(CalibrationEngine.stringNames[entry.string] ?? "")
+                        .font(.caption)
+                        .foregroundStyle(DesignSystem.Colors.text)
+                }
+            }
+        }
+    }
+
     // MARK: - Save
+
+    private func overwriteProfile(_ existing: AudioCalibrationProfile) {
+        let newProfile = engine.buildProfile()
+        existing.inputSourceRaw = newProfile.inputSourceRaw
+        existing.measuredNoiseFloorRMS = newProfile.measuredNoiseFloorRMS
+        existing.measuredAGCGain = newProfile.measuredAGCGain
+        existing.calibrationDate = newProfile.calibrationDate
+        existing.signalQualityScore = newProfile.signalQualityScore
+        existing.stringResultsData = newProfile.stringResultsData
+        existing.frettedStringResultsData = newProfile.frettedStringResultsData
+        try? container.calibrationRepository.save(existing)
+    }
 
     private func saveAndClose() {
         if let existing = recalibratingProfile {
-            // Re-calibration: overwrite calibration data on existing profile, keep name/type
-            let newProfile = engine.buildProfile()
-            existing.inputSourceRaw = newProfile.inputSourceRaw
-            existing.measuredNoiseFloorRMS = newProfile.measuredNoiseFloorRMS
-            existing.measuredAGCGain = newProfile.measuredAGCGain
-            existing.calibrationDate = newProfile.calibrationDate
-            existing.signalQualityScore = newProfile.signalQualityScore
-            existing.stringResultsData = newProfile.stringResultsData
-            existing.frettedStringResultsData = newProfile.frettedStringResultsData
-            try? container.calibrationRepository.save(existing)
+            overwriteProfile(existing)
+        } else if let existing = existingActiveProfile {
+            overwriteProfile(existing)
         } else {
-            // New profile: set name, guitar type, mark as active
             let profile = engine.buildProfile()
             let trimmedName = profileName.trimmingCharacters(in: .whitespacesAndNewlines)
             profile.name = trimmedName.isEmpty ? nil : trimmedName
             profile.guitarType = selectedGuitarType
             profile.isActive = true
 
-            // Deactivate all other profiles, then save
             if let allProfiles = try? container.calibrationRepository.allProfiles() {
                 for p in allProfiles { p.isActive = false }
             }
             try? container.calibrationRepository.save(profile)
 
-            // Sync active ID to UserDefaults
             UserDefaults.standard.set(profile.id.uuidString, forKey: LocalUserPreferences.Key.activeCalibrationProfileID)
         }
 
         UserDefaults.standard.set(true, forKey: LocalUserPreferences.Key.hasCompletedCalibration)
 
-        // Enable audio detection mode now that calibration is complete
         if let settings = try? container.settingsRepository.loadSettings() {
             settings.tapModeEnabled = false
             try? container.settingsRepository.saveSettings(settings)
@@ -478,4 +665,3 @@ struct CalibrationView: View {
         dismiss()
     }
 }
-

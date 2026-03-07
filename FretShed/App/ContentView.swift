@@ -22,37 +22,43 @@ struct ContentView: View {
 
     // MARK: - Body
 
+    @State private var metroDroneView = MetroDroneView()
+    @State private var tunerView = TunerView()
+    @State private var settingsView = SettingsView()
+
     var body: some View {
         @Bindable var quiz = quiz
         ZStack {
-            // ── Tabs (always present) ────────────────────────────────────
-            TabView(selection: $quiz.selectedTab) {
-                practiceTab
-                    .tabItem { Label(AppTab.practice.rawValue,   systemImage: AppTab.practice.icon) }
-                    .tag(AppTab.practice)
+            // ── All tabs always rendered, only selected is visible ────────
+            VStack(spacing: 0) {
+                ZStack {
+                    practiceTab
+                        .opacity(quiz.selectedTab == .practice ? 1 : 0)
+                        .allowsHitTesting(quiz.selectedTab == .practice)
 
-                progressTabView
-                    .tabItem { Label(AppTab.progress.rawValue,   systemImage: AppTab.progress.icon) }
-                    .tag(AppTab.progress)
+                    progressTabView
+                        .opacity(quiz.selectedTab == .progress ? 1 : 0)
+                        .allowsHitTesting(quiz.selectedTab == .progress)
 
-                tunerTabView
-                    .tabItem { Label(AppTab.tuner.rawValue,      systemImage: AppTab.tuner.icon) }
-                    .tag(AppTab.tuner)
+                    tunerView
+                        .opacity(quiz.selectedTab == .tuner ? 1 : 0)
+                        .allowsHitTesting(quiz.selectedTab == .tuner)
 
-                MetroDroneView()
-                    .tabItem { Label(AppTab.metroDrone.rawValue, systemImage: AppTab.metroDrone.icon) }
-                    .tag(AppTab.metroDrone)
+                    metroDroneView
+                        .opacity(quiz.selectedTab == .metroDrone ? 1 : 0)
+                        .allowsHitTesting(quiz.selectedTab == .metroDrone)
 
-                settingsStubView
-                    .tabItem { Label(AppTab.settings.rawValue,   systemImage: AppTab.settings.icon) }
-                    .tag(AppTab.settings)
+                    settingsView
+                        .opacity(quiz.selectedTab == .settings ? 1 : 0)
+                        .allowsHitTesting(quiz.selectedTab == .settings)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+                if quiz.activeQuizVM == nil {
+                    glassTabBar
+                }
             }
-            .tint(DesignSystem.Colors.cherry)
-            // Disable all TabView hit testing (including the Liquid Glass
-            // tab bar's gesture recogniser) while the quiz overlay is
-            // showing. Without this, the tab bar intercepts taps in the
-            // bottom region of the screen on iOS 26.
-            .allowsHitTesting(quiz.activeQuizVM == nil)
+            .ignoresSafeArea(.keyboard)
 
             // ── Quiz overlay (above tabs, covers full screen) ───────────
             if let vm = quiz.activeQuizVM {
@@ -81,16 +87,11 @@ struct ContentView: View {
             quiz.selectedTab = .practice
         }
 
-        // ── Calibration cover (re-calibrate from compact card / Settings) ──
-        .fullScreenCover(isPresented: $quiz.showCalibration) {
-            CalibrationView()
-        }
-
-        // ── Calibration tuner cover (audio setup flow from Do This First) ──
-        .fullScreenCover(isPresented: $quiz.showCalibrationTuner, onDismiss: {
-            quiz.handleCalibrationTunerDismiss()
+        // ── Calibration cover (all calibration entry points) ──
+        .fullScreenCover(isPresented: $quiz.showCalibration, onDismiss: {
+            quiz.handleCalibrationDismiss()
         }) {
-            CalibrationTunerView()
+            CalibrationView()
         }
 
         // ── Calibration gate alert ──────────────────────────────────
@@ -104,6 +105,13 @@ struct ContentView: View {
 
         .task {
             quiz.container = container
+            if progressVM == nil {
+                progressVM = ProgressViewModel(
+                    masteryRepository: container.masteryRepository,
+                    sessionRepository: container.sessionRepository,
+                    attemptRepository: container.attemptRepository
+                )
+            }
         }
     }
 
@@ -142,21 +150,43 @@ struct ContentView: View {
         NavigationStack {
             if let vm = progressVM {
                 ProgressTabView(vm: vm)
-            }
-        }
-        .task {
-            if progressVM == nil {
-                progressVM = ProgressViewModel(
-                    masteryRepository: container.masteryRepository,
-                    sessionRepository: container.sessionRepository,
-                    attemptRepository: container.attemptRepository
-                )
+            } else {
+                Color.clear
             }
         }
     }
 
-    private var tunerTabView: some View { TunerView() }
-    private var settingsStubView: some View { SettingsView() }
+    // MARK: - Glass Tab Bar
+
+    private var glassTabBar: some View {
+        HStack {
+            ForEach(AppTab.allCases, id: \.self) { tab in
+                Button {
+                    withAnimation(.easeInOut(duration: 0.15)) {
+                        quiz.selectedTab = tab
+                    }
+                } label: {
+                    VStack(spacing: 4) {
+                        Image(systemName: tab.icon)
+                            .font(.system(size: 28))
+                            .symbolRenderingMode(.monochrome)
+                        Text(tab.rawValue)
+                            .font(.caption2)
+                    }
+                    .foregroundStyle(quiz.selectedTab == tab
+                                     ? DesignSystem.Colors.cherry
+                                     : DesignSystem.Colors.muted)
+                    .frame(maxWidth: .infinity)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.top, 10)
+        .padding(.bottom, 6)
+        .background(DesignSystem.Colors.background)
+    }
+
 }
 
 // MARK: - PracticeHomeView
@@ -175,6 +205,7 @@ struct PracticeHomeView: View {
     @State private var showTimedPicker = false
     @State private var selectedTimedMinutes: Int = 5
     @State private var calibrationBannerDismissed = false
+    @State private var activeProfileName: String?
 
     @AppStorage(LocalUserPreferences.Key.hasCompletedCalibration)
     private var hasCompletedCalibration = false
@@ -216,9 +247,21 @@ struct PracticeHomeView: View {
             Text("The Shed")
                 .font(DesignSystem.Typography.screenTitle)
                 .foregroundStyle(DesignSystem.Colors.text)
-            Text(isNewUser ? "Time to put in the work." : "Pick up where you left off.")
-                .font(DesignSystem.Typography.tagline)
+            Text(isNewUser ? "Welcome to the Woodshed, let's get to work." : "Welcome back to the Shed.")
+                .font(.custom("CrimsonPro-Italic", size: 19.5))
                 .foregroundStyle(DesignSystem.Colors.muted)
+
+            if hasCompletedCalibration, let name = activeProfileName {
+                HStack(spacing: 6) {
+                    Image(systemName: "checkmark.seal.fill")
+                        .font(.caption)
+                        .foregroundStyle(DesignSystem.Colors.correct)
+                    Text("Using: \(name)")
+                        .font(.caption)
+                        .foregroundStyle(DesignSystem.Colors.text2)
+                }
+                .padding(.top, 2)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -261,16 +304,16 @@ struct PracticeHomeView: View {
             launchSmartPractice()
         } label: {
             VStack(alignment: .leading, spacing: 4) {
-                Text((isNewUser ? "START HERE" : "BASED ON YOUR PROGRESS, WE RECOMMEND").uppercased())
-                    .font(DesignSystem.Typography.sectionLabel)
-                    .tracking(1.5)
-                    .foregroundStyle(.white)
                 Text(isNewUser ? "Start Practice" : "Smart Practice")
                     .font(DesignSystem.Typography.screenTitle)
                     .foregroundStyle(.white)
+                Text((isNewUser ? "START HERE" : "RECOMMENDED BASED ON YOUR PROGRESS").uppercased())
+                    .font(DesignSystem.Typography.sectionLabel)
+                    .tracking(1.5)
+                    .foregroundStyle(.white)
                 Text(isNewUser
                      ? "Adaptive session based on your level"
-                     : "Next: \(smartDescription) \u{2022} \(weakSpots) weak spots")
+                     : "Next Up: \(smartDescription) \u{2022} \(weakSpots) weak spots")
                     .font(DesignSystem.Typography.accentDescription)
                     .foregroundStyle(.white.opacity(0.85))
             }
@@ -419,6 +462,10 @@ struct PracticeHomeView: View {
                 Text("Let Me Pick")
                     .font(DesignSystem.Typography.screenTitle)
                     .foregroundStyle(.white)
+                Text("CHOOSE MY OWN PRACTICE SESSION")
+                    .font(DesignSystem.Typography.sectionLabel)
+                    .tracking(1.5)
+                    .foregroundStyle(.white)
                 Text("Tap to design your session")
                     .font(DesignSystem.Typography.accentDescription)
                     .foregroundStyle(.white.opacity(0.85))
@@ -468,7 +515,16 @@ struct PracticeHomeView: View {
         alternativeTiles = (try? engine.alternativeSessions()) ?? []
     }
 
+    private func loadActiveProfileName() {
+        if let profile = try? container.calibrationRepository.activeProfile() {
+            activeProfileName = profile.name ?? profile.guitarType?.displayName ?? "Calibrated"
+        } else {
+            activeProfileName = nil
+        }
+    }
+
     private func refreshData() {
+        loadActiveProfileName()
         // Session count: if coordinator has a last session, we're a returning user
         if coordinator.lastCompletedSession != nil {
             sessionCount = 1

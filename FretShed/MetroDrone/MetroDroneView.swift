@@ -22,10 +22,7 @@ struct MetroDroneView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 24) {
-                    bpmSection
-                    beatIndicators
-                    timeSignatureAndAccents
-                    playButtons
+                    metronomeCard
                     speedTrainerSection
                     droneSection
                 }
@@ -35,6 +32,7 @@ struct MetroDroneView: View {
                 .frame(maxWidth: 600)
                 .frame(maxWidth: .infinity)
             }
+            .tint(DesignSystem.Colors.amber)
             .toolbar(.hidden, for: .navigationBar)
             .onDisappear { vm.onDisappear() }
             .sheet(isPresented: $showTempoInfo) {
@@ -87,18 +85,21 @@ struct MetroDroneView: View {
         }
     }
 
-    // MARK: - BPM Section
+    // MARK: - Metronome Card
 
-    private var bpmSection: some View {
+    private var metronomeCard: some View {
         VStack(spacing: 12) {
             // Section header
             HStack {
-                Text("Tempo")
+                Text("Metronome")
                     .font(DesignSystem.Typography.sectionHeader)
                     .foregroundStyle(DesignSystem.Colors.text)
                 infoButton { showTempoInfo = true }
                 Spacer()
             }
+
+            // Beat indicators
+            beatIndicators
 
             // Large BPM display
             Text("\(Int(vm.bpm))")
@@ -139,6 +140,29 @@ struct MetroDroneView: View {
                         .frame(width: 44, height: 44)
                         .background(.ultraThinMaterial, in: Circle())
                 }
+            }
+            .buttonStyle(.plain)
+
+            Divider()
+                .padding(.vertical, 4)
+
+            // Time Signature & Accents (inline)
+            timeSignatureContent
+
+            Divider()
+                .padding(.vertical, 4)
+
+            // Play button
+            Button(action: vm.toggleMetronome) {
+                Label(
+                    vm.isMetronomePlaying ? "Stop Metronome" : "Start Metronome",
+                    systemImage: vm.isMetronomePlaying ? "stop.fill" : "play.fill"
+                )
+                .font(.headline)
+                .frame(maxWidth: .infinity, minHeight: 50)
+                .foregroundStyle(.white)
+                .background(in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
+                .backgroundStyle(vm.isMetronomePlaying ? AnyShapeStyle(DesignSystem.Colors.wrong) : AnyShapeStyle(DesignSystem.Gradients.primary))
             }
             .buttonStyle(.plain)
         }
@@ -190,9 +214,9 @@ struct MetroDroneView: View {
         }
     }
 
-    // MARK: - Time Signature & Accents
+    // MARK: - Time Signature & Accents (inline content)
 
-    private var timeSignatureAndAccents: some View {
+    private var timeSignatureContent: some View {
         DisclosureGroup(isExpanded: $showTimeSignature) {
             VStack(spacing: 12) {
                 // Time signature picker
@@ -276,13 +300,11 @@ struct MetroDroneView: View {
         } label: {
             HStack {
                 Text("Time Signature & Accents")
-                    .font(DesignSystem.Typography.sectionHeader)
+                    .font(.subheadline.weight(.medium))
                     .foregroundStyle(DesignSystem.Colors.text)
                 infoButton { showTimeSignatureInfo = true }
             }
         }
-        .padding()
-        .background(DesignSystem.Colors.surface, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.lg))
     }
 
     @ViewBuilder
@@ -309,23 +331,6 @@ struct MetroDroneView: View {
         case .normal: return DesignSystem.Colors.cherry
         case .muted:  return .gray.opacity(0.3)
         }
-    }
-
-    // MARK: - Play Buttons
-
-    private var playButtons: some View {
-        Button(action: vm.toggleMetronome) {
-            Label(
-                vm.isMetronomePlaying ? "Stop Metronome" : "Start Metronome",
-                systemImage: vm.isMetronomePlaying ? "stop.fill" : "play.fill"
-            )
-            .font(.headline)
-            .frame(maxWidth: .infinity, minHeight: 50)
-            .foregroundStyle(.white)
-            .background(in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
-            .backgroundStyle(vm.isMetronomePlaying ? AnyShapeStyle(DesignSystem.Colors.wrong) : AnyShapeStyle(DesignSystem.Gradients.primary))
-        }
-        .buttonStyle(.plain)
     }
 
     // MARK: - Speed Trainer
@@ -425,13 +430,13 @@ struct MetroDroneView: View {
                 // Start / Stop trainer
                 Button(action: vm.toggleSpeedTrainer) {
                     Label(
-                        vm.isSpeedTrainerActive ? "Stop Trainer" : "Start Trainer",
-                        systemImage: vm.isSpeedTrainerActive ? "stop.fill" : "hare.fill"
+                        vm.isSpeedTrainerActive ? "Stop Speed Trainer" : "Start Speed Trainer",
+                        systemImage: vm.isSpeedTrainerActive ? "stop.fill" : "play.fill"
                     )
-                    .font(.subheadline.weight(.semibold))
-                    .frame(maxWidth: .infinity, minHeight: 40)
+                    .font(.headline)
+                    .frame(maxWidth: .infinity, minHeight: 50)
                     .foregroundStyle(.white)
-                    .background(in: RoundedRectangle(cornerRadius: DesignSystem.Radius.sm))
+                    .background(in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
                     .backgroundStyle(vm.isSpeedTrainerActive ? AnyShapeStyle(DesignSystem.Colors.wrong) : AnyShapeStyle(DesignSystem.Gradients.primary))
                 }
                 .buttonStyle(.plain)

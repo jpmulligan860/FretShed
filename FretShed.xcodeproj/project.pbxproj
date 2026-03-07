@@ -19,7 +19,6 @@
 		3679E6E6C395D4CF33C3B179 /* FretboardMap.swift in Sources */ = {isa = PBXBuildFile; fileRef = C97A5E570DD542CE6BE2A7DE /* FretboardMap.swift */; };
 		39AD25909A0A7C8465961526 /* MusicalNoteTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D08375D0D742EB497DA8C1B5 /* MusicalNoteTests.swift */; };
 		3BA1749981D64C8E7900D5BF /* SignalMeasurementTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 940F20D459475ADCDF1F786C /* SignalMeasurementTests.swift */; };
-		3CD9F05095A4FFA448A52A8A /* CalibrationTunerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B32719655DF20923553DFBF1 /* CalibrationTunerView.swift */; };
 		3F84D2B9568EE2A97A7CE465 /* MasteryHeatmapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40EADCDC7EF4F4CB8E8D8B6A /* MasteryHeatmapView.swift */; };
 		41A8D1A0AB8A3E4CE8AA2D9B /* settings.local.json in Resources */ = {isa = PBXBuildFile; fileRef = 616D897D4D1484E19B0FEA2F /* settings.local.json */; };
 		4A962BA3BCC7B96F8E70CA59 /* SessionHeatmapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 368D92459DC9EF2DC0B7DC23 /* SessionHeatmapView.swift */; };
@@ -145,7 +144,6 @@
 		AYIN02A1B2C3D4E5F6A7B8C9 /* AccelerateYINTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccelerateYINTests.swift; sourceTree = "<group>"; };
 		B249D088A3BF526B9663DD4D /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		B2BA6E158C16D88608168965 /* MetroDroneView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetroDroneView.swift; sourceTree = "<group>"; };
-		B32719655DF20923553DFBF1 /* CalibrationTunerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalibrationTunerView.swift; sourceTree = "<group>"; };
 		B6FDEB3EA727B49B54ACBB1C /* QuizView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuizView.swift; sourceTree = "<group>"; };
 		B90F2903BC076D7BFEF7665A /* CalibrationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalibrationView.swift; sourceTree = "<group>"; };
 		BD97CC80B02ADF5F5BAE2DAE /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -178,7 +176,6 @@
 			children = (
 				307D70BE2E5AE3372D94B9EA /* AudioCalibrationProfile.swift */,
 				F4A56A5807EDBEDFF6EC3BBB /* CalibrationEngine.swift */,
-				B32719655DF20923553DFBF1 /* CalibrationTunerView.swift */,
 				B90F2903BC076D7BFEF7665A /* CalibrationView.swift */,
 			);
 			path = Calibration;
@@ -533,7 +530,6 @@
 				BKUP01A1B2C3D4E5F6A7B8C9 /* BackupPayload.swift in Sources */,
 				BKUP03A1B2C3D4E5F6A7B8C9 /* BackupManager.swift in Sources */,
 				12DAA222A1C52E3094C2C70A /* CalibrationEngine.swift in Sources */,
-				3CD9F05095A4FFA448A52A8A /* CalibrationTunerView.swift in Sources */,
 				4B5D130E35BADB2648D0E601 /* CalibrationView.swift in Sources */,
 				90C6CE68DFA597F6BC629DCE /* CellDetailSheet.swift in Sources */,
 				1D2ADF8BA76519EDEEBE5EF8 /* ChordProgression.swift in Sources */,

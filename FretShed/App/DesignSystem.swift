@@ -171,6 +171,15 @@ enum DesignSystem {
         static let fretboardWood    = rosewood
         static let fretboardStrings = Color(.sRGB, red: 0.82, green: 0.82, blue: 0.82)
 
+        /// Shared tuning color: green (in tune) → amber (close) → red (off).
+        static func tuningColor(centsDeviation: Double, isActive: Bool) -> Color {
+            guard isActive else { return muted }
+            let absCents = abs(centsDeviation)
+            if absCents <= 5  { return correct }
+            if absCents <= 15 { return amber }
+            return wrong
+        }
+
     }
 
     // MARK: - Typography — Three-Family System (A2)

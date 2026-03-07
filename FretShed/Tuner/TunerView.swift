@@ -80,31 +80,38 @@ public struct TunerView: View {
                     }
                 } else {
                     // ── Portrait: original stacked layout ──────────────
-                    VStack(spacing: 0) {
-                        noteHeader
-                            .padding(.top, 32)
+                    VStack(spacing: 16) {
+                        VStack(spacing: 0) {
+                            noteHeader
+                                .padding(.top, 24)
 
-                        NeedleDisplay(cents: displayCents,
-                                      isActive: detector.detectedNote != nil)
-                            .padding(.top, 32)
-                            .animation(.easeInOut(duration: 0.15), value: displayCents)
+                            NeedleDisplay(cents: displayCents,
+                                          isActive: detector.detectedNote != nil)
+                                .padding(.top, 24)
+                                .animation(.easeInOut(duration: 0.15), value: displayCents)
 
-                        centsReadout
-                            .padding(.top, 20)
+                            centsReadout
+                                .padding(.top, 16)
 
-                        CentsScale()
-                            .padding(.top, 8)
-                            .padding(.horizontal, 40)
+                            CentsScale()
+                                .padding(.top, 8)
+                                .padding(.horizontal, 24)
 
-                        InputLevelBar(level: detector.inputLevel)
-                            .padding(.top, 6)
-                            .padding(.horizontal, 40)
+                            InputLevelBar(level: detector.inputLevel)
+                                .padding(.top, 6)
+                                .padding(.horizontal, 24)
+
+                            controls
+                                .padding(.top, 8)
+                                .padding(.bottom, 20)
+                        }
+                        .background(DesignSystem.Colors.surface,
+                                    in: RoundedRectangle(cornerRadius: 16))
+                        .padding(.horizontal, 16)
 
                         Spacer()
-
-                        controls
-                            .padding(.bottom, 32)
                     }
+                    .padding(.top, 24)
                 }
             }
             .toolbar(.hidden, for: .navigationBar)
@@ -178,7 +185,7 @@ public struct TunerView: View {
                 if let freq = detector.detectedFrequency {
                     Text(String(format: "%.1f Hz", freq))
                         .font(DesignSystem.Typography.centsDisplay)
-                        .foregroundStyle(DesignSystem.Colors.text2)
+                        .foregroundStyle(DesignSystem.Colors.text)
                         .contentTransition(.numericText())
                 }
             } else if let err = detector.error, case .microphonePermissionDenied = err {
@@ -204,7 +211,7 @@ public struct TunerView: View {
             } else {
                 Text("–")
                     .font(DesignSystem.Typography.noteDisplay)
-                    .foregroundStyle(DesignSystem.Colors.text2.opacity(0.4))
+                    .foregroundStyle(DesignSystem.Colors.muted)
                 Text(detector.isRunning ? "Play a note…" : "Starting…")
                     .font(DesignSystem.Typography.bodyLabel)
                     .foregroundStyle(DesignSystem.Colors.text2)
@@ -230,28 +237,27 @@ public struct TunerView: View {
     private var controls: some View {
         HStack(spacing: 6) {
             Image(systemName: "tuningfork")
-                .font(.subheadline)
-                .foregroundStyle(DesignSystem.Colors.text2)
+                .font(.body)
+                .foregroundStyle(DesignSystem.Colors.text)
             Text("A4 = 440 Hz")
                 .font(DesignSystem.Typography.bodyLabel)
-                .foregroundStyle(DesignSystem.Colors.text2)
+                .foregroundStyle(DesignSystem.Colors.text)
         }
     }
 
     // MARK: - Colour
 
     private var tuningColor: Color {
-        guard detector.detectedNote != nil else { return DesignSystem.Colors.muted }
-        let absCents = abs(detector.centsDeviation)
-        if absCents <= 5  { return DesignSystem.Colors.correct }
-        if absCents <= 15 { return DesignSystem.Colors.amber }
-        return DesignSystem.Colors.wrong
+        DesignSystem.Colors.tuningColor(
+            centsDeviation: detector.centsDeviation,
+            isActive: detector.detectedNote != nil
+        )
     }
 }
 
 // MARK: - NeedleDisplay
 
-private struct NeedleDisplay: View {
+struct NeedleDisplay: View {
 
     let cents: Double
     let isActive: Bool
@@ -263,31 +269,31 @@ private struct NeedleDisplay: View {
     var body: some View {
         ZStack {
             DialArc()
-                .stroke(DesignSystem.Colors.surface2, lineWidth: 6)
-                .frame(width: 300, height: 150)
+                .stroke(DesignSystem.Colors.border, lineWidth: 7)
+                .frame(width: 340, height: 170)
 
             DialArc()
                 .trim(from: 0.44, to: 0.56)
-                .stroke(DesignSystem.Colors.correct.opacity(0.45), lineWidth: 8)
-                .frame(width: 300, height: 150)
+                .stroke(DesignSystem.Colors.correct.opacity(0.6), lineWidth: 9)
+                .frame(width: 340, height: 170)
 
             DialTicks()
-                .frame(width: 300, height: 150)
+                .frame(width: 340, height: 170)
 
             Needle(angle: angle)
-                .frame(width: 300, height: 150)
+                .frame(width: 340, height: 170)
                 .animation(.spring(response: 0.2, dampingFraction: 0.85), value: angle)
 
             Circle()
                 .fill(DesignSystem.Colors.amber)
-                .frame(width: 14, height: 14)
-                .offset(y: 75)
+                .frame(width: 16, height: 16)
+                .offset(y: 85)
         }
-        .frame(height: 160)
+        .frame(height: 180)
     }
 }
 
-private struct DialArc: Shape {
+struct DialArc: Shape {
     func path(in rect: CGRect) -> Path {
         var p = Path()
         let centre = CGPoint(x: rect.midX, y: rect.maxY)
@@ -300,7 +306,7 @@ private struct DialArc: Shape {
     }
 }
 
-private struct DialTicks: View {
+struct DialTicks: View {
     var body: some View {
         Canvas { ctx, size in
             let centre = CGPoint(x: size.width / 2, y: size.height)
@@ -318,14 +324,14 @@ private struct DialTicks: View {
                 path.move(to: inner)
                 path.addLine(to: outer)
                 ctx.stroke(path,
-                           with: .color(DesignSystem.Colors.text2),
-                           lineWidth: isMajor ? 2.5 : 1.5)
+                           with: .color(DesignSystem.Colors.text),
+                           lineWidth: isMajor ? 3 : 2)
             }
         }
     }
 }
 
-private struct Needle: View {
+struct Needle: View {
     let angle: Double
 
     var body: some View {
@@ -339,7 +345,7 @@ private struct Needle: View {
             var path = Path()
             path.move(to: centre)
             path.addLine(to: tip)
-            ctx.stroke(path, with: .color(DesignSystem.Colors.amber), lineWidth: 3)
+            ctx.stroke(path, with: .color(DesignSystem.Colors.amber), lineWidth: 3.5)
         }
     }
 }
@@ -407,14 +413,14 @@ private final class StrobeAnimator: @unchecked Sendable {
 
 // MARK: - CentsScale
 
-private struct CentsScale: View {
+struct CentsScale: View {
     var body: some View {
         HStack {
-            Text("-50¢").font(DesignSystem.Typography.bodyLabel).foregroundStyle(DesignSystem.Colors.text2)
+            Text("-50¢").font(.callout.weight(.medium)).foregroundStyle(DesignSystem.Colors.text)
             Spacer()
-            Text("0").font(DesignSystem.Typography.bodyLabel).bold().foregroundStyle(DesignSystem.Colors.correct)
+            Text("0").font(.callout.weight(.bold)).foregroundStyle(DesignSystem.Colors.correct)
             Spacer()
-            Text("+50¢").font(DesignSystem.Typography.bodyLabel).foregroundStyle(DesignSystem.Colors.text2)
+            Text("+50¢").font(.callout.weight(.medium)).foregroundStyle(DesignSystem.Colors.text)
         }
     }
 }
@@ -457,7 +463,7 @@ struct InputLevelBar: View {
 
                 // Labels
                 if level < 0.05 {
-                    Text("TOO QUIET")
+                    Text("Audio Level")
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(.secondary)
                         .frame(maxWidth: .infinity)

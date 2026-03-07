@@ -16,10 +16,12 @@ private let logger = Logger(subsystem: "com.jpm.fretshed", category: "Calibratio
 
 public enum CalibrationPhase: Equatable {
     case welcome
-    case measuringNoise(progress: Double)  // 0.0–1.0
-    case testingString(number: Int)        // 1–6 (current string being tested)
-    case testingFretted(number: Int)       // 1–6 (current string, 12th fret)
-    case complete
+    case tuning                            // Step 1: user tunes guitar
+    case countdown(remaining: Int)         // Step 2 pre-delay: seconds remaining
+    case measuringNoise(progress: Double)  // Step 2: 0.0–1.0
+    case testingString(number: Int)        // Step 3: 1–6 (current string being tested)
+    case testingFretted(number: Int)       // Step 4: 1–6 (current string, 12th fret)
+    case complete                          // Step 5: save profile
 }
 
 // MARK: - CalibrationEngine
@@ -112,10 +114,53 @@ public final class CalibrationEngine {
         logger.info("Detected input source: \(self.detectedInputSource.displayName)")
     }
 
+    // MARK: - Tuning Phase
+
+    /// Starts the detector for the tuning step. Called when view appears.
+    public func startTuning() async {
+        phase = .tuning
+        if !detector.isRunning {
+            if detectedInputSource == .unknown {
+                detectInputSource()
+            }
+            detector.calibratedInputSource = detectedInputSource
+            detector.sustainMode = true
+            do {
+                try await detector.start()
+            } catch {
+                logger.error("Failed to start detector for tuning: \(error)")
+            }
+        }
+    }
+
+    /// Called when user taps "Done Tuning". Starts the countdown before silence measurement.
+    public func finishTuning() {
+        detector.sustainMode = false
+        startCountdown()
+    }
+
+    // MARK: - Countdown
+
+    private var countdownTask: Task<Void, Never>?
+
+    private func startCountdown() {
+        phase = .countdown(remaining: 4)
+        countdownTask = Task { @MainActor in
+            for i in stride(from: 3, through: 0, by: -1) {
+                try? await Task.sleep(for: .seconds(1))
+                guard !Task.isCancelled else { return }
+                phase = .countdown(remaining: i)
+            }
+            try? await Task.sleep(for: .seconds(1))
+            guard !Task.isCancelled else { return }
+            await startSilenceMeasurement()
+        }
+    }
+
     // MARK: - Start Silence Measurement
 
-    /// Begins the 3-second silence measurement phase.
-    /// Starts the PitchDetector, samples `currentNoiseFloor` every 100ms for 3s (30 readings),
+    /// Begins the 6-second silence measurement phase.
+    /// Starts the PitchDetector, samples `currentNoiseFloor` every 100ms for 6s (60 readings),
     /// then takes the median and auto-advances to string testing.
     public func startSilenceMeasurement() async {
         // Start detector if not already running
@@ -139,7 +184,7 @@ public final class CalibrationEngine {
         noiseReadings.removeAll()
 
         noiseMeasureTask = Task { @MainActor in
-            let totalReadings = 30
+            let totalReadings = 60
             let intervalMs = 100
 
             for i in 0..<totalReadings {
@@ -285,6 +330,7 @@ public final class CalibrationEngine {
     // MARK: - Cleanup
 
     public func cancel() {
+        countdownTask?.cancel()
         noiseMeasureTask?.cancel()
         stringTestTask?.cancel()
         Task { await detector.stop() }

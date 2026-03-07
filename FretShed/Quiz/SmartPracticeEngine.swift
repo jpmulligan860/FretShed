@@ -154,7 +154,7 @@ final class SmartPracticeEngine {
                     targetStrings: [weakest],
                     isAdaptive: true
                 )
-                return (session, "Single String", "Weakest: \(name)", "guitars")
+                return (session, "Single String", "Weakest: \(Self.stringOrdinal(weakest)) — \(name)", "guitars")
 
             case .sameNote:
                 let weakest = Self.weakestNote(from: allScores, fretboardMap: fretboardMap, strings: Self.freeStrings, fretEnd: Self.freeFretEnd)
@@ -228,6 +228,15 @@ final class SmartPracticeEngine {
             return avgA < avgB
         })
         return weakest?.key ?? .e
+    }
+
+    private static func stringOrdinal(_ string: Int) -> String {
+        switch string {
+        case 1: return "1st"
+        case 2: return "2nd"
+        case 3: return "3rd"
+        default: return "\(string)th"
+        }
     }
 
     private static func stringName(_ string: Int) -> String {

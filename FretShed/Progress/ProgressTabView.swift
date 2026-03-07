@@ -71,7 +71,6 @@ public struct ProgressTabView: View {
                 } else {
                     ScrollView {
                         VStack(spacing: 20) {
-
                             if hSizeClass == .regular {
                                 // iPad / wide: streak/filter row + overall card and heatmap side-by-side
                                 streakFilterRow
@@ -167,7 +166,7 @@ public struct ProgressTabView: View {
                                         }
                                     }
                                     .background(
-                                        Color(.secondarySystemGroupedBackground),
+                                        DesignSystem.Colors.surface,
                                         in: RoundedRectangle(cornerRadius: 16)
                                     )
                                     .padding(.horizontal, 16)
@@ -201,8 +200,7 @@ public struct ProgressTabView: View {
             }
         }
         .background(DesignSystem.Colors.background)
-        .navigationTitle("Journey")
-        .navigationBarTitleDisplayMode(.large)
+        .toolbar(.hidden, for: .navigationBar)
         .task { await vm.load() }
         .onAppear { Task { await vm.load() } }
         .sheet(item: $vm.selectedCell) { detail in
@@ -495,7 +493,7 @@ public struct ProgressTabView: View {
             .padding(.top, 4)
         }
         .padding(16)
-        .background(Color(.secondarySystemGroupedBackground),
+        .background(DesignSystem.Colors.surface,
                     in: RoundedRectangle(cornerRadius: 18))
     }
 
@@ -557,7 +555,7 @@ public struct ProgressTabView: View {
             .padding(.top, 4)
         }
         .padding(16)
-        .background(Color(.secondarySystemGroupedBackground),
+        .background(DesignSystem.Colors.surface,
                     in: RoundedRectangle(cornerRadius: 18))
     }
 
@@ -596,7 +594,7 @@ public struct ProgressTabView: View {
             }
         }
         .padding(16)
-        .background(Color(.secondarySystemGroupedBackground),
+        .background(DesignSystem.Colors.surface,
                     in: RoundedRectangle(cornerRadius: 18))
     }
 

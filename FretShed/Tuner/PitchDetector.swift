@@ -248,6 +248,7 @@ public final class PitchDetector {
             var smoothedCents: Double = 0
             var smoothedLevel: Double = 0
             var freqHistory: [Double] = []
+            let freqHistoryMax = sustainEnabled ? 7 : 5
             // Pitch hold: sustain the last detection briefly after the gate closes so the
             // tuner needle doesn't snap back to centre as the note decays (fixes T2, T3).
             var holdUntilDate: Date? = nil
@@ -325,7 +326,7 @@ public final class PitchDetector {
                         }
                     }
                     freqHistory.append(freq)
-                    if freqHistory.count > 5 { freqHistory.removeFirst() }
+                    if freqHistory.count > freqHistoryMax { freqHistory.removeFirst() }
 
                     // Use median frequency when we have enough samples
                     let useFreq: Double
@@ -360,15 +361,29 @@ public final class PitchDetector {
                         break
                     }
 
-                    smoothedCents = 0.3 * cents + 0.7 * smoothedCents
+                    if sustainEnabled {
+                        // Tuner: publish raw median-filtered cents for responsive needle.
+                        // TunerView handles all visual smoothing with adaptive EMA.
+                        smoothedCents = cents
+                    } else {
+                        // Quiz: EMA smoothing to prevent flicker.
+                        smoothedCents = 0.3 * cents + 0.7 * smoothedCents
+                    }
                     // Extend hold window on every fresh detection.
                     holdUntilDate = Date().addingTimeInterval(holdDuration)
                     self.detectedNote = note
                     self.detectedFrequency = useFreq
                     self.detectedConfidence = confidence
-                    // Dead-zone: skip sub-cent jitter
-                    if abs(smoothedCents - self.centsDeviation) >= 0.5 {
+                    // Dead-zone: skip sub-cent jitter.
+                    // Tuner publishes every value for maximum responsiveness;
+                    // TunerView handles all visual smoothing.
+                    if sustainEnabled {
                         self.centsDeviation = smoothedCents
+                    } else {
+                        let deadZone: Double = 0.5
+                        if abs(smoothedCents - self.centsDeviation) >= deadZone {
+                            self.centsDeviation = smoothedCents
+                        }
                     }
                 }
             }
@@ -666,7 +681,8 @@ final class AccelerateYIN: @unchecked Sendable {
         // The HPS-guided correction in Step 3c handles ratios up to 5:1
         // using the 3-term result as the cross-check.
         let hpsMinBin = max(1, Int(75.0 * Double(fftN) / sampleRate))
-        let hpsMaxBin = min(halfFFT / 3 - 1, Int(700.0 * Double(fftN) / sampleRate))
+        // 1200 Hz covers all 12th-fret notes (E5 = 659 Hz) with headroom for higher frets.
+        let hpsMaxBin = min(halfFFT / 3 - 1, Int(1200.0 * Double(fftN) / sampleRate))
         var hpsFundamentalHz: Double = 0
         if hpsMinBin < hpsMaxBin {
             for k in hpsMinBin...hpsMaxBin {
@@ -1043,7 +1059,7 @@ private func makeTapClosure(
     sustainEnabled: Bool = false
 ) -> AVAudioNodeTapBlock {
     let windowSize = 4096
-    let hopSize = 1024
+    let hopSize = sustainEnabled ? 512 : 1024  // Tuner: 512 (~86 Hz update rate) for smoother needle
     let ringCapacity = 8192
 
     // Bundle all mutable tap state into a single Sendable class so the

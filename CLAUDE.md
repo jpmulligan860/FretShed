@@ -277,6 +277,8 @@ Full analysis: `FretShed_Competitive_Analysis.md` in Claude.ai project files.
 
 **Journey Reload Fix (Mar 2026) — FIXED.** Added `needsProgressReload` flag on QuizLaunchCoordinator + `.onChange` in ContentView to explicitly reload ProgressViewModel after quiz ends. Root cause: `.onAppear` unreliable under ZStack overlay architecture.
 
+**Tuner Needle Smoothing (TN1, Mar 2026) — IMPLEMENTED.** Professional-grade tuner improvements: (1) Hop size halved to 512 in sustainMode (~86 Hz update rate vs ~43 Hz); (2) Dead zone removed in sustain mode — every cents value published for maximum responsiveness; (3) HPS frequency cap raised from 700→1200 Hz for reliable 12th-fret detection (E5=659 Hz, B4=494 Hz now well within range); (4) TunerView 5-tier adaptive alpha with ±1 cent near-instant zone (0.95); (5) Spring animation: response 0.25, damping 0.9 (fast, non-bouncy). All changes gated on sustainMode — zero quiz impact.
+
 **Next task:** Phase 4 (Monetization).
 
 **Quiz Presentation Architecture (current — ZStack overlay + QuizLaunchCoordinator):**

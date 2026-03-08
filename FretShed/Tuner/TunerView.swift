@@ -62,7 +62,6 @@ public struct TunerView: View {
                             NeedleDisplay(cents: displayCents,
                                               isActive: detector.detectedNote != nil)
                                 .padding(.top, 12)
-                                .animation(.easeInOut(duration: 0.15), value: displayCents)
 
                             CentsScale()
                                 .padding(.top, 8)
@@ -89,7 +88,6 @@ public struct TunerView: View {
                             NeedleDisplay(cents: displayCents,
                                           isActive: detector.detectedNote != nil)
                                 .padding(.top, 24)
-                                .animation(.easeInOut(duration: 0.15), value: displayCents)
 
                             centsReadout
                                 .padding(.top, 16)
@@ -132,16 +130,30 @@ public struct TunerView: View {
             .onChange(of: referenceAHz) { _, new in
                 detector.referenceA = Double(new)
             }
-            // Reset displayCents when a NEW note starts (nil → some)
+            // Sweep from center when a NEW note starts (nil → some).
+            // The adaptive smoothing + spring animation creates a natural arc.
             .onChange(of: detector.detectedNote) { oldNote, newNote in
                 if newNote != nil && oldNote == nil {
-                    displayCents = detector.centsDeviation
+                    displayCents = 0
                 }
             }
-            // During sustained detection, apply amplitude-aware EMA
+            // Adaptive smoothing: near-instant at center for intonation work,
+            // progressively damped farther out for smooth sweeps.
             .onChange(of: detector.centsDeviation) { _, newCents in
                 guard detector.detectedNote != nil else { return }
-                let alpha = 0.1 + 0.3 * min(detector.inputLevel, 1.0)
+                let deviation = abs(newCents)
+                let alpha: Double
+                if deviation < 1 {
+                    alpha = 0.95  // Dead-on: near-instant for intonation
+                } else if deviation < 3 {
+                    alpha = 0.8   // Very close: highly responsive
+                } else if deviation < 8 {
+                    alpha = 0.5   // Close: responsive
+                } else if deviation < 20 {
+                    alpha = 0.3   // Medium: balanced
+                } else {
+                    alpha = 0.15  // Far out: smooth sweep
+                }
                 displayCents = alpha * newCents + (1.0 - alpha) * displayCents
             }
             .alert("Microphone Access Required",
@@ -298,7 +310,7 @@ struct NeedleDisplay: View {
 
             Needle(angle: angle)
                 .frame(width: 340, height: 170)
-                .animation(.spring(response: 0.2, dampingFraction: 0.85), value: angle)
+                .animation(.spring(response: 0.25, dampingFraction: 0.9), value: angle)
 
             Circle()
                 .fill(DesignSystem.Colors.amber)

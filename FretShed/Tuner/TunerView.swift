@@ -12,6 +12,39 @@
 import SwiftUI
 import AVFoundation
 
+// MARK: - Guitar String Matching
+
+private struct GuitarStringInfo {
+    let number: Int         // 1–6 (1 = high E, 6 = low E)
+    let label: String       // "E2", "A2", etc.
+    let openFrequency: Double
+}
+
+private let standardStrings: [GuitarStringInfo] = [
+    GuitarStringInfo(number: 6, label: "E2", openFrequency: 82.41),
+    GuitarStringInfo(number: 5, label: "A2", openFrequency: 110.00),
+    GuitarStringInfo(number: 4, label: "D3", openFrequency: 146.83),
+    GuitarStringInfo(number: 3, label: "G3", openFrequency: 196.00),
+    GuitarStringInfo(number: 2, label: "B3", openFrequency: 246.94),
+    GuitarStringInfo(number: 1, label: "E4", openFrequency: 329.63),
+]
+
+/// Returns the nearest open string if the detected frequency is within ~1.5 semitones.
+private func nearestOpenString(frequency: Double) -> GuitarStringInfo? {
+    var best: GuitarStringInfo?
+    var bestDistance = Double.infinity
+    for s in standardStrings {
+        let semitones = abs(12.0 * log2(frequency / s.openFrequency))
+        if semitones < bestDistance {
+            bestDistance = semitones
+            best = s
+        }
+    }
+    // Only show if within ~1.5 semitones of an open string
+    guard bestDistance <= 1.5 else { return nil }
+    return best
+}
+
 // MARK: - TunerView
 
 public struct TunerView: View {
@@ -22,7 +55,10 @@ public struct TunerView: View {
     @State private var settings: UserSettings? = nil
     @State private var displayEngine = TunerDisplayEngine()
     @State private var showLatencyWarning = false
+    @State private var tuningState: TuningState = .noSignal
+    @State private var showLevelBar = true
     @Environment(\.verticalSizeClass) private var vSizeClass
+    @Environment(\.colorScheme) private var colorScheme
 
     // displayStyle and referenceAHz kept in @AppStorage so the tuner tab
     // reflects the same values as the Settings screen immediately.
@@ -44,7 +80,9 @@ public struct TunerView: View {
     public var body: some View {
         NavigationStack {
             ZStack {
+                // Background with color wash
                 DesignSystem.Colors.background.ignoresSafeArea()
+                backgroundWash.ignoresSafeArea()
 
                 if vSizeClass == .compact {
                     // ── Landscape: note header left, display + controls right ──
@@ -67,7 +105,8 @@ public struct TunerView: View {
 
                             VStack(spacing: 0) {
                                 AnimatedNeedleView(displayEngine: displayEngine,
-                                                   isActive: detector.detectedNote != nil)
+                                                   isActive: detector.detectedNote != nil,
+                                                   tuningState: tuningState)
                                     .padding(.top, 12)
 
                                 CentsScale()
@@ -77,6 +116,7 @@ public struct TunerView: View {
                                 InputLevelBar(level: detector.inputLevel)
                                     .padding(.top, 6)
                                     .padding(.horizontal, 40)
+                                    .opacity(showLevelBar ? 1 : 0)
 
                                 Spacer()
 
@@ -99,7 +139,8 @@ public struct TunerView: View {
                                 .padding(.top, 24)
 
                             AnimatedNeedleView(displayEngine: displayEngine,
-                                               isActive: detector.detectedNote != nil)
+                                               isActive: detector.detectedNote != nil,
+                                               tuningState: tuningState)
                                 .padding(.top, 24)
 
                             centsReadout
@@ -112,6 +153,7 @@ public struct TunerView: View {
                             InputLevelBar(level: detector.inputLevel)
                                 .padding(.top, 6)
                                 .padding(.horizontal, 24)
+                                .opacity(showLevelBar ? 1 : 0)
 
                             controls
                                 .padding(.top, 8)
@@ -153,13 +195,31 @@ public struct TunerView: View {
                 guard detector.detectedNote != nil else { return }
                 let noteName = detector.detectedNote?.displayName(format: noteFormat)
                 displayEngine.pushSample(cents: newCents, note: noteName)
+                // Read tuning state from engine (updated during TimelineView's update())
+                let newState = displayEngine.tuningState
+                if newState != tuningState {
+                    let oldState = tuningState
+                    tuningState = newState
+                    handleStateTransition(from: oldState, to: newState)
+                }
             }
-            // When note drops, tell the display engine so the needle drifts to center.
+            // When note drops, tell the display engine so the needle holds position.
             .onChange(of: detector.detectedNote) { oldNote, newNote in
                 if newNote == nil && oldNote != nil {
                     displayEngine.pushSilence()
+                    tuningState = .noSignal
+                    // Show level bar again after signal drops
+                    withAnimation(.easeIn(duration: 0.5)) {
+                        showLevelBar = true
+                    }
                 }
             }
+            #if DEBUG
+            .overlay(alignment: .bottom) {
+                TunerDiagnosticView(detector: detector)
+                    .padding(.bottom, 80)
+            }
+            #endif
             .alert("Microphone Access Required",
                    isPresented: Binding(
                     get: { detector.error != nil },
@@ -173,6 +233,23 @@ public struct TunerView: View {
                 Button("Cancel", role: .cancel) {}
             } message: {
                 Text(detector.error?.localizedDescription ?? "")
+            }
+            .animation(.easeInOut(duration: 0.5), value: tuningState)
+        }
+    }
+
+    // MARK: - State Transition Handling
+
+    private func handleStateTransition(from old: TuningState, to new: TuningState) {
+        // Auto-hide level bar when signal is established
+        if old == .noSignal && new != .noSignal {
+            // Delay before hiding so user can see the initial level
+            Task { @MainActor in
+                try? await Task.sleep(for: .seconds(1.5))
+                guard tuningState != .noSignal else { return }
+                withAnimation(.easeOut(duration: 0.8)) {
+                    showLevelBar = false
+                }
             }
         }
     }
@@ -197,8 +274,22 @@ public struct TunerView: View {
         if let profile = try? container.calibrationRepository.activeProfile() {
             let gateTrimMultiplier = pow(10.0, profile.userGateTrimDB / 20.0)
             detector.calibratedNoiseFloor = profile.measuredNoiseFloorRMS * gateTrimMultiplier
+            // Use profile's input source as fallback; start() will re-detect
+            // the actual hardware once the audio session is active.
             detector.calibratedInputSource = profile.inputSource
         }
+    }
+
+    // MARK: - Background Color Wash
+
+    private var backgroundWash: some View {
+        let opacity: Double = switch tuningState {
+        case .noSignal, .outOfRange: 0
+        case .approaching: 0
+        case .inTune: colorScheme == .dark ? 0.04 : 0.03
+        case .settled: colorScheme == .dark ? 0.08 : 0.05
+        }
+        return DesignSystem.Colors.correct.opacity(opacity)
     }
 
     // MARK: - Note Header
@@ -211,12 +302,22 @@ public struct TunerView: View {
                     .foregroundStyle(tuningColor)
                     .contentTransition(.numericText())
                     .animation(.spring(duration: 0.2), value: note)
+                    .shadow(color: tuningState == .settled
+                            ? DesignSystem.Colors.correct.opacity(0.4) : .clear,
+                            radius: 8)
 
                 if let freq = detector.detectedFrequency {
-                    Text(String(format: "%.1f Hz", freq))
-                        .font(DesignSystem.Typography.centsDisplay)
-                        .foregroundStyle(DesignSystem.Colors.text)
-                        .contentTransition(.numericText())
+                    HStack(spacing: 8) {
+                        Text(String(format: "%.1f Hz", freq))
+                            .font(DesignSystem.Typography.centsDisplay)
+                            .foregroundStyle(DesignSystem.Colors.text)
+                            .contentTransition(.numericText())
+
+                        // String indicator
+                        if let guitarString = nearestOpenString(frequency: freq) {
+                            stringIndicator(guitarString)
+                        }
+                    }
                 }
             } else if !detector.isRunning && AVAudioApplication.shared.recordPermission != .granted {
                 Image(systemName: AVAudioApplication.shared.recordPermission == .denied ? "mic.slash.fill" : "mic.fill")
@@ -260,31 +361,57 @@ public struct TunerView: View {
         .frame(height: 110)
     }
 
+    // MARK: - String Indicator
+
+    private func stringIndicator(_ info: GuitarStringInfo) -> some View {
+        HStack(spacing: 4) {
+            Text("\(info.number)")
+                .font(.system(size: 10, weight: .bold, design: .monospaced))
+                .foregroundStyle(DesignSystem.Colors.surface)
+                .frame(width: 16, height: 16)
+                .background(DesignSystem.Colors.amber, in: Circle())
+            Text(info.label)
+                .font(DesignSystem.Typography.smallLabel)
+                .foregroundStyle(DesignSystem.Colors.text2)
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 3)
+        .background(DesignSystem.Colors.surface2, in: Capsule())
+    }
+
     // MARK: - Cents Readout
 
     private var centsReadout: some View {
         let c = detector.centsDeviation
         let isActive = detector.detectedNote != nil
+        let isSettled = tuningState == .settled
         return VStack(spacing: 4) {
             Text(String(format: "%+.1f ¢", c))
                 .font(DesignSystem.Typography.subDisplay)
-                .foregroundStyle(tuningColor)
+                .foregroundStyle(isSettled ? tuningColor.opacity(0.6) : tuningColor)
                 .contentTransition(.numericText())
 
             // Sharp / Flat / In Tune directional label
             Group {
-                if abs(c) <= 1.0 {
+                if tuningState == .settled {
                     Text("IN TUNE")
+                        .font(DesignSystem.Typography.subDisplay)
                         .foregroundStyle(DesignSystem.Colors.correct)
-                } else if c > 1.0 {
+                        .shadow(color: DesignSystem.Colors.correct.opacity(0.3), radius: 6)
+                } else if abs(c) <= 2.0 {
+                    Text("IN TUNE")
+                        .font(DesignSystem.Typography.sectionLabel)
+                        .foregroundStyle(DesignSystem.Colors.correct)
+                } else if c > 2.0 {
                     Text("SHARP ↑")
+                        .font(DesignSystem.Typography.sectionLabel)
                         .foregroundStyle(tuningColor)
                 } else {
                     Text("FLAT ↓")
+                        .font(DesignSystem.Typography.sectionLabel)
                         .foregroundStyle(tuningColor)
                 }
             }
-            .font(DesignSystem.Typography.sectionLabel)
             .tracking(1.5)
         }
         .opacity(isActive ? 1 : 0)
@@ -343,11 +470,12 @@ public struct TunerView: View {
 struct AnimatedNeedleView: View {
     let displayEngine: TunerDisplayEngine
     let isActive: Bool
+    let tuningState: TuningState
 
     var body: some View {
         TimelineView(.animation) { _ in
             let cents = displayEngine.update(now: CACurrentMediaTime())
-            NeedleDisplay(cents: cents, isActive: isActive)
+            NeedleDisplay(cents: cents, isActive: isActive, tuningState: tuningState)
                 .opacity(isActive ? 1.0 : 0.3)
                 .animation(.easeOut(duration: 0.8), value: isActive)
         }
@@ -360,6 +488,7 @@ struct NeedleDisplay: View {
 
     let cents: Double
     let isActive: Bool
+    let tuningState: TuningState
 
     private var angle: Double {
         // Always driven by the spring-damper's position.
@@ -367,30 +496,51 @@ struct NeedleDisplay: View {
         (cents / 50.0) * 90.0
     }
 
+    private var needleColor: Color {
+        switch tuningState {
+        case .noSignal: return DesignSystem.Colors.muted
+        case .outOfRange: return DesignSystem.Colors.wrong
+        case .approaching: return DesignSystem.Colors.amber
+        case .inTune, .settled: return DesignSystem.Colors.correct
+        }
+    }
+
+    private var inTuneZoneGlow: Bool {
+        tuningState == .inTune || tuningState == .settled
+    }
+
     var body: some View {
         ZStack {
+            // Dial arc background
             DialArc()
                 .stroke(DesignSystem.Colors.border, lineWidth: 7)
                 .frame(width: 340, height: 170)
 
+            // In-tune zone (green arc at center)
             DialArc()
                 .trim(from: 0.44, to: 0.56)
-                .stroke(DesignSystem.Colors.correct.opacity(0.6), lineWidth: 9)
+                .stroke(DesignSystem.Colors.correct.opacity(inTuneZoneGlow ? 1.0 : 0.6),
+                        lineWidth: 9)
+                .shadow(color: inTuneZoneGlow
+                        ? DesignSystem.Colors.correct.opacity(0.5) : .clear,
+                        radius: 6)
                 .frame(width: 340, height: 170)
 
+            // Tick marks with labels
             DialTicks()
                 .frame(width: 340, height: 170)
 
-            Needle(angle: angle)
+            // Needle — color reflects tuning state
+            Needle(angle: angle, color: needleColor)
                 .frame(width: 340, height: 170)
-                // No .animation() — TunerDisplayEngine handles all smoothing
 
+            // Pivot dot — matches needle color
             Circle()
-                .fill(DesignSystem.Colors.amber)
+                .fill(needleColor)
                 .frame(width: 16, height: 16)
                 .offset(y: 85)
         }
-        .frame(height: 180)
+        .frame(height: 190)
     }
 }
 
@@ -412,11 +562,13 @@ struct DialTicks: View {
         Canvas { ctx, size in
             let centre = CGPoint(x: size.width / 2, y: size.height)
             let r = size.width / 2
+
             for i in stride(from: -50, through: 50, by: 10) {
                 let angleDeg = 180.0 + Double(i + 50) / 100.0 * 180.0
                 let rad = angleDeg * .pi / 180
                 let isMajor = i % 50 == 0 || i == 0
-                let len: CGFloat = isMajor ? 18 : 10
+                let isQuarter = i % 25 == 0
+                let len: CGFloat = isMajor ? 18 : (isQuarter ? 14 : 10)
                 let inner = CGPoint(x: centre.x + (r - len) * cos(rad),
                                     y: centre.y + (r - len) * sin(rad))
                 let outer = CGPoint(x: centre.x + r * cos(rad),
@@ -428,12 +580,33 @@ struct DialTicks: View {
                            with: .color(DesignSystem.Colors.text),
                            lineWidth: isMajor ? 3 : 2)
             }
+
+            // Tick labels at -50, -25, 0, +25, +50
+            let labels: [(Int, String)] = [
+                (-50, "-50"), (-25, "-25"), (0, "0"), (25, "+25"), (50, "+50")
+            ]
+            for (cents, label) in labels {
+                let angleDeg = 180.0 + Double(cents + 50) / 100.0 * 180.0
+                let rad = angleDeg * .pi / 180
+                let labelR = r - 28 // Position labels inside the arc
+                let pos = CGPoint(x: centre.x + labelR * cos(rad),
+                                  y: centre.y + labelR * sin(rad))
+
+                let color = cents == 0 ? DesignSystem.Colors.correct : DesignSystem.Colors.text2
+                let resolved = ctx.resolve(
+                    Text(label)
+                        .font(.system(size: 10, weight: .medium, design: .monospaced))
+                        .foregroundStyle(color)
+                )
+                ctx.draw(resolved, at: pos, anchor: .center)
+            }
         }
     }
 }
 
 struct Needle: View {
     let angle: Double
+    let color: Color
 
     var body: some View {
         Canvas { ctx, size in
@@ -446,7 +619,7 @@ struct Needle: View {
             var path = Path()
             path.move(to: centre)
             path.addLine(to: tip)
-            ctx.stroke(path, with: .color(DesignSystem.Colors.amber), lineWidth: 3.5)
+            ctx.stroke(path, with: .color(color), lineWidth: 3.5)
         }
     }
 }

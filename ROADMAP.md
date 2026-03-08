@@ -169,9 +169,9 @@ Estimated: 6–8 hours
 |---|---|---|
 | T.P1 | Phase 1 Quick Wins — I/O buffer reduction, sub-cent display, sharp/flat labels, 2-frame gate, HPF/maxTau for Drop C/D, BT latency warning | ✅ |
 | T.P2 | Phase 2 Core Architecture — Lightweight tap fast path, tracking mode, cents-space filtering, adaptive YIN threshold, TunerDisplayEngine (spring-damper), rewire TunerView | ✅ |
-| T.P2.5 | Phase 2.5 Pitch Drift Fix — DecayStabilizer (time+amplitude lock, spike-based peg turn breakout), spectral flatness gate in tuner path, noise capture re-enabled, 17 unit tests | 🚧 |
-| T.P3 | Phase 3 Visual Presentation — Settled readout, in-tune hysteresis state machine, background color wash, string indicator, responsive dial, auto-hide level bar | [ ] |
-| T.P4 | Phase 4 Differentiators — Intonation comparison mode, pitch rate predictor (ghost needle), adaptive update rate | [ ] |
+| T.P2.5 | Phase 2.5 Pitch Drift Fix — Goertzel hybrid tracker (magnitude-based 3-bin parabolic interpolation, onset suppression, decay detection), thread-safe NSLock integration, TunerDiagnosticView, input source auto-detection, 17 unit tests | ✅ |
+| T.P3 | Phase 3 Visual Presentation — Settled readout, in-tune hysteresis state machine (5 states with hysteresis thresholds), background color wash, string indicator pill, responsive dial (tick labels, state-aware needle/pivot color, green zone glow), auto-hide level bar | ✅ |
+| T.P4 | Phase 4 Adaptive Update Rate — Hop size halved in sustain mode, spring-damper gain scheduling, hysteresis state machine adapts display behavior | ✅ (absorbed into T.P2/T.P2.5/T.P3) |
 
 ---
 
@@ -275,6 +275,12 @@ Estimated: 18–25 hours
 | 5.17 | Recruit 20–30 beta testers — offer 3-month free premium at launch as incentive | 1 hr | 🔲 |
 | 5.18 | Run beta for 2–3 weeks — collect feedback, fix top 3 issues, re-upload build | 5–8 hrs | 🔲 |
 
+### 5D.5 — Accuracy Testing Protocol
+
+| # | Task | Est. | Status |
+|---|---|---|---|
+| 5.18a | Develop accuracy testing protocol — documented procedure: tune each guitar with a reference tuner (PolyTune or similar), run TunerDiagnosticView on all 6 strings, record final held readings. Test across 3–5 guitars (electric + acoustic), both input methods (USB interface + built-in mic), open strings + 5th/9th/12th fret. Document results to back a defensible accuracy claim (e.g., "Sub-5 cent accuracy on all strings") for App Store description (Task 5.12). | 2–3 hrs | 🔲 |
+
 ### 5E — Final Pre-Submission Checklist
 
 | # | Task | Est. | Status |
@@ -296,6 +302,8 @@ Estimated: 18–25 hours
 | 6.3 | "Suggested Next Session" on quiz results screen — recommend next focus based on weak spots | 2–3 hrs | 🔲 |
 | 6.4 | Full accessibility audit — VoiceOver, Dynamic Type, color contrast across all screens | 4–6 hrs | 🔲 |
 | 6.5 | Auto-tune PitchDetector from accuracy assessment data — analyze per-attempt detection metadata (confidence, cents, frequency) to auto-adjust per-string confidence thresholds, consecutive frame gate, and spectral flatness threshold. Prerequisite: detection metadata capture (shipped). | 3–4 hrs | 🔲 |
+| 6.6 | Tuner: Intonation comparison mode — play open string then 12th fret, compare readings to verify guitar intonation setup | 3–4 hrs | 🔲 |
+| 6.7 | Tuner: Pitch rate predictor (ghost needle) — translucent needle showing where pitch is heading based on rate of change | 2–3 hrs | 🔲 |
 
 ---
 

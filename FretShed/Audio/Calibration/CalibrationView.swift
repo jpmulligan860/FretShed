@@ -284,7 +284,8 @@ struct CalibrationView: View {
 
             // Needle display
             NeedleDisplay(cents: displayCents,
-                          isActive: engine.detector.detectedNote != nil)
+                          isActive: engine.detector.detectedNote != nil,
+                          tuningState: engine.detector.detectedNote != nil ? .approaching : .noSignal)
                 .animation(.easeInOut(duration: 0.15), value: displayCents)
 
             // Cents readout

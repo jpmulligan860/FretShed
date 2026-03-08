@@ -283,6 +283,14 @@ Full analysis: `FretShed_Competitive_Analysis.md` in Claude.ai project files.
 
 **Tuner Expert Review (Mar 2026) — COMPLETE.** Comprehensive 6-expert review in `TUNER_REVIEW_REPORT.md`. Top recommendations: (1) reduce I/O buffer to 5ms in tuner mode, (2) replace EMA+Spring double-smoothing with unified physics model, (3) add pitch tracking mode, (4) sub-cent display + sharp/flat labels, (5) intonation comparison mode.
 
+**Tuner Rewrite Complete (T.P1–T.P4, Mar 2026) — COMPLETE.** Full 4-phase professional tuner upgrade:
+- T.P1: I/O buffer reduction, sub-cent display, sharp/flat labels, Drop C/D support, BT latency warning
+- T.P2: TunerDisplayEngine (spring-damper physics), lightweight tap fast path, tracking mode, cents-space filtering
+- T.P2.5: Goertzel hybrid tracker (magnitude-based 3-bin parabolic interpolation, onset suppression, decay detection), thread-safe NSLock integration, TunerDiagnosticView (#if DEBUG), input source auto-detection in PitchDetector.start(), 17 GoertzelTracker unit tests. Phase tracking removed (unreliable for real guitar signals).
+- T.P3: TuningState hysteresis state machine (noSignal→outOfRange→approaching→inTune→settled with hysteresis thresholds), settled readout (enlarged "IN TUNE" with glow), background color wash (green overlay when in tune), string indicator pill (nearest open string badge), responsive dial (tick labels at ±50/±25/0, state-aware needle color red→amber→green, green zone glow), auto-hide level bar
+- T.P4: Adaptive update rate (absorbed into T.P2/T.P2.5/T.P3 — hop size, gain scheduling, hysteresis)
+- Post-launch: Intonation comparison mode (6.6), ghost needle pitch rate predictor (6.7)
+
 **Next task:** Phase 4 (Monetization).
 
 **Quiz Presentation Architecture (current — ZStack overlay + QuizLaunchCoordinator):**

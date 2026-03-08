@@ -111,6 +111,17 @@ public final class PitchDetector {
     /// Current AGC gain as reported by the realtime tap (read-only for UI).
     public private(set) var currentAGCGain: Float = 2.0
 
+    #if DEBUG
+    // MARK: - Diagnostics (debug only)
+    public private(set) var diagSampleRate: Double = 0
+    public private(set) var diagGoertzelTarget: Double = 0
+    public private(set) var diagGoertzelCents: Double? = nil
+    public private(set) var diagGoertzelMethod: String = "none"
+    public private(set) var diagGoertzelMagRatio: Double = 0
+    public private(set) var diagYINFrequency: Double = 0
+    public private(set) var diagYINConfidence: Double = 0
+    #endif
+
     // MARK: - Audio Engine
 
     // Engine is a `var` so it can be recreated after interruptions or route changes.
@@ -198,6 +209,9 @@ public final class PitchDetector {
         let hardwareFormat = inputNode.inputFormat(forBus: 0)
         logger.info("Input node format — sampleRate: \(hardwareFormat.sampleRate), channels: \(hardwareFormat.channelCount)")
         let tapSampleRate = hardwareFormat.sampleRate > 0 ? hardwareFormat.sampleRate : 44100.0
+        #if DEBUG
+        self.diagSampleRate = tapSampleRate
+        #endif
         guard let tapFormat = AVAudioFormat(
             commonFormat: .pcmFormatFloat32,
             sampleRate: tapSampleRate,
@@ -234,6 +248,13 @@ public final class PitchDetector {
         let playbackTS = MetroDroneEngine.lastPlaybackTime
         let calNoiseFloor = calibratedNoiseFloor
         let calAGCGain = calibratedAGCGain
+        // Re-detect input source now that the audio session is active.
+        // The route info is only populated after session activation, so
+        // detectCurrent() called earlier (e.g. in applySettings) returns .unknown.
+        let detectedSource = AudioInputSource.detectCurrent()
+        if detectedSource != .unknown {
+            calibratedInputSource = detectedSource
+        }
         let calInputSource = calibratedInputSource
         let (tapClosure, tapState) = makeTapClosure(
             isStopping: isStopping,
@@ -284,9 +305,12 @@ public final class PitchDetector {
             // applies disproportionate smoothing (1 Hz = 21¢ at 82 Hz vs 2.6¢ at 659 Hz).
             var centsHistory: [Double] = []
 
-            // Decay stabilization: prevents flat-ward drift from YIN degradation
-            // during note decay while allowing real peg turns to break through.
-            var decayStabilizer = DecayStabilizer()
+            // Adaptive EMA for tracking mode: heavy smoothing suppresses YIN
+            // flat-ward drift during decay (~1.5¢ over 200 frames vs ~30¢ raw).
+            // Large changes (peg turns) switch to fast alpha for ~250ms response.
+            let trackingAlphaFast: Double = 0.3    // for changes > threshold
+            let trackingAlphaSlow: Double = 0.05   // for steady state / drift
+            let trackingJumpThreshold: Double = 2.0 // cents to trigger fast mode
 
             for await result in pitchStream {
                 guard let self else { break }
@@ -308,6 +332,7 @@ public final class PitchDetector {
                     lastConsecutiveNote = nil
                     trackingState = .acquiring
                     tapState.isTracking = false
+                    tapState.goertzelReset()
                     trackingNoteChangeCount = 0
                     trackingLowConfidenceStart = nil
                 case .silent(let rmsLevel, let noiseFloor, let agcGain):
@@ -331,12 +356,34 @@ public final class PitchDetector {
                     lastConsecutiveNote = nil
                     trackingState = .acquiring
                     tapState.isTracking = false
+                    tapState.goertzelReset()
                     trackingNoteChangeCount = 0
                     trackingLowConfidenceStart = nil
+                case .goertzelUpdate(let cents, let method, let magRatio, let rmsLevel, let noiseFloor, let agcGain):
+                    // Goertzel drift-free cents measurement during sustain tracking.
+                    // Publish directly — no median filter or EMA needed because
+                    // Goertzel computes at a fixed frequency and doesn't drift.
+                    self.currentNoiseFloor = noiseFloor
+                    self.currentAGCGain = agcGain
+                    smoothedLevel = 0.3 * Double(rmsLevel) + 0.7 * smoothedLevel
+                    self.inputLevel = smoothedLevel
+                    holdUntilDate = Date().addingTimeInterval(holdDuration)
+                    self.centsDeviation = cents
+                    #if DEBUG
+                    self.diagGoertzelCents = cents
+                    self.diagGoertzelMethod = method
+                    self.diagGoertzelMagRatio = magRatio
+                    #endif
+
                 case .detected(let freq, let confidence, let rmsLevel, let noiseFloor, let agcGain):
                     // Publish realtime signal state for calibration / diagnostics.
                     self.currentNoiseFloor = noiseFloor
                     self.currentAGCGain = agcGain
+                    #if DEBUG
+                    self.diagYINFrequency = freq
+                    self.diagYINConfidence = confidence
+                    self.diagGoertzelTarget = tapState.goertzelTargetFrequency
+                    #endif
 
                     // Always update level indicator so the user sees their
                     // signal even when the frequency is out of range or the
@@ -349,7 +396,7 @@ public final class PitchDetector {
                     let isSustaining = sustainEnabled
                         && self.detectedNote != nil
                         && consecutiveNoteCount >= consecutiveFrameThreshold
-                    let effectiveThreshold = isSustaining ? 0.55 : Double(self.confidenceThreshold)
+                    let effectiveThreshold = isSustaining ? 0.72 : Double(self.confidenceThreshold)
                     guard confidence >= effectiveThreshold else {
                         // Low confidence: extend hold to bridge gap, but don't update note
                         if self.detectedNote != nil {
@@ -368,6 +415,7 @@ public final class PitchDetector {
                             if trackingNoteChangeCount >= 2 {
                                 trackingState = .acquiring
                                 tapState.isTracking = false
+                                tapState.goertzelReset()
                                 trackingNoteChangeCount = 0
                                 consecutiveNoteCount = 0
                                 lastConsecutiveNote = nil
@@ -384,12 +432,13 @@ public final class PitchDetector {
                         }
 
                         // Exit tracking if confidence < sustain threshold for >600ms
-                        if confidence < 0.55 {
+                        if confidence < 0.72 {
                             if trackingLowConfidenceStart == nil {
                                 trackingLowConfidenceStart = Date()
                             } else if Date().timeIntervalSince(trackingLowConfidenceStart!) > 0.6 {
                                 trackingState = .acquiring
                                 tapState.isTracking = false
+                                tapState.goertzelReset()
                                 trackingLowConfidenceStart = nil
                                 consecutiveNoteCount = 0
                                 lastConsecutiveNote = nil
@@ -405,43 +454,22 @@ public final class PitchDetector {
                             // Attack stabilization: skip first N frames to let the
                             // pluck transient pass before showing cents to the user.
                             trackingStabilizationFrames += 1
-                            centsHistory.append(cents)
-                            if centsHistory.count > freqHistoryMax { centsHistory.removeFirst() }
 
                             if trackingStabilizationFrames <= trackingStabilizationThreshold {
                                 // Still stabilizing — accumulate history but don't publish.
                                 // The hold window keeps the previous note/cents on screen.
                                 holdUntilDate = Date().addingTimeInterval(holdDuration)
-                                // Track peak level during stabilization too
-                                _ = decayStabilizer.process(rmsLevel: rmsLevel, medianCents: cents)
                                 break
                             }
 
-                            // Cents-space median filter
-                            let medianCents: Double
-                            if centsHistory.count >= 3 {
-                                let sorted = centsHistory.sorted()
-                                medianCents = sorted[sorted.count / 2]
-                            } else {
-                                medianCents = cents
-                            }
-
-                            // Decay stabilization: locks display during amplitude decay
-                            // to prevent YIN flat-ward drift, but allows real peg turns
-                            // to break through via spike detection on raw cents (faster
-                            // than waiting for the 13-frame median to flip).
-                            let (useCents, shouldUpdate) = decayStabilizer.process(
-                                rmsLevel: rmsLevel, medianCents: medianCents, rawCents: cents)
-                            guard shouldUpdate else {
-                                holdUntilDate = Date().addingTimeInterval(holdDuration)
-                                break
-                            }
-
+                            // Publish note and frequency from YIN (still the best for note ID).
+                            // Cents deviation is published by the .goertzelUpdate handler —
+                            // YIN cents drift flat during decay, Goertzel doesn't.
                             holdUntilDate = Date().addingTimeInterval(holdDuration)
                             self.detectedNote = note
                             self.detectedFrequency = freq
                             self.detectedConfidence = confidence
-                            self.centsDeviation = useCents
+                            // Don't publish YIN centsDeviation — Goertzel handles it.
                             break
                         }
                     }
@@ -499,10 +527,20 @@ public final class PitchDetector {
                         trackingNoteChangeCount = 0
                         trackingLowConfidenceStart = nil
                         trackingStabilizationFrames = 0
-                        decayStabilizer.reset()
                         centsHistory.removeAll()
                         centsHistory.append(cents)
                         smoothedCents = cents
+
+                        // Set Goertzel target to the ET frequency for this note.
+                        // YIN gave us `useFreq` (the actual detected frequency);
+                        // we need the ideal target the user is tuning toward.
+                        let midiFloat = 12.0 * log2(useFreq / self.referenceA) + 69.0
+                        let midiRounded = midiFloat.rounded()
+                        let targetFreq = self.referenceA * pow(2.0, (midiRounded - 69.0) / 12.0)
+                        logger.info("Goertzel: target=\(targetFreq) Hz, sampleRate=\(tapSampleRate)")
+                        tapState.goertzelSetTarget(
+                            frequency: targetFreq,
+                            sampleRate: tapSampleRate)
                     } else {
                         // Quiz: EMA smoothing to prevent flicker.
                         smoothedCents = 0.3 * cents + 0.7 * smoothedCents
@@ -674,6 +712,10 @@ private enum DetectedPitch: Sendable {
     case none
     case silent(rmsLevel: Float, noiseFloor: Float, agcGain: Float)
     case detected(frequency: Double, confidence: Double, rmsLevel: Float, noiseFloor: Float, agcGain: Float)
+    /// Goertzel-based cents measurement during sustain tracking.
+    /// Sent alongside .detected when the tuner is tracking a locked note.
+    /// The consumer uses this for display instead of YIN's cents (which drifts flat).
+    case goertzelUpdate(cents: Double, method: String, magRatio: Double, rmsLevel: Float, noiseFloor: Float, agcGain: Float)
 }
 
 // MARK: - AccelerateYIN
@@ -1124,6 +1166,42 @@ private final class TapProcessingState: @unchecked Sendable {
     // the YIN CMND threshold from 0.15 to 0.25 for better sustain tracking.
     var isTracking: Bool = false
 
+    // Goertzel tracker: set target frequency by consumer when tracking begins.
+    // Tap closure runs Goertzel on the analysis buffer for drift-free cents.
+    // Protected by goertzelLock because the audio thread calls measureCents()
+    // while the consumer (MainActor) calls reset()/setTarget().
+    private var _goertzel = GoertzelTracker()
+    private let goertzelLock = NSLock()
+
+    /// Thread-safe Goertzel measurement (called from audio thread tap closure).
+    func goertzelMeasure(buffer: UnsafePointer<Float>, count: Int) -> (cents: Double, method: String, magRatio: Double)? {
+        goertzelLock.lock()
+        defer { goertzelLock.unlock() }
+        guard let cents = _goertzel.measureCents(buffer: buffer, count: count) else { return nil }
+        return (cents, _goertzel.lastMethod, _goertzel.magnitudeRatio)
+    }
+
+    /// Thread-safe Goertzel target setup (called from consumer / MainActor).
+    func goertzelSetTarget(frequency: Double, sampleRate: Double) {
+        goertzelLock.lock()
+        defer { goertzelLock.unlock() }
+        _goertzel.setTarget(frequency: frequency, sampleRate: sampleRate, hopSize: 0)
+    }
+
+    /// Thread-safe Goertzel reset (called from consumer / MainActor).
+    func goertzelReset() {
+        goertzelLock.lock()
+        defer { goertzelLock.unlock() }
+        _goertzel.reset()
+    }
+
+    /// Thread-safe read of target frequency (called from consumer for diagnostics).
+    var goertzelTargetFrequency: Double {
+        goertzelLock.lock()
+        defer { goertzelLock.unlock() }
+        return _goertzel.targetFrequency
+    }
+
     init(windowSize: Int, hopSize: Int, ringCapacity: Int, sampleRate: Double,
          inputSource: AudioInputSource?) {
         self.windowSize = windowSize
@@ -1302,51 +1380,54 @@ private func makeTapClosure(
             }
         }
 
-        // sustainMode: lower the hard floor from confidenceThreshold to 60% of it.
-        // Default 0.85 × 0.6 = 0.51 — still rejects garbage, but passes
-        // decay-phase frames for the consumer to evaluate with context.
+        // sustainMode: lower the hard floor from confidenceThreshold to 90% of it.
+        // Default 0.85 × 0.9 = 0.765 — rejects degraded decay-phase frames
+        // where low SNR biases YIN toward longer periods (flat-ward drift).
         // Non-sustain (quiz): full confidenceThreshold as today.
         let tapFloor = sustainEnabled
-            ? Double(confidenceThreshold) * 0.6
+            ? Double(confidenceThreshold) * 0.90
             : Double(confidenceThreshold)
 
-        if sustainEnabled {
-            // Tuner fast path: skip crest factor and harmonic regularity (expensive),
-            // but keep spectral flatness gate to reject degraded decay-phase frames
-            // where low SNR biases YIN toward longer periods (flat-ward drift).
-            guard let (frequency, confidence, flatness, _) = state.yin.detectPitch(
-                in: state.analysisBuffer,
-                count: windowSize,
-                sampleRate: sampleRate
-            ), confidence >= tapFloor,
-               flatness < state.spectralFlatnessThreshold else {
-                continuation.yield(.silent(rmsLevel: gainedLevel, noiseFloor: state.noiseFloor, agcGain: state.agcGain))
-                return
-            }
-            continuation.yield(.detected(frequency: frequency, confidence: confidence, rmsLevel: gainedLevel, noiseFloor: state.noiseFloor, agcGain: state.agcGain))
-        } else {
-            // Quiz path: full DSP chain with crest factor, harmonic regularity,
-            // spectral subtraction, and three-way tonal signal gate.
-            var peakValue: Float = 0
-            vDSP_maxmgv(state.analysisBuffer, 1, &peakValue, vDSP_Length(windowSize))
-            var postRMS: Float = 0
-            vDSP_rmsqv(state.analysisBuffer, 1, &postRMS, vDSP_Length(windowSize))
-            let crestFactor: Float = postRMS > 1e-10 ? peakValue / postRMS : 10.0
+        // Full DSP chain for both tuner and quiz: crest factor, harmonic regularity,
+        // and three-way tonal signal gate. Previously the tuner used a "fast path" that
+        // skipped crest factor and harmonic regularity — this allowed degraded decay-phase
+        // frames through, causing systematic flat-ward drift of 12–35 cents.
+        var peakValue: Float = 0
+        vDSP_maxmgv(state.analysisBuffer, 1, &peakValue, vDSP_Length(windowSize))
+        var postRMS: Float = 0
+        vDSP_rmsqv(state.analysisBuffer, 1, &postRMS, vDSP_Length(windowSize))
+        let crestFactor: Float = postRMS > 1e-10 ? peakValue / postRMS : 10.0
 
-            guard let (frequency, confidence, flatness, harmonicReg) = state.yin.detectPitch(
-                in: state.analysisBuffer,
-                count: windowSize,
-                sampleRate: sampleRate
-            ), confidence >= tapFloor,
-               // Three-way tonal signal check: pass if ANY of these is true.
-               // 1. Low crest factor → clipped/distorted signal (not noise)
-               // 2. High harmonic regularity → energy at integer multiples (tonal)
-               // 3. Low spectral flatness → clean tonal signal (original check)
-               crestFactor < 2.0 || harmonicReg > 0.3 || flatness < state.spectralFlatnessThreshold else {
-                continuation.yield(.silent(rmsLevel: gainedLevel, noiseFloor: state.noiseFloor, agcGain: state.agcGain))
-                return
+        guard let (frequency, confidence, flatness, harmonicReg) = state.yin.detectPitch(
+            in: state.analysisBuffer,
+            count: windowSize,
+            sampleRate: sampleRate
+        ), confidence >= tapFloor,
+           // Three-way tonal signal check: pass if ANY of these is true.
+           // 1. Low crest factor → clipped/distorted signal (not noise)
+           // 2. High harmonic regularity → energy at integer multiples (tonal)
+           // 3. Low spectral flatness → clean tonal signal (original check)
+           crestFactor < 2.0 || harmonicReg > 0.3 || flatness < state.spectralFlatnessThreshold else {
+            continuation.yield(.silent(rmsLevel: gainedLevel, noiseFloor: state.noiseFloor, agcGain: state.agcGain))
+            return
+        }
+        continuation.yield(.detected(frequency: frequency, confidence: confidence, rmsLevel: gainedLevel, noiseFloor: state.noiseFloor, agcGain: state.agcGain))
+
+        // Goertzel cents tracking: when the tuner is tracking a locked note,
+        // run Goertzel on the same analysis buffer for drift-free cents measurement.
+        // YIN .detected is still yielded above for note-change detection.
+        if sustainEnabled, state.isTracking {
+            if let result = state.goertzelMeasure(
+                buffer: state.analysisBuffer, count: windowSize
+            ) {
+                continuation.yield(.goertzelUpdate(
+                    cents: result.cents, method: result.method,
+                    magRatio: result.magRatio, rmsLevel: gainedLevel,
+                    noiseFloor: state.noiseFloor, agcGain: state.agcGain))
             }
-            continuation.yield(.detected(frequency: frequency, confidence: confidence, rmsLevel: gainedLevel, noiseFloor: state.noiseFloor, agcGain: state.agcGain))
+            // If Goertzel returns nil → signal decayed below threshold.
+            // Consumer will use YIN .detected for note-change detection but
+            // hold the last Goertzel reading on display.
         }
     }
 

@@ -13,9 +13,20 @@
 import Foundation
 import QuartzCore
 
+// MARK: - TuningState
+
+enum TuningState: Equatable {
+    case noSignal       // No note detected
+    case outOfRange     // |cents| > 15
+    case approaching    // 3 < |cents| <= 15
+    case inTune         // |cents| <= 2 (enter), exit at > 4
+    case settled        // inTune AND stable for 0.8s
+}
+
 final class TunerDisplayEngine {
     // MARK: - Output (read by the view via TimelineView)
     private(set) var currentCents: Double = 0
+    private(set) var tuningState: TuningState = .noSignal
 
     // MARK: - Internal state
     private var velocity: Double = 0
@@ -25,6 +36,10 @@ final class TunerDisplayEngine {
     private var suppressionFramesRemaining: Int = 0
     private var lastNoteName: String?
     private var lastUpdateTime: CFTimeInterval = 0
+    private var hasSignal: Bool = false
+
+    // Hysteresis state tracking
+    private var inTuneEntryTime: CFTimeInterval = 0
 
     // Input smoothing: light EMA on incoming samples to reduce frame-to-frame
     // jitter from pitch detection variance (especially on low strings).
@@ -35,6 +50,7 @@ final class TunerDisplayEngine {
 
     func pushSample(cents: Double, note: String?) {
         let now = CACurrentMediaTime()
+        hasSignal = true
 
         // Transient suppression: if note changed, suppress for 3 frames
         // and freeze the needle at its current position to prevent jumping.
@@ -74,6 +90,9 @@ final class TunerDisplayEngine {
         previousSample = nil
         currentSample = nil
         smoothedInput = nil
+        hasSignal = false
+        tuningState = .noSignal
+        inTuneEntryTime = 0
     }
 
     // MARK: - Per-frame update (called by TimelineView at display refresh rate)
@@ -118,7 +137,62 @@ final class TunerDisplayEngine {
         currentCents = max(-55, min(55, currentCents))
         velocity = max(-500, min(500, velocity))
 
+        // Update tuning state with hysteresis
+        updateTuningState(now: now)
+
         return currentCents
+    }
+
+    // MARK: - Tuning State Hysteresis
+
+    private func updateTuningState(now: CFTimeInterval) {
+        guard hasSignal else {
+            tuningState = .noSignal
+            inTuneEntryTime = 0
+            return
+        }
+
+        let absCents = abs(currentCents)
+
+        switch tuningState {
+        case .noSignal:
+            // Just got signal — classify by position
+            if absCents <= 2 {
+                tuningState = .inTune
+                inTuneEntryTime = now
+            } else if absCents <= 15 {
+                tuningState = .approaching
+            } else {
+                tuningState = .outOfRange
+            }
+
+        case .outOfRange:
+            if absCents <= 15 {
+                tuningState = .approaching
+            }
+
+        case .approaching:
+            if absCents > 18 {
+                tuningState = .outOfRange
+            } else if absCents <= 2 {
+                tuningState = .inTune
+                inTuneEntryTime = now
+            }
+
+        case .inTune:
+            if absCents > 4 {
+                tuningState = .approaching
+                inTuneEntryTime = 0
+            } else if now - inTuneEntryTime >= 0.8 && abs(velocity) < 5 {
+                tuningState = .settled
+            }
+
+        case .settled:
+            if absCents > 3 {
+                tuningState = .approaching
+                inTuneEntryTime = 0
+            }
+        }
     }
 
     private func gainSchedule(_ absError: Double) -> (stiffness: Double, damping: Double) {
@@ -144,5 +218,8 @@ final class TunerDisplayEngine {
         lastNoteName = nil
         lastUpdateTime = 0
         smoothedInput = nil
+        tuningState = .noSignal
+        hasSignal = false
+        inTuneEntryTime = 0
     }
 }

@@ -36,6 +36,9 @@
 		7BC1FC21CCA1EAF1B325D5CC /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E3FF02A66FF10C9470B4575 /* OnboardingView.swift */; };
 		83CA8031BF7C507EDA2148B6 /* SessionSummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6BFA7C97D6BCC3CC6978867E /* SessionSummaryView.swift */; };
 		8C67D2972E1BB431096B7236 /* TunerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 712A49EB16F90D326925F1C7 /* TunerView.swift */; };
+		DCST01A1B2C3D4E5F6A7B8C9 /* DecayStabilizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = DCST02A1B2C3D4E5F6A7B8C9 /* DecayStabilizer.swift */; };
+		DCST03A1B2C3D4E5F6A7B8C9 /* DecayStabilizerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DCST04A1B2C3D4E5F6A7B8C9 /* DecayStabilizerTests.swift */; };
+		F53C65121B3DCC244E38FD57 /* TunerDisplayEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8B7D9ED997E52BCC484B82A /* TunerDisplayEngine.swift */; };
 		90C6CE68DFA597F6BC629DCE /* CellDetailSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 334441AE15BE47671C39BF23 /* CellDetailSheet.swift */; };
 		94BC7C432D4A4DB84D559C90 /* ProgressTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A86D768D2FA40411BA07A9A4 /* ProgressTabView.swift */; };
 		961097F9A52C883CCA49FA31 /* SignalMeasurement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BFFA59339D000888D580604 /* SignalMeasurement.swift */; };
@@ -112,6 +115,9 @@
 		6BFA7C97D6BCC3CC6978867E /* SessionSummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionSummaryView.swift; sourceTree = "<group>"; };
 		6E3FF02A66FF10C9470B4575 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		712A49EB16F90D326925F1C7 /* TunerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TunerView.swift; sourceTree = "<group>"; };
+		DCST02A1B2C3D4E5F6A7B8C9 /* DecayStabilizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DecayStabilizer.swift; sourceTree = "<group>"; };
+		DCST04A1B2C3D4E5F6A7B8C9 /* DecayStabilizerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DecayStabilizerTests.swift; sourceTree = "<group>"; };
+		D8B7D9ED997E52BCC484B82A /* TunerDisplayEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TunerDisplayEngine.swift; sourceTree = "<group>"; };
 		7C5E6B98AEE0090E92E72659 /* ProgressViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressViewModelTests.swift; sourceTree = "<group>"; };
 		8258E65B255BA29FC05A7AC7 /* CompactHeatmapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompactHeatmapView.swift; sourceTree = "<group>"; };
 		83CC05DC4F6BC279CF06E4BE /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -204,6 +210,7 @@
 				9A49C34D79598F0C40D67A54 /* QuizViewModelTests.swift */,
 				9FE5B2CFA6EF2400E6CCF60B /* SettingsTests.swift */,
 				940F20D459475ADCDF1F786C /* SignalMeasurementTests.swift */,
+				DCST04A1B2C3D4E5F6A7B8C9 /* DecayStabilizerTests.swift */,
 			);
 			path = UnitTests;
 			sourceTree = "<group>";
@@ -281,8 +288,10 @@
 		5B8B3473E3FF274F645F732F /* Tuner */ = {
 			isa = PBXGroup;
 			children = (
+				DCST02A1B2C3D4E5F6A7B8C9 /* DecayStabilizer.swift */,
 				92DAA6EC80EF1378C99C5A2B /* PitchDetector.swift */,
 				B249D088A3BF526B9663DD4D /* SettingsView.swift */,
+				D8B7D9ED997E52BCC484B82A /* TunerDisplayEngine.swift */,
 				712A49EB16F90D326925F1C7 /* TunerView.swift */,
 			);
 			path = Tuner;
@@ -570,6 +579,8 @@
 				04EAC52BD44A0E963783AC41 /* SwiftDataRepositories.swift in Sources */,
 				C847309B899C791A4ADA05B3 /* SwiftDataStore.swift in Sources */,
 				8C67D2972E1BB431096B7236 /* TunerView.swift in Sources */,
+				F53C65121B3DCC244E38FD57 /* TunerDisplayEngine.swift in Sources */,
+				DCST01A1B2C3D4E5F6A7B8C9 /* DecayStabilizer.swift in Sources */,
 				D0470482E5CE63A0853FDE7A /* UserSettings.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -588,6 +599,7 @@
 				2A150C28DE7C57576FDEF755 /* QuizViewModelTests.swift in Sources */,
 				F3201BA22FA3FAFF4F0AF8DB /* SettingsTests.swift in Sources */,
 				3BA1749981D64C8E7900D5BF /* SignalMeasurementTests.swift in Sources */,
+				DCST03A1B2C3D4E5F6A7B8C9 /* DecayStabilizerTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

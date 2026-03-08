@@ -150,7 +150,13 @@ public final class PitchDetector {
                                     mode: .measurement,
                                     options: [.defaultToSpeaker, .mixWithOthers])
             try session.setPreferredSampleRate(44100)
-            try session.setPreferredIOBufferDuration(Double(bufferSize) / 44100.0)
+            if sustainMode {
+                // Tuner: request smallest practical buffer (~5ms ≈ 221 frames).
+                // System negotiates to 256; reduces input-to-DSP latency from ~93ms to ~6-12ms.
+                try session.setPreferredIOBufferDuration(0.005)
+            } else {
+                try session.setPreferredIOBufferDuration(Double(bufferSize) / 44100.0)
+            }
             try session.setActive(true, options: .notifyOthersOnDeactivation)
 
             // Force built-in mic if requested. Must be set AFTER setActive.
@@ -229,7 +235,7 @@ public final class PitchDetector {
         let calNoiseFloor = calibratedNoiseFloor
         let calAGCGain = calibratedAGCGain
         let calInputSource = calibratedInputSource
-        let tapClosure = makeTapClosure(
+        let (tapClosure, tapState) = makeTapClosure(
             isStopping: isStopping,
             confidenceThreshold: threshold,
             sampleRate: tapSampleRate,
@@ -248,16 +254,40 @@ public final class PitchDetector {
             var smoothedCents: Double = 0
             var smoothedLevel: Double = 0
             var freqHistory: [Double] = []
-            let freqHistoryMax = sustainEnabled ? 7 : 5
+            let freqHistoryMax = sustainEnabled ? 13 : 5
             // Pitch hold: sustain the last detection briefly after the gate closes so the
             // tuner needle doesn't snap back to centre as the note decays (fixes T2, T3).
             var holdUntilDate: Date? = nil
-            let holdDuration: TimeInterval = sustainEnabled ? 0.5 : 0.25
+            let holdDuration: TimeInterval = sustainEnabled ? 1.5 : 0.25
             // Consecutive frame gate: require the same note for N frames before
             // publishing to detectedNote, preventing transient slide noise artifacts.
             var consecutiveNoteCount: Int = 0
             var lastConsecutiveNote: MusicalNote? = nil
-            let consecutiveFrameThreshold = 3  // ~69ms at 23ms hop
+            let consecutiveFrameThreshold = sustainEnabled ? 2 : 3  // Tuner: 2 (~46ms), Quiz: 3 (~69ms)
+
+            // Tuner tracking mode (2B): once a note is established, skip the
+            // consecutive gate and accept pitch directly for faster response.
+            enum TunerTrackingState {
+                case acquiring
+                case tracking(note: MusicalNote)
+            }
+            var trackingState: TunerTrackingState = .acquiring
+            var trackingNoteChangeCount: Int = 0  // consecutive frames with different note
+            var trackingLowConfidenceStart: Date? = nil
+            // Attack stabilization: skip first N frames after entering tracking mode.
+            // The pluck transient has sharp inharmonic partials that bias the pitch
+            // estimate. Brief delay lets the median filter start filling.
+            var trackingStabilizationFrames: Int = 0
+            let trackingStabilizationThreshold = 4  // ~46ms at 86 Hz
+
+            // Cents-space median filter (2C, sustain mode only): filtering in Hz
+            // applies disproportionate smoothing (1 Hz = 21¢ at 82 Hz vs 2.6¢ at 659 Hz).
+            var centsHistory: [Double] = []
+
+            // Decay stabilization: prevents flat-ward drift from YIN degradation
+            // during note decay while allowing real peg turns to break through.
+            var decayStabilizer = DecayStabilizer()
+
             for await result in pitchStream {
                 guard let self else { break }
                 switch result {
@@ -267,6 +297,7 @@ public final class PitchDetector {
                     smoothedCents = 0
                     smoothedLevel = 0
                     freqHistory.removeAll()
+                    centsHistory.removeAll()
                     self.detectedNote = nil
                     self.detectedFrequency = nil
                     self.centsDeviation = 0
@@ -275,6 +306,10 @@ public final class PitchDetector {
                     holdUntilDate = nil
                     consecutiveNoteCount = 0
                     lastConsecutiveNote = nil
+                    trackingState = .acquiring
+                    tapState.isTracking = false
+                    trackingNoteChangeCount = 0
+                    trackingLowConfidenceStart = nil
                 case .silent(let rmsLevel, let noiseFloor, let agcGain):
                     // Publish realtime signal state for calibration / diagnostics.
                     self.currentNoiseFloor = noiseFloor
@@ -286,6 +321,7 @@ public final class PitchDetector {
                     if let until = holdUntilDate, until > Date() { break }
                     smoothedCents = 0
                     freqHistory.removeAll()
+                    centsHistory.removeAll()
                     self.detectedNote = nil
                     self.detectedFrequency = nil
                     self.centsDeviation = 0
@@ -293,6 +329,10 @@ public final class PitchDetector {
                     holdUntilDate = nil
                     consecutiveNoteCount = 0
                     lastConsecutiveNote = nil
+                    trackingState = .acquiring
+                    tapState.isTracking = false
+                    trackingNoteChangeCount = 0
+                    trackingLowConfidenceStart = nil
                 case .detected(let freq, let confidence, let rmsLevel, let noiseFloor, let agcGain):
                     // Publish realtime signal state for calibration / diagnostics.
                     self.currentNoiseFloor = noiseFloor
@@ -309,7 +349,7 @@ public final class PitchDetector {
                     let isSustaining = sustainEnabled
                         && self.detectedNote != nil
                         && consecutiveNoteCount >= consecutiveFrameThreshold
-                    let effectiveThreshold = isSustaining ? 0.65 : Double(self.confidenceThreshold)
+                    let effectiveThreshold = isSustaining ? 0.55 : Double(self.confidenceThreshold)
                     guard confidence >= effectiveThreshold else {
                         // Low confidence: extend hold to bridge gap, but don't update note
                         if self.detectedNote != nil {
@@ -318,11 +358,102 @@ public final class PitchDetector {
                         break
                     }
 
+                    // --- Tuner tracking mode (sustain) ---
+                    if sustainEnabled, case .tracking(let trackedNote) = trackingState {
+                        let (note, cents) = pitchDetectorNoteAndCents(frequency: freq, referenceA: self.referenceA)
+
+                        // Exit tracking if note changes for 2+ consecutive frames
+                        if note != trackedNote {
+                            trackingNoteChangeCount += 1
+                            if trackingNoteChangeCount >= 2 {
+                                trackingState = .acquiring
+                                tapState.isTracking = false
+                                trackingNoteChangeCount = 0
+                                consecutiveNoteCount = 0
+                                lastConsecutiveNote = nil
+                                centsHistory.removeAll()
+                                freqHistory.removeAll()
+                                // Fall through to acquiring path below
+                            } else {
+                                // One frame of different note — hold current display
+                                holdUntilDate = Date().addingTimeInterval(holdDuration)
+                                break
+                            }
+                        } else {
+                            trackingNoteChangeCount = 0
+                        }
+
+                        // Exit tracking if confidence < sustain threshold for >600ms
+                        if confidence < 0.55 {
+                            if trackingLowConfidenceStart == nil {
+                                trackingLowConfidenceStart = Date()
+                            } else if Date().timeIntervalSince(trackingLowConfidenceStart!) > 0.6 {
+                                trackingState = .acquiring
+                                tapState.isTracking = false
+                                trackingLowConfidenceStart = nil
+                                consecutiveNoteCount = 0
+                                lastConsecutiveNote = nil
+                                centsHistory.removeAll()
+                                freqHistory.removeAll()
+                            }
+                        } else {
+                            trackingLowConfidenceStart = nil
+                        }
+
+                        // If still tracking, publish directly (skip consecutive gate)
+                        if case .tracking = trackingState {
+                            // Attack stabilization: skip first N frames to let the
+                            // pluck transient pass before showing cents to the user.
+                            trackingStabilizationFrames += 1
+                            centsHistory.append(cents)
+                            if centsHistory.count > freqHistoryMax { centsHistory.removeFirst() }
+
+                            if trackingStabilizationFrames <= trackingStabilizationThreshold {
+                                // Still stabilizing — accumulate history but don't publish.
+                                // The hold window keeps the previous note/cents on screen.
+                                holdUntilDate = Date().addingTimeInterval(holdDuration)
+                                // Track peak level during stabilization too
+                                _ = decayStabilizer.process(rmsLevel: rmsLevel, medianCents: cents)
+                                break
+                            }
+
+                            // Cents-space median filter
+                            let medianCents: Double
+                            if centsHistory.count >= 3 {
+                                let sorted = centsHistory.sorted()
+                                medianCents = sorted[sorted.count / 2]
+                            } else {
+                                medianCents = cents
+                            }
+
+                            // Decay stabilization: locks display during amplitude decay
+                            // to prevent YIN flat-ward drift, but allows real peg turns
+                            // to break through via spike detection on raw cents (faster
+                            // than waiting for the 13-frame median to flip).
+                            let (useCents, shouldUpdate) = decayStabilizer.process(
+                                rmsLevel: rmsLevel, medianCents: medianCents, rawCents: cents)
+                            guard shouldUpdate else {
+                                holdUntilDate = Date().addingTimeInterval(holdDuration)
+                                break
+                            }
+
+                            holdUntilDate = Date().addingTimeInterval(holdDuration)
+                            self.detectedNote = note
+                            self.detectedFrequency = freq
+                            self.detectedConfidence = confidence
+                            self.centsDeviation = useCents
+                            break
+                        }
+                    }
+
+                    // --- Acquiring mode (both tuner and quiz) ---
+
                     // Median filter: detect note changes and maintain sliding window
                     if !freqHistory.isEmpty {
                         let currentMedian = freqHistory.sorted()[freqHistory.count / 2]
                         if abs(freq - currentMedian) / currentMedian > 0.10 {
                             freqHistory.removeAll()
+                            centsHistory.removeAll()
                         }
                     }
                     freqHistory.append(freq)
@@ -361,9 +492,16 @@ public final class PitchDetector {
                         break
                     }
 
+                    // Note established — transition to tracking in sustain mode
                     if sustainEnabled {
-                        // Tuner: publish raw median-filtered cents for responsive needle.
-                        // TunerView handles all visual smoothing with adaptive EMA.
+                        trackingState = .tracking(note: note)
+                        tapState.isTracking = true
+                        trackingNoteChangeCount = 0
+                        trackingLowConfidenceStart = nil
+                        trackingStabilizationFrames = 0
+                        decayStabilizer.reset()
+                        centsHistory.removeAll()
+                        centsHistory.append(cents)
                         smoothedCents = cents
                     } else {
                         // Quiz: EMA smoothing to prevent flicker.
@@ -375,8 +513,6 @@ public final class PitchDetector {
                     self.detectedFrequency = useFreq
                     self.detectedConfidence = confidence
                     // Dead-zone: skip sub-cent jitter.
-                    // Tuner publishes every value for maximum responsiveness;
-                    // TunerView handles all visual smoothing.
                     if sustainEnabled {
                         self.centsDeviation = smoothedCents
                     } else {
@@ -441,7 +577,7 @@ public final class PitchDetector {
                     commonFormat: .pcmFormatFloat32, sampleRate: sr,
                     channels: 1, interleaved: false
                 ) else { return }
-                let newTap = makeTapClosure(
+                let (newTap, _) = makeTapClosure(
                     isStopping: isStopping,
                     confidenceThreshold: threshold,
                     sampleRate: sr,
@@ -762,7 +898,7 @@ final class AccelerateYIN: @unchecked Sendable {
         // --- Step 3: Absolute threshold ---
         let yinThreshold: Float = 0.15
         let minTau = max(1, Int(sampleRate / 1175.0))
-        let maxTau = min(Int(sampleRate / 80.0), halfN - 1)
+        let maxTau = min(Int(sampleRate / 55.0), halfN - 1)
         guard minTau < maxTau else { return nil }
 
         var bestTau = -1
@@ -983,6 +1119,11 @@ private final class TapProcessingState: @unchecked Sendable {
     // relaxing the threshold avoids rejecting valid distorted-guitar frames.
     let spectralFlatnessThreshold: Float
 
+    // Tracking mode flag: set by the consumer (MainActor) when a note is
+    // established in sustain mode. Read by the tap (audio thread) to relax
+    // the YIN CMND threshold from 0.15 to 0.25 for better sustain tracking.
+    var isTracking: Bool = false
+
     init(windowSize: Int, hopSize: Int, ringCapacity: Int, sampleRate: Double,
          inputSource: AudioInputSource?) {
         self.windowSize = windowSize
@@ -996,10 +1137,9 @@ private final class TapProcessingState: @unchecked Sendable {
         self.filteredBuffer = .allocate(capacity: filteredBufferCapacity)
         self.filteredBuffer.initialize(repeating: 0, count: filteredBufferCapacity)
 
-        // Compute 2nd-order Butterworth HPF coefficients (f0 = 60 Hz)
-        // Lowered from 70 Hz to give full headroom for low E (82.4 Hz)
-        // and support drop D tuning (73.4 Hz).
-        let f0 = 60.0
+        // Compute 2nd-order Butterworth HPF coefficients (f0 = 50 Hz)
+        // Lowered from 60 Hz to support Drop C (65.4 Hz) and Drop D (73.4 Hz).
+        let f0 = 50.0
         let q = 1.0 / sqrt(2.0)  // Butterworth Q
         let w0 = 2.0 * Double.pi * f0 / sampleRate
         let alpha = sin(w0) / (2.0 * q)
@@ -1057,7 +1197,7 @@ private func makeTapClosure(
     calibratedAGCGain: Float? = nil,
     calibratedInputSource: AudioInputSource? = nil,
     sustainEnabled: Bool = false
-) -> AVAudioNodeTapBlock {
+) -> (block: AVAudioNodeTapBlock, state: TapProcessingState) {
     let windowSize = 4096
     let hopSize = sustainEnabled ? 512 : 1024  // Tuner: 512 (~86 Hz update rate) for smoother needle
     let ringCapacity = 8192
@@ -1081,13 +1221,13 @@ private func makeTapClosure(
         tapState.deallocate()
     }
 
-    return { buffer, _ in
+    let block: AVAudioNodeTapBlock = { buffer, _ in
         guard !isStopping.get() else { return }
         guard let channelData = buffer.floatChannelData?[0] else { return }
         let frameCount = Int(buffer.frameLength)
         guard frameCount > 0 else { return }
 
-        // Apply high-pass biquad filter (70 Hz cutoff) to remove rumble/handling noise
+        // Apply high-pass biquad filter (50 Hz cutoff) to remove rumble/handling noise
         let state = tapState
         let fb = state.filteredBuffer
         let b0 = state.hpfB0, b1 = state.hpfB1, b2 = state.hpfB2
@@ -1118,12 +1258,8 @@ private func makeTapClosure(
         let gateThreshold = SignalMeasurement.gateThreshold(noiseFloor: state.noiseFloor)
         guard rms > gateThreshold else {
             // Capture noise spectrum during silence for adaptive spectral subtraction.
-            // Captured at RAW level (no AGC scaling). The signal path's FFT is at
-            // AGC-scaled level, so the subtraction slightly under-subtracts — this is
-            // intentional. Over-subtraction (from AGC mismatch when gain changes
-            // between silence and playing) destroys the power spectrum and causes
-            // false rejections. Under-subtraction just leaves residual noise that
-            // the existing gates handle.
+            // Both tuner and quiz paths benefit: silence periods between string strikes
+            // provide noise estimates that improve pitch accuracy during note decay.
             state.yin.captureNoiseSpectrum(in: state.analysisBuffer, count: windowSize, sampleRate: sampleRate)
             continuation.yield(.silent(rmsLevel: rmsLevel, noiseFloor: state.noiseFloor, agcGain: state.agcGain))
             return
@@ -1166,15 +1302,6 @@ private func makeTapClosure(
             }
         }
 
-        // Crest factor: peak / RMS. Distorted signals ~1.0–1.5 (clipped);
-        // clean guitar / noise ~3–5. Low crest factor indicates a distortion
-        // pedal, not broadband noise — safe to bypass the flatness gate.
-        var peakValue: Float = 0
-        vDSP_maxmgv(state.analysisBuffer, 1, &peakValue, vDSP_Length(windowSize))
-        var postRMS: Float = 0
-        vDSP_rmsqv(state.analysisBuffer, 1, &postRMS, vDSP_Length(windowSize))
-        let crestFactor: Float = postRMS > 1e-10 ? peakValue / postRMS : 10.0
-
         // sustainMode: lower the hard floor from confidenceThreshold to 60% of it.
         // Default 0.85 × 0.6 = 0.51 — still rejects garbage, but passes
         // decay-phase frames for the consumer to evaluate with context.
@@ -1183,25 +1310,47 @@ private func makeTapClosure(
             ? Double(confidenceThreshold) * 0.6
             : Double(confidenceThreshold)
 
-        guard let (frequency, confidence, flatness, harmonicReg) = state.yin.detectPitch(
-            in: state.analysisBuffer,
-            count: windowSize,
-            sampleRate: sampleRate
-        ), confidence >= tapFloor,
-           // Three-way tonal signal check: pass if ANY of these is true.
-           // 1. Low crest factor → clipped/distorted signal (not noise)
-           // 2. High harmonic regularity → energy at integer multiples (tonal)
-           // 3. Low spectral flatness → clean tonal signal (original check)
-           crestFactor < 2.0 || harmonicReg > 0.3 || flatness < state.spectralFlatnessThreshold else {
-            // Yield .silent with the gained level so the UI still shows
-            // signal activity even when detection fails. Previously yielded
-            // .none which hard-zeroed the level indicator, hiding the signal.
-            continuation.yield(.silent(rmsLevel: gainedLevel, noiseFloor: state.noiseFloor, agcGain: state.agcGain))
-            return
-        }
+        if sustainEnabled {
+            // Tuner fast path: skip crest factor and harmonic regularity (expensive),
+            // but keep spectral flatness gate to reject degraded decay-phase frames
+            // where low SNR biases YIN toward longer periods (flat-ward drift).
+            guard let (frequency, confidence, flatness, _) = state.yin.detectPitch(
+                in: state.analysisBuffer,
+                count: windowSize,
+                sampleRate: sampleRate
+            ), confidence >= tapFloor,
+               flatness < state.spectralFlatnessThreshold else {
+                continuation.yield(.silent(rmsLevel: gainedLevel, noiseFloor: state.noiseFloor, agcGain: state.agcGain))
+                return
+            }
+            continuation.yield(.detected(frequency: frequency, confidence: confidence, rmsLevel: gainedLevel, noiseFloor: state.noiseFloor, agcGain: state.agcGain))
+        } else {
+            // Quiz path: full DSP chain with crest factor, harmonic regularity,
+            // spectral subtraction, and three-way tonal signal gate.
+            var peakValue: Float = 0
+            vDSP_maxmgv(state.analysisBuffer, 1, &peakValue, vDSP_Length(windowSize))
+            var postRMS: Float = 0
+            vDSP_rmsqv(state.analysisBuffer, 1, &postRMS, vDSP_Length(windowSize))
+            let crestFactor: Float = postRMS > 1e-10 ? peakValue / postRMS : 10.0
 
-        continuation.yield(.detected(frequency: frequency, confidence: confidence, rmsLevel: gainedLevel, noiseFloor: state.noiseFloor, agcGain: state.agcGain))
+            guard let (frequency, confidence, flatness, harmonicReg) = state.yin.detectPitch(
+                in: state.analysisBuffer,
+                count: windowSize,
+                sampleRate: sampleRate
+            ), confidence >= tapFloor,
+               // Three-way tonal signal check: pass if ANY of these is true.
+               // 1. Low crest factor → clipped/distorted signal (not noise)
+               // 2. High harmonic regularity → energy at integer multiples (tonal)
+               // 3. Low spectral flatness → clean tonal signal (original check)
+               crestFactor < 2.0 || harmonicReg > 0.3 || flatness < state.spectralFlatnessThreshold else {
+                continuation.yield(.silent(rmsLevel: gainedLevel, noiseFloor: state.noiseFloor, agcGain: state.agcGain))
+                return
+            }
+            continuation.yield(.detected(frequency: frequency, confidence: confidence, rmsLevel: gainedLevel, noiseFloor: state.noiseFloor, agcGain: state.agcGain))
+        }
     }
+
+    return (block: block, state: tapState)
 }
 
 private func pitchDetectorNoteAndCents(frequency: Double, referenceA: Double) -> (MusicalNote, Double) {

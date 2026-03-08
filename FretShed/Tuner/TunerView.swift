@@ -20,7 +20,8 @@ public struct TunerView: View {
 
     @State private var detector = PitchDetector()
     @State private var settings: UserSettings? = nil
-    @State private var displayCents: Double = 0
+    @State private var displayEngine = TunerDisplayEngine()
+    @State private var showLatencyWarning = false
     @Environment(\.verticalSizeClass) private var vSizeClass
 
     // displayStyle and referenceAHz kept in @AppStorage so the tuner tab
@@ -47,46 +48,58 @@ public struct TunerView: View {
 
                 if vSizeClass == .compact {
                     // ── Landscape: note header left, display + controls right ──
-                    HStack(spacing: 0) {
-                        VStack(spacing: 12) {
-                            Spacer()
-                            noteHeader
-                            centsReadout
-                            Spacer()
+                    VStack(spacing: 0) {
+                        if showLatencyWarning {
+                            latencyWarningBanner
+                                .padding(.horizontal, 16)
+                                .padding(.top, 4)
                         }
-                        .frame(maxWidth: .infinity)
+                        HStack(spacing: 0) {
+                            VStack(spacing: 12) {
+                                Spacer()
+                                noteHeader
+                                centsReadout
+                                Spacer()
+                            }
+                            .frame(maxWidth: .infinity)
 
-                        Divider().padding(.vertical, 20)
+                            Divider().padding(.vertical, 20)
 
-                        VStack(spacing: 0) {
-                            NeedleDisplay(cents: displayCents,
-                                              isActive: detector.detectedNote != nil)
-                                .padding(.top, 12)
+                            VStack(spacing: 0) {
+                                AnimatedNeedleView(displayEngine: displayEngine,
+                                                   isActive: detector.detectedNote != nil)
+                                    .padding(.top, 12)
 
-                            CentsScale()
-                                .padding(.top, 8)
-                                .padding(.horizontal, 40)
+                                CentsScale()
+                                    .padding(.top, 8)
+                                    .padding(.horizontal, 40)
 
-                            InputLevelBar(level: detector.inputLevel)
-                                .padding(.top, 6)
-                                .padding(.horizontal, 40)
+                                InputLevelBar(level: detector.inputLevel)
+                                    .padding(.top, 6)
+                                    .padding(.horizontal, 40)
 
-                            Spacer()
+                                Spacer()
 
-                            controls
-                                .padding(.bottom, 16)
+                                controls
+                                    .padding(.bottom, 16)
+                            }
+                            .frame(maxWidth: .infinity)
                         }
-                        .frame(maxWidth: .infinity)
                     }
                 } else {
                     // ── Portrait: original stacked layout ──────────────
                     VStack(spacing: 16) {
+                        if showLatencyWarning {
+                            latencyWarningBanner
+                                .padding(.horizontal, 16)
+                        }
+
                         VStack(spacing: 0) {
                             noteHeader
                                 .padding(.top, 24)
 
-                            NeedleDisplay(cents: displayCents,
-                                          isActive: detector.detectedNote != nil)
+                            AnimatedNeedleView(displayEngine: displayEngine,
+                                               isActive: detector.detectedNote != nil)
                                 .padding(.top, 24)
 
                             centsReadout
@@ -123,6 +136,11 @@ public struct TunerView: View {
                 let status = AVAudioApplication.shared.recordPermission
                 guard status == .granted else { return }
                 try? await detector.start()
+                // Check for high-latency input (e.g. Bluetooth)
+                let inputLatency = AVAudioSession.sharedInstance().inputLatency
+                if inputLatency > 0.05 {
+                    showLatencyWarning = true
+                }
             }
             .onDisappear {
                 Task { await detector.stop() }
@@ -130,31 +148,17 @@ public struct TunerView: View {
             .onChange(of: referenceAHz) { _, new in
                 detector.referenceA = Double(new)
             }
-            // Sweep from center when a NEW note starts (nil → some).
-            // The adaptive smoothing + spring animation creates a natural arc.
-            .onChange(of: detector.detectedNote) { oldNote, newNote in
-                if newNote != nil && oldNote == nil {
-                    displayCents = 0
-                }
-            }
-            // Adaptive smoothing: near-instant at center for intonation work,
-            // progressively damped farther out for smooth sweeps.
+            // Feed pitch data into the display engine's interpolation buffer.
             .onChange(of: detector.centsDeviation) { _, newCents in
                 guard detector.detectedNote != nil else { return }
-                let deviation = abs(newCents)
-                let alpha: Double
-                if deviation < 1 {
-                    alpha = 0.95  // Dead-on: near-instant for intonation
-                } else if deviation < 3 {
-                    alpha = 0.8   // Very close: highly responsive
-                } else if deviation < 8 {
-                    alpha = 0.5   // Close: responsive
-                } else if deviation < 20 {
-                    alpha = 0.3   // Medium: balanced
-                } else {
-                    alpha = 0.15  // Far out: smooth sweep
+                let noteName = detector.detectedNote?.displayName(format: noteFormat)
+                displayEngine.pushSample(cents: newCents, note: noteName)
+            }
+            // When note drops, tell the display engine so the needle drifts to center.
+            .onChange(of: detector.detectedNote) { oldNote, newNote in
+                if newNote == nil && oldNote != nil {
+                    displayEngine.pushSilence()
                 }
-                displayCents = alpha * newCents + (1.0 - alpha) * displayCents
             }
             .alert("Microphone Access Required",
                    isPresented: Binding(
@@ -259,13 +263,31 @@ public struct TunerView: View {
     // MARK: - Cents Readout
 
     private var centsReadout: some View {
-        let c = displayCents
-        let sign = c >= 0 ? "+" : ""
-        return Text("\(sign)\(Int(c.rounded())) ¢")
-            .font(DesignSystem.Typography.subDisplay)
-            .foregroundStyle(tuningColor)
-            .contentTransition(.numericText())
-            .opacity(detector.detectedNote != nil ? 1 : 0)
+        let c = detector.centsDeviation
+        let isActive = detector.detectedNote != nil
+        return VStack(spacing: 4) {
+            Text(String(format: "%+.1f ¢", c))
+                .font(DesignSystem.Typography.subDisplay)
+                .foregroundStyle(tuningColor)
+                .contentTransition(.numericText())
+
+            // Sharp / Flat / In Tune directional label
+            Group {
+                if abs(c) <= 1.0 {
+                    Text("IN TUNE")
+                        .foregroundStyle(DesignSystem.Colors.correct)
+                } else if c > 1.0 {
+                    Text("SHARP ↑")
+                        .foregroundStyle(tuningColor)
+                } else {
+                    Text("FLAT ↓")
+                        .foregroundStyle(tuningColor)
+                }
+            }
+            .font(DesignSystem.Typography.sectionLabel)
+            .tracking(1.5)
+        }
+        .opacity(isActive ? 1 : 0)
     }
 
     // MARK: - Controls
@@ -281,6 +303,27 @@ public struct TunerView: View {
         }
     }
 
+    // MARK: - Latency Warning
+
+    private var latencyWarningBanner: some View {
+        HStack {
+            Text("High latency input detected. For best accuracy, use the built-in mic or a wired connection.")
+                .font(DesignSystem.Typography.smallLabel)
+                .foregroundStyle(DesignSystem.Colors.text2)
+            Spacer()
+            Button {
+                showLatencyWarning = false
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(DesignSystem.Colors.text2)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(12)
+        .background(DesignSystem.Colors.surface2, in: RoundedRectangle(cornerRadius: 10))
+    }
+
     // MARK: - Colour
 
     private var tuningColor: Color {
@@ -288,6 +331,26 @@ public struct TunerView: View {
             centsDeviation: detector.centsDeviation,
             isActive: detector.detectedNote != nil
         )
+    }
+}
+
+// MARK: - AnimatedNeedleView
+
+/// Drives the needle at display refresh rate via TimelineView + TunerDisplayEngine.
+/// No SwiftUI .animation() — all smoothing is handled by the spring-damper physics model.
+/// When the note decays, the needle holds its last position and fades to 30% opacity
+/// so the user can distinguish "in tune" (solid at center) from "note gone" (faded).
+struct AnimatedNeedleView: View {
+    let displayEngine: TunerDisplayEngine
+    let isActive: Bool
+
+    var body: some View {
+        TimelineView(.animation) { _ in
+            let cents = displayEngine.update(now: CACurrentMediaTime())
+            NeedleDisplay(cents: cents, isActive: isActive)
+                .opacity(isActive ? 1.0 : 0.3)
+                .animation(.easeOut(duration: 0.8), value: isActive)
+        }
     }
 }
 
@@ -299,7 +362,9 @@ struct NeedleDisplay: View {
     let isActive: Bool
 
     private var angle: Double {
-        isActive ? (cents / 50.0) * 90.0 : -90
+        // Always driven by the spring-damper's position.
+        // When no note is active, the display engine drifts to center via pushSilence().
+        (cents / 50.0) * 90.0
     }
 
     var body: some View {
@@ -318,7 +383,7 @@ struct NeedleDisplay: View {
 
             Needle(angle: angle)
                 .frame(width: 340, height: 170)
-                .animation(.spring(response: 0.25, dampingFraction: 0.9), value: angle)
+                // No .animation() — TunerDisplayEngine handles all smoothing
 
             Circle()
                 .fill(DesignSystem.Colors.amber)

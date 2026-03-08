@@ -18,7 +18,7 @@ The core product is feature-complete and well-architected:
 - SwiftData persistence + repository pattern
 - 219 unit tests (3 pre-existing failures unrelated to feature work)
 - Full audio calibration system (F22) — required before quiz, pre-seeds PitchDetector
-- Advanced pitch detection: spectral flatness gate, consecutive frame gate, HPS octave verification, string-aware frequency constraints, 60 Hz HPF, input-source-aware low-frequency emphasis, adaptive spectral subtraction, distortion tolerance (crest factor, harmonic regularity, input-aware flatness threshold), tuner sustain hysteresis (F29)
+- Advanced pitch detection: spectral flatness gate, consecutive frame gate, HPS octave verification, string-aware frequency constraints, 50 Hz HPF, input-source-aware low-frequency emphasis, adaptive spectral subtraction, distortion tolerance (crest factor, harmonic regularity, input-aware flatness threshold), tuner sustain hysteresis (F29)
 - Piano drone timbre (F26), practice streak tracker (F27), tap mode bypass for calibration (F28)
 - Swift 6 strict concurrency
 
@@ -158,6 +158,20 @@ Estimated: 6–8 hours
 | SD.12 | Branded Launch Screen — LaunchScreen.storyboard with Woodshop colors, replaces blank UILaunchScreen | ✅ |
 | SD.13 | Repeat Last Session Tracking — coordinator-based `lastCompletedSession`, `isNewUser` fix, `sessionTimeLimitSeconds` copy on repeat | ✅ |
 | SD.14 | Repeat Last Subtitle + "Same Note" Rename — full focus mode + game mode subtitle, 2-line limit, FocusMode.singleNote label → "Same Note" | ✅ |
+
+---
+
+## Tuner Rewrite
+
+**4-phase professional tuner upgrade: quick wins → core architecture → visual presentation → differentiators.**
+
+| # | Task | Status |
+|---|---|---|
+| T.P1 | Phase 1 Quick Wins — I/O buffer reduction, sub-cent display, sharp/flat labels, 2-frame gate, HPF/maxTau for Drop C/D, BT latency warning | ✅ |
+| T.P2 | Phase 2 Core Architecture — Lightweight tap fast path, tracking mode, cents-space filtering, adaptive YIN threshold, TunerDisplayEngine (spring-damper), rewire TunerView | ✅ |
+| T.P2.5 | Phase 2.5 Pitch Drift Fix — DecayStabilizer (time+amplitude lock, spike-based peg turn breakout), spectral flatness gate in tuner path, noise capture re-enabled, 17 unit tests | 🚧 |
+| T.P3 | Phase 3 Visual Presentation — Settled readout, in-tune hysteresis state machine, background color wash, string indicator, responsive dial, auto-hide level bar | [ ] |
+| T.P4 | Phase 4 Differentiators — Intonation comparison mode, pitch rate predictor (ghost needle), adaptive update rate | [ ] |
 
 ---
 

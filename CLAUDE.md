@@ -279,6 +279,10 @@ Full analysis: `FretShed_Competitive_Analysis.md` in Claude.ai project files.
 
 **Tuner Needle Smoothing (TN1, Mar 2026) — IMPLEMENTED.** Professional-grade tuner improvements: (1) Hop size halved to 512 in sustainMode (~86 Hz update rate vs ~43 Hz); (2) Dead zone removed in sustain mode — every cents value published for maximum responsiveness; (3) HPS frequency cap raised from 700→1200 Hz for reliable 12th-fret detection (E5=659 Hz, B4=494 Hz now well within range); (4) TunerView 5-tier adaptive alpha with ±1 cent near-instant zone (0.95); (5) Spring animation: response 0.25, damping 0.9 (fast, non-bouncy). All changes gated on sustainMode — zero quiz impact.
 
+**Tuner Calibration Pre-seeding (Mar 2026) — FIXED.** TunerView now loads the active calibration profile and pre-seeds `calibratedNoiseFloor` and `calibratedInputSource` on the detector, matching what QuizView does. Without this, the tuner started with default noise floor (0.01) and no low-frequency emphasis for built-in mic.
+
+**Tuner Expert Review (Mar 2026) — COMPLETE.** Comprehensive 6-expert review in `TUNER_REVIEW_REPORT.md`. Top recommendations: (1) reduce I/O buffer to 5ms in tuner mode, (2) replace EMA+Spring double-smoothing with unified physics model, (3) add pitch tracking mode, (4) sub-cent display + sharp/flat labels, (5) intonation comparison mode.
+
 **Next task:** Phase 4 (Monetization).
 
 **Quiz Presentation Architecture (current — ZStack overlay + QuizLaunchCoordinator):**

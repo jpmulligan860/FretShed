@@ -173,7 +173,7 @@ public struct TunerView: View {
         }
     }
 
-    /// Loads UserSettings and applies them to the detector before starting.
+    /// Loads UserSettings and calibration profile, applies them to the detector before starting.
     private func applySettings() async {
         let loaded = try? container.settingsRepository.loadSettings()
         settings = loaded
@@ -186,6 +186,14 @@ public struct TunerView: View {
             displayStyleRaw = s.tunerDisplayStyleRaw
         } else {
             detector.referenceA = Double(referenceAHz)
+        }
+        // Pre-seed from calibration profile — same as QuizView does.
+        // Without this, the tuner starts with default noise floor (0.01)
+        // and no input-source-aware processing (no low-freq emphasis).
+        if let profile = try? container.calibrationRepository.activeProfile() {
+            let gateTrimMultiplier = pow(10.0, profile.userGateTrimDB / 20.0)
+            detector.calibratedNoiseFloor = profile.measuredNoiseFloorRMS * gateTrimMultiplier
+            detector.calibratedInputSource = profile.inputSource
         }
     }
 

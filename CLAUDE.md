@@ -357,6 +357,8 @@ Full analysis: `FretShed_Competitive_Analysis.md` in Claude.ai project files.
     - **Strategy flag:** If strategy-relevant changes were made (e.g., business model decisions, positioning updates), note: "This change may need to be reflected in CLAUDE_STRATEGY.md — update it during your next Claude.ai session."
     - **Inbound:** If there are any 🔲 Pending inbound items that weren't addressed this session, flag them for the next session.
 
+11. **Update "What Did I Learn.md"** — Add up to 5 process lessons from this session (not technical details — lessons about the development process, using AI tools, project management, etc.). Keep it conversational. Then rewrite the executive summary at the top to reflect cumulative learnings across all sessions.
+
 ---
 
 ## Known Issues (from BUGLOG.md)

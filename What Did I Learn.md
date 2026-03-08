@@ -1,0 +1,142 @@
+# What Did I Learn?
+
+> A running journal of the most important lessons from building FretShed — not the technical nitty-gritty, but the process stuff. How to build better, work smarter with AI, and avoid stepping on the same rake twice.
+
+---
+
+## Executive Summary
+
+Building FretShed from a working prototype to an App Store-ready product taught me a few things I won't forget:
+
+**Device testing is king.** Every clever algorithm I built worked beautifully in unit tests and fell apart the moment a real guitar was involved. The low E string doesn't care about your math. Phase tracking, spectral gates, confidence thresholds — they all needed real-world validation. The single most productive thing I did on this project was plug in my Strat and play.
+
+**Know your competition before you build.** I almost shipped with "the only app that listens to you play" as my tagline. Turns out five competitors already do that. The competitive analysis forced me to find what they *don't* do — calibration and adaptive learning — which became the features that actually matter. That one afternoon of research shaped months of architecture.
+
+**AI is a force multiplier, not a replacement for judgment.** Claude.ai is spectacular at drafting plans, analyzing code, and catching patterns I'd miss. But it needs direction. The best sessions were the ones where I came in with a clear question or a specific problem. The worst were "just make it better." The split between Claude.ai (strategy, analysis, expert review) and Claude Code (implementation, testing, debugging) worked brilliantly once I stopped trying to use one tool for everything.
+
+**Feature flags saved my sanity.** The `sustainMode` pattern — where tuner enhancements are gated behind a boolean that quiz mode never sets — meant I could experiment aggressively with the tuner without ever worrying about breaking the quiz. Every time I was tempted to "just change it globally," I reminded myself of the time a threshold tweak silently broke low-string detection in quizzes.
+
+**Polish is not optional.** The gap between "it works" and "it ships" is enormous. Phase 3.6 was supposed to be 8 tasks. It became 14. Every one of those extra tasks made the app feel intentional instead of cobbled together. Budget 30% more time than you think you need for the last mile.
+
+---
+
+## Session Log
+
+### Session: Feb 2026 — Phase 1 Cleanup
+*The "Oh, There's More Technical Debt Than I Thought" Session*
+
+1. **Always start by cleaning house.** I thought Phase 1 (cleanup) would be a quick 6-hour pass. It took closer to 9. Deleting the legacy `Presentation/` folder, auditing Settings, fixing Xcode warnings — each one surfaced something I didn't know was broken. Starting clean meant everything that followed was built on solid ground.
+
+2. **A file manifest is worth its weight in gold.** Running `find . -name "*.swift" | sort > FILE_MANIFEST.txt` at the start of every session sounds pedantic, but it caught two near-duplicate files that would have caused merge hell later.
+
+3. **Extract utilities early.** Pulling signal measurement functions (RMS, dBFS, noise floor) into `SignalMeasurement.swift` with 17 unit tests gave me a testable foundation that every future audio feature depended on. Best 1-hour investment of the project.
+
+---
+
+### Session: Feb 2026 — Design System & Woodshop
+*The "Let's Make It Look Like a Guitar" Session*
+
+1. **Design tokens first, visual redesign second.** Creating `DesignSystem.swift` with colors, typography, and spacing constants before touching any views meant the redesign was mechanical (find system color → replace with token) rather than creative (what color should this be?). Boring process, beautiful result.
+
+2. **A visual redesign forces a comprehensive audit.** Replacing 458+ system colors across 18 files was tedious, but it caught dark mode bugs, inconsistent text hierarchies, and orphaned styling that I'd never have found otherwise. The sweep *was* the QA.
+
+3. **Time your redesign right.** Doing Woodshop after core features were stable but before monetization meant I wasn't redesigning a half-built product (waste) or shipping a generic-looking app (missed opportunity).
+
+---
+
+### Session: Feb 2026 — Audio Calibration (F22)
+*The "Wait, No Other App Does This?" Session*
+
+1. **Competitive analysis should happen before architecture, not after.** I almost built a "listen and detect" app — which five competitors already offer. The afternoon I spent mapping the competitive landscape revealed that *calibration* was the real gap. That analysis shaped the entire F22 calibration system and became the core differentiator.
+
+2. **Never claim "the only app that..."** unless you've verified it. I had the tagline ready. It was wrong. Embarrassment avoided by doing homework.
+
+3. **Calibration is a trust-building moment.** When the app measures the user's room noise and guitar signal, it's saying "I'm adapting to *you*." That's a fundamentally different experience from "hope your room is quiet enough." The UX of the calibration flow matters as much as the DSP behind it.
+
+---
+
+### Session: Feb 2026 — Pitch Detection Hardening (F23–F25)
+*The "One Gate Is Never Enough" Session*
+
+1. **Layer your defenses.** Each detection gate (spectral flatness, consecutive frame, HPS octave, string-aware constraints, crest factor) catches a different failure mode. String slides fool the flatness gate but not the consecutive gate. Octave errors fool the consecutive gate but not HPS. You need all of them.
+
+2. **Device testing reveals what unit tests can't.** The spectral flatness gate worked perfectly on synthetic signals. Then I played an acoustic guitar through the iPhone mic and the wound G string produced enough broadband energy to fail the gate every time. Real instruments are messy, beautiful, and completely uncooperative.
+
+3. **Input source matters more than you'd think.** Built-in mic, USB interface, wired headset, and Bluetooth all have different frequency responses, noise floors, and latency characteristics. The `AudioInputSource` detection and per-source thresholds were not over-engineering — they were survival.
+
+---
+
+### Session: Feb 2026 — Expert Review
+*The "Fresh Eyes Find Everything" Session*
+
+1. **Schedule an expert review when the product is feature-complete but before monetization.** The 6-expert panel found 11 issues in one pass. Two were architectural showstoppers (NotificationCenter unreliability, quiz state management). Catching them before Phase 4 saved weeks of debugging.
+
+2. **NotificationCenter is a trap.** It looks simple. It works in demos. Then you put a fullScreenCover over your TabView and the handlers silently stop firing. The pivot to direct closures + `QuizLaunchCoordinator` was painful but permanent. Document your architectural decisions so you don't repeat the experiment.
+
+3. **Copy matters.** "Metronome in Quiz" → "Countdown Tick." "Single Note" → "Same Note." "Tap Mode" → "Tap Testing Mode." These seem trivial but they're the difference between an app that feels like a developer made it and an app that feels like a musician made it.
+
+---
+
+### Session: Mar 2026 — Shed Redesign (Phase 3.6)
+*The "Fewer Taps to Playing" Session*
+
+1. **Break big features into sub-phases.** Phase 3.6 was 14 tasks (SD.1–SD.14). Each was independently testable, independently committable, and independently estimable. When SD.9 (polish) took longer than expected, it didn't block SD.10–SD.14.
+
+2. **Smart defaults beat configuration.** The baseline prior system (5 experience levels) seeds the Bayesian mastery model so the first quiz isn't random. Asking one question during onboarding saves 10 sessions of cold-start exploration. When your app has a learning algorithm, give it a head start.
+
+3. **Polish is a phase, not an afterthought.** SD.9–SD.14 (the "polish" tasks) weren't bugs or features — they were refinements that made the Shed feel intentional. Auto-advance after mic permission. Branded launch screen. Repeat Last session tracking. Each one took 30-60 minutes and made a disproportionate difference.
+
+---
+
+### Session: Mar 2026 — Tuner Rewrite Phase 1–2 (T.P1, T.P2)
+*The "Physics Models Beat Animation Hacks" Session*
+
+1. **Replace animation hacks with physics models.** The original tuner used EMA smoothing + SwiftUI `.spring()` animation — two competing smoothing layers that fought each other. Replacing both with a single spring-damper physics model (TunerDisplayEngine) gave predictable, tunable behavior. One model, one source of truth.
+
+2. **Halve the hop size, double the responsiveness.** Going from 1024-sample hops to 512-sample hops in sustain mode doubled the update rate to ~86 Hz. The tuner went from "laggy" to "instant" with no accuracy cost. Sometimes the simplest optimization is the best one.
+
+3. **Feature flags protect your core product.** Every tuner enhancement was gated on `sustainMode`. Quiz detection remained byte-for-byte identical. When a threshold tweak broke low E detection in testing, I knew immediately it was a tuner-only issue because the quiz flag was false.
+
+---
+
+### Session: Mar 2026 — Tuner Drift Fix (T.P2.5)
+*The "Phase Tracking Was a Beautiful Lie" Session*
+
+1. **When clever math fails on real data, simplify.** Phase-based instantaneous frequency estimation is elegant, well-documented, and produces gorgeous results on synthetic sine waves. On a real guitar through a real mic? 0% phase frames, 98% fallback. I spent two sessions trying to make it work before accepting that magnitude-based parabolic interpolation was the right answer all along.
+
+2. **Thread safety isn't optional in audio.** The crash during calibration profile creation was a classic data race — the audio thread writing to GoertzelTracker while the main thread called reset(). NSLock solved it. If your struct is accessed from two threads, it's not a value type anymore.
+
+3. **First-frame transients are real.** The first Goertzel measurement after note lock consistently produced outlier readings (+619¢, -28¢) because peak magnitude hadn't stabilized. Adding an onset threshold (mag ratio ≥ 0.10) was a one-line fix that eliminated an entire class of visual glitches. Sometimes the best fix is "don't publish the first frame."
+
+---
+
+### Session: Mar 2026 — Diagnostic Tool & Device Testing
+*The "Measure Everything" Session*
+
+1. **Build diagnostic tools, not just features.** TunerDiagnosticView (#if DEBUG) captures per-frame Goertzel and YIN data across all 6 strings and generates a clipboard-ready report. Building it took 2 hours. It immediately revealed the G string octave error on built-in mic, the onset transient problem, and the input source detection bug. Those 2 hours saved at least 10 hours of guesswork.
+
+2. **Test with multiple guitars and input methods.** USB interface gave ±1¢ accuracy. Built-in mic gave ±1.1¢ on 5/6 strings but the G string had an octave acquisition error. If I'd only tested one setup, I'd have shipped a bug. The diagnostic tool made multi-setup testing fast enough to actually do.
+
+3. **Usability test your test tools.** The first version of the diagnostic auto-started recording the next string before I'd plucked it. Adding a `waitingForSilence` state fixed the usability — but I only discovered the issue by trying to use the tool myself. Even debug tools need UX.
+
+---
+
+### Session: Mar 2026 — Tuner Visual Polish (T.P3)
+*The "Make the Needle Tell a Story" Session*
+
+1. **State machines prevent UI flickering.** The TuningState hysteresis (noSignal → outOfRange → approaching → inTune → settled) with different entry/exit thresholds means the "IN TUNE" label doesn't flash on and off when the needle hovers near the threshold. Enter at ±2¢, exit at ±4¢. Simple, effective, obvious in hindsight.
+
+2. **Color should communicate, not decorate.** Needle goes red → amber → green as you approach tune. Background washes green when settled. The level bar fades out once signal is established. Every visual change maps to a state transition. No gratuitous animation.
+
+3. **Know when to stop.** T.P4 originally included intonation comparison mode and a ghost needle. After T.P3, I looked at those features and realized they were post-launch nice-to-haves, not launch requirements. Splitting them out to Phase 6 (tasks 6.6, 6.7) kept the tuner rewrite from expanding indefinitely.
+
+---
+
+### Session: Mar 2026 — Wrapping Up the Tuner
+*The "Ship It and Move On" Session*
+
+1. **Separate optimizations from features in your roadmap.** T.P4 mixed "adaptive update rate" (optimization, already done) with "intonation mode" (new feature) and "ghost needle" (new feature). Reviewing and splitting them saved me from feeling like there was still a whole phase of work when really it was already done.
+
+2. **Document what you removed and why.** Phase tracking removal, onset threshold addition, thread safety fix — all documented in CLAUDE.md with rationale. Future me will want to try phase tracking again in 6 months. Past me left a note: "Don't. It doesn't work on real guitar signals."
+
+3. **The two-AI workflow works.** Claude.ai for strategy, competitive analysis, expert review, and research. Claude Code for implementation, debugging, and testing. The Goertzel research findings doc (drafted in Claude.ai, implemented in Claude Code) was the cleanest handoff of the project. Define the interface between your AI tools the same way you'd define an API.

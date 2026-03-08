@@ -25,11 +25,10 @@ public struct SettingsView: View {
     @State private var restoreResult: BackupImportResult? = nil
 
     @State private var showDisplayInfo = false
-    @State private var showAudioInfo = false
     @State private var showAudioSetupInfo = false
     @State private var showQuizDefaultsInfo = false
-    @State private var showDataInfo = false
     @State private var showCalibration = false
+    @State private var licensesExpanded = false
     @State private var calibrationProfile: AudioCalibrationProfile? = nil
     @State private var calibrationProfiles: [AudioCalibrationProfile] = []
     @State private var showRenameAlert = false
@@ -43,6 +42,8 @@ public struct SettingsView: View {
     @State private var showSeedConfirmation = false
     @State private var showRemoveConfirmation = false
     @State private var seedStatusMessage = ""
+    @State private var showDeveloperInfo = false
+    @State private var showDiagnosticRunner = false
 
     @AppStorage(LocalUserPreferences.Key.hasCompletedCalibration)
     private var hasCompletedCalibration = false
@@ -96,10 +97,8 @@ public struct SettingsView: View {
 
             Form {
             displaySection
-            audioSection(settings: settings)
-            audioSetupSection
             quizSection(settings: settings)
-            dataSection
+            audioSetupSection
             #if DEBUG
             debugSection
             #endif
@@ -126,7 +125,7 @@ public struct SettingsView: View {
         }
         .sheet(isPresented: $showDisplayInfo) {
             SettingsInfoSheet(
-                title: "Display",
+                title: "Global Display",
                 items: [
                     ("Note Names", "Choose sharp (A#), flat (Bb), or both (A#/Bb) notation throughout the app."),
                     ("Fretboard Hand", "Flip the fretboard orientation for left-handed players."),
@@ -135,41 +134,22 @@ public struct SettingsView: View {
                 ]
             )
         }
-        .sheet(isPresented: $showAudioInfo) {
-            SettingsInfoSheet(
-                title: "Detection & Input",
-                items: [
-                    ("Detection Sensitivity", "How confident the pitch detector must be before accepting a note. Higher values reduce false detections but require cleaner playing. Most users won't need to change this — calibration handles it."),
-                    ("Note Hold Time", "Minimum time a note must ring before it's accepted. Prevents brief, accidental sounds from triggering an answer."),
-                    ("Tap Testing Mode", "Replaces audio detection with Correct/Wrong buttons on screen. Useful for practicing note recognition without your guitar."),
-                    ("Tap To Answer", "Tap fretboard positions to answer instead of playing notes. Best in landscape with fret count set to 12 so positions are large enough to tap."),
-                    ("Response Sounds", "Play a sound cue on correct and incorrect answers."),
-                    ("Response Sound Volume", "Volume level for correct/incorrect sound cues."),
-                    ("Countdown Tick", "Play a metronome tick during the countdown in Timed and Tempo practice modes."),
-                    ("Countdown Tick Volume", "Volume level for the countdown tick sound.")
-                ]
-            )
-        }
         .sheet(isPresented: $showQuizDefaultsInfo) {
             SettingsInfoSheet(
-                title: "Quiz Behavior",
+                title: "Session Settings",
                 items: [
-                    ("Default Practice Mode", "The default practice mode for new sessions: Relaxed (no timer), Timed (countdown per question), Streak (consecutive correct), or Tempo (progressive speed)."),
+                    ("Default Practice Mode", "The default practice mode for new sessions: Relaxed (no timer), Timed (countdown per question), or Streak (consecutive correct answers)."),
                     ("Note Highlighting", "How target notes appear on the fretboard: one position only, all positions at once, or revealed after you play."),
                     ("Note Acceptance", "Accept the correct note played on any string, or require it on the exact string shown."),
-                    ("Timer Duration", "Seconds allowed per question in Timed and Tempo modes. In Tempo mode, this is the starting duration that decreases with each correct answer."),
+                    ("Timer Duration", "Seconds allowed per question in Timed mode."),
                     ("Session Length", "Number of questions per session. Does not apply to Streak mode, which continues until you get one wrong."),
-                    ("Hint Timeout", "Seconds before the fret number hint is automatically revealed during a question.")
-                ]
-            )
-        }
-        .sheet(isPresented: $showDataInfo) {
-            SettingsInfoSheet(
-                title: "Data",
-                items: [
-                    ("Back Up Data", "Exports all sessions, attempts, mastery scores, settings, and calibration profiles to a JSON file. The file is saved to your Documents folder and accessible via the Files app."),
-                    ("Restore from Backup", "Imports a previously exported backup file. This replaces all current data — sessions, mastery scores, calibration profiles, and settings — with the backup contents."),
-                    ("Delete All Data", "Permanently removes all session history, mastery scores, and attempts. Calibration profiles and settings are kept. This cannot be undone.")
+                    ("Hint Timeout", "Seconds before the fret number hint is automatically revealed during a question."),
+                    ("Tap To Answer", "Tap fretboard positions to answer instead of playing notes. Best in landscape with fret count set to 12 so positions are large enough to tap."),
+                    ("Haptic Feedback", "Vibrate the device on correct and incorrect answers."),
+                    ("Response Sounds", "Play a sound cue on correct and incorrect answers."),
+                    ("Response Sound Volume", "Volume level for correct/incorrect sound cues."),
+                    ("Countdown Tick", "Play a metronome tick during the countdown in Timed practice mode."),
+                    ("Countdown Tick Volume", "Volume level for the countdown tick sound.")
                 ]
             )
         }
@@ -181,6 +161,8 @@ public struct SettingsView: View {
 
     private var displaySection: some View {
         Section {
+            sectionTitleRow("Global Display") { showDisplayInfo = true }
+
             Picker("Note Names", selection: $noteNameFormatRaw) {
                 ForEach(NoteNameFormat.allCases, id: \.rawValue) { format in
                     Text(format.localizedLabel).tag(format.rawValue)
@@ -203,144 +185,25 @@ public struct SettingsView: View {
                 Text("Light").tag("light")
                 Text("Dark").tag("dark")
             }
-        } header: {
-            HStack {
-                DesignSystem.Typography.capsLabel("Display")
-                infoButton { showDisplayInfo = true }
-            }
         }
         .listRowBackground(DesignSystem.Colors.surface)
-    }
-
-    // MARK: - Audio Section
-    // Covers pitch detection input settings and all sound/haptic output settings.
-
-    private func audioSection(settings: UserSettings) -> some View {
-        Section {
-            VStack(alignment: .leading, spacing: 4) {
-                HStack {
-                    Text("Detection Sensitivity")
-                    Spacer()
-                    Text(String(format: "%.0f%%", settings.confidenceThreshold * 100))
-                        .foregroundStyle(DesignSystem.Colors.text2)
-                        .monospacedDigit()
-                }
-                GradientSlider(
-                    value: Binding(
-                        get: { Double(settings.confidenceThreshold) },
-                        set: { settings.confidenceThreshold = Float($0); save(settings) }
-                    ),
-                    range: 0.70...0.99,
-                    step: 0.01
-                )
-            }
-
-            VStack(alignment: .leading, spacing: 4) {
-                HStack {
-                    Text("Note Hold Time")
-                    Spacer()
-                    Text("\(settings.noteHoldDurationMs) ms")
-                        .foregroundStyle(DesignSystem.Colors.text2)
-                        .monospacedDigit()
-                }
-                GradientSlider(
-                    value: Binding(
-                        get: { Double(settings.noteHoldDurationMs) },
-                        set: { settings.noteHoldDurationMs = Int($0); save(settings) }
-                    ),
-                    range: 50...200,
-                    step: 10
-                )
-            }
-
-            Toggle("Tap Testing Mode", isOn: Binding(
-                get: { settings.tapModeEnabled },
-                set: {
-                    settings.tapModeEnabled = $0
-                    if $0 { settings.tapToAnswerEnabled = false }
-                    save(settings)
-                }
-            ))
-
-            Toggle("Tap To Answer", isOn: Binding(
-                get: { settings.tapToAnswerEnabled },
-                set: {
-                    settings.tapToAnswerEnabled = $0
-                    if $0 { settings.tapModeEnabled = false }
-                    save(settings)
-                }
-            ))
-
-            Toggle("Response Sounds", isOn: Binding(
-                get: { settings.correctSoundEnabled },
-                set: { settings.correctSoundEnabled = $0; settings.incorrectSoundEnabled = $0; save(settings) }
-            ))
-
-            if settings.correctSoundEnabled {
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack {
-                        Text("Response Sound Volume")
-                        Spacer()
-                        Text(String(format: "%.0f%%", settings.correctSoundVolume * 100))
-                            .foregroundStyle(DesignSystem.Colors.text2)
-                            .monospacedDigit()
-                    }
-                    GradientSlider(
-                        value: Binding(
-                            get: { Double(settings.correctSoundVolume) },
-                            set: { settings.correctSoundVolume = Float($0); save(settings) }
-                        ),
-                        range: 0...1,
-                        step: 0.05
-                    )
-                }
-                .transition(.opacity.combined(with: .move(edge: .top)))
-            }
-
-            Toggle("Countdown Tick", isOn: Binding(
-                get: { settings.isMetronomeEnabled },
-                set: { settings.isMetronomeEnabled = $0; save(settings) }
-            ))
-
-            if settings.isMetronomeEnabled {
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack {
-                        Text("Countdown Tick Volume")
-                        Spacer()
-                        Text(String(format: "%.0f%%", settings.metronomeVolume * 100))
-                            .foregroundStyle(DesignSystem.Colors.text2)
-                            .monospacedDigit()
-                    }
-                    GradientSlider(
-                        value: Binding(
-                            get: { Double(settings.metronomeVolume) },
-                            set: { settings.metronomeVolume = Float($0); save(settings) }
-                        ),
-                        range: 0...1,
-                        step: 0.05
-                    )
-                }
-                .transition(.opacity.combined(with: .move(edge: .top)))
-            }
-
-        } header: {
-            HStack {
-                DesignSystem.Typography.capsLabel("Detection & Input")
-                infoButton { showAudioInfo = true }
-            }
-        } footer: {
-            Text("Detection settings are tuned by calibration — most users won't need to adjust them. Tap modes let you practice without a guitar.")
-        }
-        .listRowBackground(DesignSystem.Colors.surface)
-        .animation(.easeInOut(duration: 0.2), value: settings.correctSoundEnabled)
-        .animation(.easeInOut(duration: 0.2), value: settings.isMetronomeEnabled)
     }
 
     // MARK: - Audio Setup Section
 
     private var audioSetupSection: some View {
         Section {
+            sectionTitleRow("Guitar Rig Settings") { showAudioSetupInfo = true }
+
             if hasCompletedCalibration, !calibrationProfiles.isEmpty {
+                // Add New Profile button
+                Button {
+                    recalibratingProfile = nil
+                    showCalibration = true
+                } label: {
+                    Label("Add New Profile", systemImage: "plus.circle")
+                }
+
                 // Profile list
                 ForEach(calibrationProfiles, id: \.id) { profile in
                     profileRow(profile)
@@ -392,51 +255,6 @@ public struct SettingsView: View {
                         }
                 }
 
-                // Trim sliders for active profile
-                if let activeProfile = calibrationProfiles.first(where: { $0.isActive }) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        HStack {
-                            Text("Input Gain Trim")
-                            Spacer()
-                            Text(String(format: "%+.1f dB", activeProfile.userGainTrimDB))
-                                .foregroundStyle(DesignSystem.Colors.text2)
-                                .monospacedDigit()
-                        }
-                        GradientSlider(
-                            value: Binding(
-                                get: { Double(activeProfile.userGainTrimDB) },
-                                set: {
-                                    activeProfile.userGainTrimDB = Float($0)
-                                    try? container.calibrationRepository.save(activeProfile)
-                                }
-                            ),
-                            range: -6...6,
-                            step: 0.5
-                        )
-                    }
-
-                    VStack(alignment: .leading, spacing: 4) {
-                        HStack {
-                            Text("Noise Gate Trim")
-                            Spacer()
-                            Text(String(format: "%+.1f dB", activeProfile.userGateTrimDB))
-                                .foregroundStyle(DesignSystem.Colors.text2)
-                                .monospacedDigit()
-                        }
-                        GradientSlider(
-                            value: Binding(
-                                get: { Double(activeProfile.userGateTrimDB) },
-                                set: {
-                                    activeProfile.userGateTrimDB = Float($0)
-                                    try? container.calibrationRepository.save(activeProfile)
-                                }
-                            ),
-                            range: -6...6,
-                            step: 0.5
-                        )
-                    }
-                }
-
                 if let s = settings {
                     Toggle("Force Built-In Microphone", isOn: Binding(
                         get: { s.forceBuiltInMic },
@@ -444,21 +262,6 @@ public struct SettingsView: View {
                     ))
                 }
 
-                // Add New Profile button
-                Button {
-                    recalibratingProfile = nil
-                    showCalibration = true
-                } label: {
-                    Label("Add New Profile", systemImage: "plus.circle")
-                }
-
-                if settings?.showAccuracyAssessment != false {
-                    Button {
-                        launchAccuracyAssessment()
-                    } label: {
-                        Label("Run Accuracy Assessment", systemImage: "waveform.badge.magnifyingglass")
-                    }
-                }
             } else {
                 // Not calibrated
                 HStack {
@@ -475,13 +278,6 @@ public struct SettingsView: View {
                     Label("Run Calibration", systemImage: "waveform.badge.mic")
                 }
             }
-        } header: {
-            HStack {
-                DesignSystem.Typography.capsLabel("Audio Setup")
-                infoButton { showAudioSetupInfo = true }
-            }
-        } footer: {
-            Text("Calibration profiles store audio settings per guitar. The active profile is used for note detection in quizzes.")
         }
         .listRowBackground(DesignSystem.Colors.surface)
         .fullScreenCover(isPresented: $showCalibration, onDismiss: {
@@ -495,11 +291,11 @@ public struct SettingsView: View {
         }
         .sheet(isPresented: $showAudioSetupInfo) {
             SettingsInfoSheet(
-                title: "Audio Setup",
+                title: "Guitar Rig Settings",
                 items: [
-                    ("Calibration Profiles", "Each profile stores calibration data for a specific guitar and input source. You can have multiple profiles and switch between them."),
-                    ("Input Gain Trim", "Fine-tune the input sensitivity for the active profile. Increase if notes aren't being detected; decrease if you're getting false detections."),
-                    ("Noise Gate Trim", "Adjust the noise gate threshold for the active profile. Increase in noisy environments; decrease in quiet ones."),
+                    ("Overview", "Calibration profiles store audio settings per guitar. The active profile is used for note detection in quizzes."),
+                    ("Add New Profile", "Create a new calibration profile for a different guitar or input source."),
+                    ("Calibration Profiles", "Each profile stores calibration data for a specific guitar and input source. You can have multiple profiles and switch between them. Long-press a profile for options like rename, re-calibrate, or delete."),
                     ("Force Built-In Microphone", "Always use the iPhone's built-in mic, even when an external audio interface or headset is connected. Useful if your interface isn't providing a clean signal.")
                 ]
             )
@@ -597,11 +393,12 @@ public struct SettingsView: View {
 
     private func quizSection(settings: UserSettings) -> some View {
         Section {
+            sectionTitleRow("Session Settings") { showQuizDefaultsInfo = true }
             Picker("Default Practice Mode", selection: Binding(
                 get: { settings.defaultGameMode },
                 set: { settings.defaultGameMode = $0; save(settings) }
             )) {
-                ForEach(GameMode.allCases, id: \.self) { mode in
+                ForEach(GameMode.selectableCases, id: \.self) { mode in
                     Text(mode.localizedLabel).tag(mode)
                 }
             }
@@ -628,7 +425,7 @@ public struct SettingsView: View {
                     Text("Timer Duration")
                     Spacer()
                     Text("\(settings.defaultTimerDuration)s")
-                        .foregroundStyle(DesignSystem.Colors.text2)
+                        .foregroundStyle(DesignSystem.Colors.cherry)
                         .monospacedDigit()
                 }
                 GradientSlider(
@@ -646,7 +443,7 @@ public struct SettingsView: View {
                     Text("Session Length")
                     Spacer()
                     Text("\(settings.defaultSessionLength) questions")
-                        .foregroundStyle(DesignSystem.Colors.text2)
+                        .foregroundStyle(DesignSystem.Colors.cherry)
                         .monospacedDigit()
                 }
                 GradientSlider(
@@ -664,7 +461,7 @@ public struct SettingsView: View {
                     Text("Hint Timeout")
                     Spacer()
                     Text("\(settings.hintTimeoutSeconds)s")
-                        .foregroundStyle(DesignSystem.Colors.text2)
+                        .foregroundStyle(DesignSystem.Colors.cherry)
                         .monospacedDigit()
                 }
                 GradientSlider(
@@ -677,19 +474,181 @@ public struct SettingsView: View {
                 )
             }
 
-        } header: {
-            HStack {
-                DesignSystem.Typography.capsLabel("Quiz Behavior")
-                infoButton { showQuizDefaultsInfo = true }
+            Toggle("Tap To Answer", isOn: Binding(
+                get: { settings.tapToAnswerEnabled },
+                set: {
+                    settings.tapToAnswerEnabled = $0
+                    if $0 { settings.tapModeEnabled = false }
+                    save(settings)
+                }
+            ))
+
+            Toggle("Haptic Feedback", isOn: Binding(
+                get: { settings.hapticFeedbackEnabled },
+                set: { settings.hapticFeedbackEnabled = $0; save(settings) }
+            ))
+
+            Toggle("Response Sounds", isOn: Binding(
+                get: { settings.correctSoundEnabled },
+                set: { settings.correctSoundEnabled = $0; settings.incorrectSoundEnabled = $0; save(settings) }
+            ))
+
+            if settings.correctSoundEnabled {
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack {
+                        Text("Response Sound Volume")
+                        Spacer()
+                        Text(String(format: "%.0f%%", settings.correctSoundVolume * 100))
+                            .foregroundStyle(DesignSystem.Colors.cherry)
+                            .monospacedDigit()
+                    }
+                    GradientSlider(
+                        value: Binding(
+                            get: { Double(settings.correctSoundVolume) },
+                            set: { settings.correctSoundVolume = Float($0); save(settings) }
+                        ),
+                        range: 0...1,
+                        step: 0.05
+                    )
+                }
+                .transition(.opacity.combined(with: .move(edge: .top)))
             }
+
+            Toggle("Countdown Tick", isOn: Binding(
+                get: { settings.isMetronomeEnabled },
+                set: { settings.isMetronomeEnabled = $0; save(settings) }
+            ))
+
+            if settings.isMetronomeEnabled {
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack {
+                        Text("Countdown Tick Volume")
+                        Spacer()
+                        Text(String(format: "%.0f%%", settings.metronomeVolume * 100))
+                            .foregroundStyle(DesignSystem.Colors.cherry)
+                            .monospacedDigit()
+                    }
+                    GradientSlider(
+                        value: Binding(
+                            get: { Double(settings.metronomeVolume) },
+                            set: { settings.metronomeVolume = Float($0); save(settings) }
+                        ),
+                        range: 0...1,
+                        step: 0.05
+                    )
+                }
+                .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+
         }
         .listRowBackground(DesignSystem.Colors.surface)
+        .animation(.easeInOut(duration: 0.2), value: settings.correctSoundEnabled)
+        .animation(.easeInOut(duration: 0.2), value: settings.isMetronomeEnabled)
     }
 
-    // MARK: - Data Management Section
 
-    private var dataSection: some View {
+    // MARK: - Debug Section
+
+    private var debugSection: some View {
         Section {
+            sectionTitleRow("Developer") { showDeveloperInfo = true }
+
+            if let s = settings {
+                Toggle("Tap Testing Mode", isOn: Binding(
+                    get: { s.tapModeEnabled },
+                    set: {
+                        s.tapModeEnabled = $0
+                        if $0 { s.tapToAnswerEnabled = false }
+                        save(s)
+                    }
+                ))
+            }
+
+            // Detection tuning (moved from user-facing settings — calibration handles these)
+            if let s = settings {
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack {
+                        Text("Detection Sensitivity")
+                        Spacer()
+                        Text(String(format: "%.0f%%", s.confidenceThreshold * 100))
+                            .foregroundStyle(DesignSystem.Colors.cherry)
+                            .monospacedDigit()
+                    }
+                    GradientSlider(
+                        value: Binding(
+                            get: { Double(s.confidenceThreshold) },
+                            set: { s.confidenceThreshold = Float($0); save(s) }
+                        ),
+                        range: 0.70...0.99,
+                        step: 0.01
+                    )
+                }
+
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack {
+                        Text("Note Hold Time")
+                        Spacer()
+                        Text("\(s.noteHoldDurationMs) ms")
+                            .foregroundStyle(DesignSystem.Colors.cherry)
+                            .monospacedDigit()
+                    }
+                    GradientSlider(
+                        value: Binding(
+                            get: { Double(s.noteHoldDurationMs) },
+                            set: { s.noteHoldDurationMs = Int($0); save(s) }
+                        ),
+                        range: 50...200,
+                        step: 10
+                    )
+                }
+            }
+
+            // Calibration trim sliders
+            if let activeProfile = calibrationProfiles.first(where: { $0.isActive }) {
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack {
+                        Text("Input Gain Trim")
+                        Spacer()
+                        Text(String(format: "%+.1f dB", activeProfile.userGainTrimDB))
+                            .foregroundStyle(DesignSystem.Colors.cherry)
+                            .monospacedDigit()
+                    }
+                    GradientSlider(
+                        value: Binding(
+                            get: { Double(activeProfile.userGainTrimDB) },
+                            set: {
+                                activeProfile.userGainTrimDB = Float($0)
+                                try? container.calibrationRepository.save(activeProfile)
+                            }
+                        ),
+                        range: -6...6,
+                        step: 0.5
+                    )
+                }
+
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack {
+                        Text("Noise Gate Trim")
+                        Spacer()
+                        Text(String(format: "%+.1f dB", activeProfile.userGateTrimDB))
+                            .foregroundStyle(DesignSystem.Colors.cherry)
+                            .monospacedDigit()
+                    }
+                    GradientSlider(
+                        value: Binding(
+                            get: { Double(activeProfile.userGateTrimDB) },
+                            set: {
+                                activeProfile.userGateTrimDB = Float($0)
+                                try? container.calibrationRepository.save(activeProfile)
+                            }
+                        ),
+                        range: -6...6,
+                        step: 0.5
+                    )
+                }
+            }
+
+            // Data management
             Button {
                 performBackup()
             } label: {
@@ -717,15 +676,74 @@ public struct SettingsView: View {
                 }
                 .foregroundStyle(DesignSystem.Colors.wrong)
             }
-        } header: {
-            HStack {
-                DesignSystem.Typography.capsLabel("Data")
-                infoButton { showDataInfo = true }
+
+            // Test data
+            if testDataSeeded {
+                HStack {
+                    Label("Test Data Active", systemImage: "checkmark.circle.fill")
+                        .foregroundStyle(DesignSystem.Colors.correct)
+                    Spacer()
+                    Text("18 sessions")
+                        .font(DesignSystem.Typography.smallLabel)
+                        .foregroundStyle(DesignSystem.Colors.muted)
+                }
+
+                Button(role: .destructive) {
+                    showRemoveConfirmation = true
+                } label: {
+                    Label("Remove Test Data", systemImage: "trash")
+                }
+            } else {
+                Button {
+                    showSeedConfirmation = true
+                } label: {
+                    Label("Seed Test Data", systemImage: "square.stack.3d.up.fill")
+                }
             }
-        } footer: {
-            Text("Back up your sessions, mastery scores, and settings to a JSON file. Restore replaces all current data with the backup.")
+
+            if !seedStatusMessage.isEmpty {
+                Text(seedStatusMessage)
+                    .font(DesignSystem.Typography.smallLabel)
+                    .foregroundStyle(DesignSystem.Colors.muted)
+            }
+
+            // Diagnostics
+            if settings?.showAccuracyAssessment != false {
+                Button {
+                    launchAccuracyAssessment()
+                } label: {
+                    Label("Run Accuracy Assessment", systemImage: "waveform.badge.magnifyingglass")
+                }
+            }
+
+            Button {
+                showDiagnosticRunner = true
+            } label: {
+                Label("Run 6-String Diagnostic", systemImage: "waveform.badge.mic")
+            }
         }
         .listRowBackground(DesignSystem.Colors.surface)
+        .sheet(isPresented: $showDeveloperInfo) {
+            SettingsInfoSheet(
+                title: "Developer",
+                items: [
+                    ("Tap Testing Mode", "Replaces audio detection with Correct/Wrong buttons on screen. Useful for practicing note recognition without your guitar."),
+                    ("Detection Sensitivity", "How confident the pitch detector must be before accepting a note. Calibration sets this automatically — only adjust for testing."),
+                    ("Note Hold Time", "Minimum time a note must ring before it's accepted. The consecutive frame gate handles this in practice."),
+                    ("Input Gain Trim", "Fine-tune the input sensitivity for the active calibration profile. Increase if notes aren't being detected; decrease if you're getting false detections."),
+                    ("Noise Gate Trim", "Adjust the noise gate threshold for the active calibration profile. Increase in noisy environments; decrease in quiet ones."),
+                    ("Back Up Data", "Exports all sessions, attempts, mastery scores, settings, and calibration profiles to a JSON file. The file is saved to your Documents folder and accessible via the Files app."),
+                    ("Restore from Backup", "Imports a previously exported backup file. This replaces all current data — sessions, mastery scores, calibration profiles, and settings — with the backup contents."),
+                    ("Delete All Data", "Permanently removes all session history, mastery scores, and attempts. Calibration profiles and settings are kept. This cannot be undone."),
+                    ("Test Data", "Seeds 18 dummy sessions (3 per focus mode) with ~65% accuracy for UI testing. Remove before TestFlight."),
+                    ("Accuracy Assessment", "Runs through every fretboard cell 3 times to measure detection accuracy across the full fretboard."),
+                    ("6-String Diagnostic", "Records per-frame Goertzel and YIN data for all 6 open strings and copies a diagnostic report to the clipboard.")
+                ]
+            )
+        }
+        .fullScreenCover(isPresented: $showDiagnosticRunner) {
+            DiagnosticRunnerView()
+        }
         .fileImporter(
             isPresented: $showFileImporter,
             allowedContentTypes: [UTType.json],
@@ -772,46 +790,6 @@ public struct SettingsView: View {
                      + (result.calibrationRestored ? " Calibration restored." : ""))
             }
         }
-    }
-
-    // MARK: - Debug Section
-
-    private var debugSection: some View {
-        Section {
-            if testDataSeeded {
-                HStack {
-                    Label("Test Data Active", systemImage: "checkmark.circle.fill")
-                        .foregroundStyle(DesignSystem.Colors.correct)
-                    Spacer()
-                    Text("18 sessions")
-                        .font(DesignSystem.Typography.smallLabel)
-                        .foregroundStyle(DesignSystem.Colors.muted)
-                }
-
-                Button(role: .destructive) {
-                    showRemoveConfirmation = true
-                } label: {
-                    Label("Remove Test Data", systemImage: "trash")
-                }
-            } else {
-                Button {
-                    showSeedConfirmation = true
-                } label: {
-                    Label("Seed Test Data", systemImage: "square.stack.3d.up.fill")
-                }
-            }
-
-            if !seedStatusMessage.isEmpty {
-                Text(seedStatusMessage)
-                    .font(DesignSystem.Typography.smallLabel)
-                    .foregroundStyle(DesignSystem.Colors.muted)
-            }
-        } header: {
-            DesignSystem.Typography.capsLabel("Developer")
-        } footer: {
-            Text("Seeds 18 dummy sessions (3 per focus mode) with ~65% accuracy for UI testing. Remove before TestFlight.")
-        }
-        .listRowBackground(DesignSystem.Colors.surface)
         .alert("Seed Test Data?", isPresented: $showSeedConfirmation) {
             Button("Seed") {
                 TestDataSeeder.seed(container: container)
@@ -838,31 +816,35 @@ public struct SettingsView: View {
 
     private var licensesSection: some View {
         Section {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Montserrat")
-                    .font(DesignSystem.Typography.bodyLabel)
-                Text("Designed by Julieta Ulanovsky. Licensed under the SIL Open Font License.")
-                    .font(DesignSystem.Typography.smallLabel)
-                    .foregroundStyle(DesignSystem.Colors.text2)
-            }
+            DisclosureGroup(isExpanded: $licensesExpanded) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Montserrat")
+                        .font(DesignSystem.Typography.bodyLabel)
+                    Text("Designed by Julieta Ulanovsky. Licensed under the SIL Open Font License.")
+                        .font(DesignSystem.Typography.smallLabel)
+                        .foregroundStyle(DesignSystem.Colors.text2)
+                }
+                .padding(.top, 4)
 
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Crimson Pro")
-                    .font(DesignSystem.Typography.bodyLabel)
-                Text("Designed by Jacques Le Bailly. Licensed under the SIL Open Font License.")
-                    .font(DesignSystem.Typography.smallLabel)
-                    .foregroundStyle(DesignSystem.Colors.text2)
-            }
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Crimson Pro")
+                        .font(DesignSystem.Typography.bodyLabel)
+                    Text("Designed by Jacques Le Bailly. Licensed under the SIL Open Font License.")
+                        .font(DesignSystem.Typography.smallLabel)
+                        .foregroundStyle(DesignSystem.Colors.text2)
+                }
 
-            VStack(alignment: .leading, spacing: 4) {
-                Text("JetBrains Mono")
-                    .font(DesignSystem.Typography.bodyLabel)
-                Text("Designed by JetBrains. Licensed under the Apache License 2.0.")
-                    .font(DesignSystem.Typography.smallLabel)
-                    .foregroundStyle(DesignSystem.Colors.text2)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("JetBrains Mono")
+                        .font(DesignSystem.Typography.bodyLabel)
+                    Text("Designed by JetBrains. Licensed under the Apache License 2.0.")
+                        .font(DesignSystem.Typography.smallLabel)
+                        .foregroundStyle(DesignSystem.Colors.text2)
+                }
+            } label: {
+                DesignSystem.Typography.capsLabel("Licenses")
             }
-        } header: {
-            DesignSystem.Typography.capsLabel("Licenses")
+            .tint(DesignSystem.Colors.text2)
         }
         .listRowBackground(DesignSystem.Colors.surface)
     }
@@ -953,7 +935,15 @@ public struct SettingsView: View {
         }
     }
 
-    // MARK: - Info Button
+    // MARK: - Section Helpers
+
+    private func sectionTitleRow(_ title: String, infoAction: @escaping () -> Void) -> some View {
+        HStack {
+            DesignSystem.Typography.capsLabel(title)
+            infoButton(action: infoAction)
+            Spacer()
+        }
+    }
 
     private func infoButton(action: @escaping () -> Void) -> some View {
         Button(action: action) {

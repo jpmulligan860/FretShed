@@ -384,4 +384,59 @@ struct TunerDiagnosticView: View {
         }
     }
 }
+
+// MARK: - Diagnostic Runner (launched from Settings > Developer)
+
+struct DiagnosticRunnerView: View {
+    @Environment(\.appContainer) private var container
+    @Environment(\.dismiss) private var dismiss
+    @State private var detector = PitchDetector()
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                Color.black.ignoresSafeArea()
+
+                VStack(spacing: 20) {
+                    // Minimal tuner readout so the user can see what's being detected
+                    if let note = detector.detectedNote {
+                        Text(note.displayName(format: .sharps))
+                            .font(.system(size: 48, weight: .bold, design: .monospaced))
+                            .foregroundStyle(.white)
+                        Text(String(format: "%+.1f¢", detector.centsDeviation))
+                            .font(.system(size: 24, design: .monospaced))
+                            .foregroundStyle(abs(detector.centsDeviation) < 5 ? .green : .orange)
+                    } else {
+                        Text("Waiting for signal…")
+                            .font(.system(size: 18, design: .monospaced))
+                            .foregroundStyle(.gray)
+                    }
+
+                    TunerDiagnosticView(detector: detector)
+                }
+                .padding()
+            }
+            .navigationTitle("6-String Diagnostic")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Done") {
+                        Task { await detector.stop() }
+                        dismiss()
+                    }
+                }
+            }
+        }
+        .task {
+            // Pre-seed calibration like TunerView does
+            if let profile = try? container.calibrationRepository.activeProfile() {
+                let gateTrimMultiplier = pow(10.0, profile.userGateTrimDB / 20.0)
+                detector.calibratedNoiseFloor = profile.measuredNoiseFloorRMS * gateTrimMultiplier
+                detector.calibratedInputSource = profile.inputSource
+            }
+            detector.sustainMode = true
+            try? await detector.start()
+        }
+    }
+}
 #endif

@@ -304,7 +304,7 @@ public struct SessionSetupView: View {
             .padding(.horizontal, 20)
 
             HStack(spacing: 10) {
-                ForEach(GameMode.allCases, id: \.self) { mode in
+                ForEach(GameMode.selectableCases, id: \.self) { mode in
                     GameModeChip(
                         mode: mode,
                         isSelected: selectedGameMode == mode
@@ -535,40 +535,28 @@ public struct SessionSetupView: View {
 
     private var sessionLengthSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Label("Session Length", systemImage: "number.circle")
-                .font(DesignSystem.Typography.smallLabel)
-                .foregroundStyle(DesignSystem.Colors.text2)
-                .padding(.horizontal, 20)
-
-            HStack(spacing: 16) {
-                Button {
-                    if sessionLength > 5 { sessionLength -= 1 }
-                } label: {
-                    Image(systemName: "minus.circle.fill")
-                        .font(DesignSystem.Typography.screenTitle)
-                        .foregroundStyle(sessionLength > 5 ? DesignSystem.Colors.cherry : .secondary)
-                }
-                .buttonStyle(.plain)
-                .disabled(sessionLength <= 5)
-
+            HStack {
+                Label("Session Length", systemImage: "number.circle")
+                    .font(DesignSystem.Typography.smallLabel)
+                    .foregroundStyle(DesignSystem.Colors.text2)
+                Spacer()
                 Text("\(sessionLength) questions")
                     .font(DesignSystem.Typography.bodyLabel)
                     .monospacedDigit()
-                    .frame(minWidth: 110)
-                    .multilineTextAlignment(.center)
-
-                Button {
-                    if sessionLength < 100 { sessionLength += 1 }
-                } label: {
-                    Image(systemName: "plus.circle.fill")
-                        .font(DesignSystem.Typography.screenTitle)
-                        .foregroundStyle(sessionLength < 100 ? DesignSystem.Colors.cherry : .secondary)
-                }
-                .buttonStyle(.plain)
-                .disabled(sessionLength >= 100)
+                    .foregroundStyle(DesignSystem.Colors.cherry)
             }
             .padding(.horizontal, 20)
-            .animation(.easeInOut(duration: 0.15), value: sessionLength)
+
+            GradientSlider(
+                value: Binding(
+                    get: { Double(sessionLength) },
+                    set: { sessionLength = Int($0) }
+                ),
+                range: 5...100,
+                step: 1
+            )
+            .frame(height: 36)
+            .padding(.horizontal, 20)
 
             Text(sessionLengthHint)
                 .font(DesignSystem.Typography.smallLabel)
@@ -1004,8 +992,9 @@ public struct SessionSetupView: View {
     /// Focus modes shown in the session builder. Excludes accuracy assessment
     /// (moved to Settings) and circle modes (hidden from Shed UI per spec).
     private var displayedFocusModes: [FocusMode] {
-        [.fullFretboard, .singleString, .naturalNotes, .sharpsAndFlats,
-         .fretboardPosition, .singleNote, .chordProgression]
+        [.fullFretboard, .singleNote,
+         .fretboardPosition, .naturalNotes,
+         .singleString, .sharpsAndFlats]
     }
 
     private func focusModeDescription(_ mode: FocusMode) -> String {
@@ -1083,9 +1072,7 @@ private struct PracticeModeInfoSheet: View {
         ("Timed",    "timer",               DesignSystem.Colors.amber,
          "A countdown timer runs for each question. Answer before time runs out or it counts as wrong. Good for building speed."),
         ("Streak",   "flame.fill",          DesignSystem.Colors.cherry,
-         "See how many correct answers you can get in a row. One wrong answer ends your streak. Perfect for testing consistency."),
-        ("Tempo",    "metronome.fill",      DesignSystem.Colors.gold,
-         "The time limit gets shorter with each correct answer, gradually increasing the pace. Resets when you get one wrong. A progressive challenge.")
+         "See how many correct answers you can get in a row. One wrong answer ends your streak. Perfect for testing consistency.")
     ]
 
     var body: some View {
@@ -1233,8 +1220,6 @@ private struct FocusModeInfoSheet: View {
          "Notes are presented in circle-of-fourths order (C, F, Bb, Eb…). Useful for learning key signatures and jazz patterns. Can be constrained to specific strings or fret positions."),
         ("Circle of Fifths",   "circle.dashed",       DesignSystem.Colors.amber,
          "Notes follow the circle of fifths (C, G, D, A…). A classic tool for understanding key relationships. Can be constrained to specific strings or fret positions."),
-        ("Chord Progression",  "pianokeys",           DesignSystem.Colors.honey,
-         "Practice identifying chord tones within a progression. Notes are drawn from the chords you select."),
         ("Prioritize Weak Spots", "brain",            DesignSystem.Colors.gold,
          "A toggle that works with any focus mode. When enabled, the app targets your weakest notes based on your mastery data.")
     ]

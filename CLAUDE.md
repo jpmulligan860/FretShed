@@ -216,10 +216,12 @@ Full analysis: `FretShed_Competitive_Analysis.md` in Claude.ai project files.
 **Phase 1:** Tasks 1.1–1.8 complete ✅
 **Phase 2:** Tasks 2.1–2.17 complete ✅ (Design System fully applied to all tabs)
 **Phase 3:** Tasks 3.1–3.7 complete ✅
-**Phase 3.6:** Shed Redesign complete ✅ (SD.1–SD.14)
+**Phase 3.6:** Shed Redesign complete ✅ (SD.1–SD.15)
 **Phase 4:** Not started
 **Phase 5:** Not started
-**Test suite:** 230 tests passing (3 pre-existing session length default failures)
+**Test suite:** 260 tests passing (3 pre-existing session length default failures)
+
+**Pre-launch UI Polish (SD.15) — COMPLETE.** Settings page fully reorganized: 4 sections (Global Display, Session Settings, Guitar Rig Settings, Developer) + Licenses. Detection & Input section removed (empty after moves). Tempo game mode removed from UI (kept in enum for SwiftData backward compat via `selectableCases`). Chord Progression focus mode hidden from UI (kept for future add-on). Focus modes reordered in 2-column grid. Session length changed to GradientSlider. Slider value labels use cherry accent. Haptic Feedback toggle added to Session Settings. Shed page: streak counter + time-practiced alternating messages. Journey page: section titles/info inside cards, date axis formatting. GradientSlider drag fix. DiagnosticRunnerView in Settings Developer section.
 
 **Audio Calibration System (F22) — IMPLEMENTED.** Full calibration flow: silence measurement → 6-string test → profile saved to SwiftData. Quiz launch gated on calibration. Do This First card with action buttons. Settings > Audio Setup with trim sliders. PitchDetector pre-seeded from calibration profile.
 

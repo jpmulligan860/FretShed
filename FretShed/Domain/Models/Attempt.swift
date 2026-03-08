@@ -12,15 +12,18 @@ import SwiftData
 public enum GameMode: String, CaseIterable, Codable, Sendable, Hashable {
     case untimed   = "untimed"
     case timed     = "timed"
-    case tempo     = "tempo"
+    case tempo     = "tempo"     // Kept for backward compatibility with existing SwiftData records
     case streak    = "streak"
+
+    /// Modes available for user selection in the UI. Excludes deprecated `.tempo`.
+    public static var selectableCases: [GameMode] { [.untimed, .timed, .streak] }
 
     public var localizedLabel: String {
         switch self {
         case .timed:   return String(localized: "Timed", bundle: .main)
         case .untimed: return String(localized: "Relaxed", bundle: .main)
         case .streak:  return String(localized: "Streak", bundle: .main)
-        case .tempo:   return String(localized: "Tempo", bundle: .main)
+        case .tempo:   return String(localized: "Timed", bundle: .main) // Legacy — maps to Timed label
         }
     }
 }

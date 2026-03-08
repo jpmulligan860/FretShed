@@ -156,12 +156,6 @@ public struct SessionSummaryView: View {
                 StatCard(label: "Correct",     value: "\(vm.correctCount)",         icon: "checkmark.circle", color: DesignSystem.Colors.correct)
                 StatCard(label: "Accuracy",    value: "\(Int(accuracy * 100))%",   icon: "target",           color: accuracyColor)
                 StatCard(label: "Questions",   value: "\(vm.attemptCount)",         icon: "list.number",      color: DesignSystem.Colors.cherry)
-            case .tempo:
-                StatCard(label: "Best Streak", value: "\(vm.bestStreak)🔥",        icon: "flame.fill",       color: DesignSystem.Colors.amber)
-                StatCard(label: "Fastest",     value: String(format: "%.1fs", vm.tempoTimeAllowance),
-                                                                                    icon: "bolt.fill",        color: DesignSystem.Colors.honey)
-                StatCard(label: "Accuracy",    value: "\(Int(accuracy * 100))%",   icon: "target",           color: accuracyColor)
-                StatCard(label: "Questions",   value: "\(vm.attemptCount)",         icon: "list.number",      color: DesignSystem.Colors.cherry)
             default:
                 StatCard(label: "Accuracy",    value: "\(Int(accuracy * 100))%",   icon: "target",           color: accuracyColor)
                 StatCard(label: "Questions",   value: "\(vm.attemptCount)",         icon: "list.number",      color: DesignSystem.Colors.cherry)
@@ -330,10 +324,6 @@ public struct SessionSummaryView: View {
             if vm.bestStreak >= 10 { return "On Fire!" }
             if vm.bestStreak >= 5  { return "Nice Run!" }
             return "Keep Pushing!"
-        case .tempo:
-            if vm.tempoTimeAllowance <= 2.5 { return "Lightning Fast!" }
-            if accuracy >= 0.9 { return "Outstanding!" }
-            return "Great Tempo!"
         default:
             if accuracy >= 0.9 { return "Outstanding!" }
             if accuracy >= 0.7 { return "Great Work!" }
@@ -346,8 +336,6 @@ public struct SessionSummaryView: View {
         switch vm.session.gameMode {
         case .streak:
             return "You answered \(vm.bestStreak) in a row without a mistake."
-        case .tempo:
-            return String(format: "You reached a %.1f second time limit per note.", vm.tempoTimeAllowance)
         default:
             if accuracy >= 0.9 { return "You're mastering the fretboard." }
             if accuracy >= 0.7 { return "Your knowledge is growing steadily." }

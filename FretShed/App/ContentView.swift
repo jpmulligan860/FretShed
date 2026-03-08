@@ -146,7 +146,11 @@ struct ContentView: View {
 
     private var practiceTab: some View {
         NavigationStack {
-            PracticeHomeView(coordinator: quiz)
+            PracticeHomeView(
+                coordinator: quiz,
+                currentStreak: progressVM?.currentStreak ?? 0,
+                totalTimePracticed: progressVM?.recentSessions.reduce(0.0) { $0 + $1.duration } ?? 0
+            )
                 .toolbar(.hidden, for: .navigationBar)
         }
     }
@@ -201,6 +205,8 @@ struct ContentView: View {
 struct PracticeHomeView: View {
 
     let coordinator: QuizLaunchCoordinator
+    var currentStreak: Int = 0
+    var totalTimePracticed: TimeInterval = 0
     @Environment(\.appContainer) private var container
     @State private var sessionCount: Int = 0
     @State private var smartEngine: SmartPracticeEngine?
@@ -211,11 +217,21 @@ struct PracticeHomeView: View {
     @State private var selectedTimedMinutes: Int = 5
     @State private var allProfiles: [AudioCalibrationProfile] = []
     @State private var rigPickerExpanded = false
+    @State private var showTimeStat = false
 
     @AppStorage(LocalUserPreferences.Key.hasCompletedCalibration)
     private var hasCompletedCalibration = false
 
     private var isNewUser: Bool { sessionCount == 0 && coordinator.lastCompletedSession == nil }
+
+    private var formattedTimePracticed: String {
+        let total = Int(totalTimePracticed)
+        let hours = total / 3600
+        let mins = (total % 3600) / 60
+        if hours > 0 { return "\(hours)h \(mins)m" }
+        if mins > 0 { return "\(mins)m" }
+        return "\(total)s"
+    }
 
     var body: some View {
         ScrollView {
@@ -258,8 +274,34 @@ struct PracticeHomeView: View {
             Text(isNewUser ? "Welcome to the Woodshed, let's get to work." : "Welcome back to the Shed.")
                 .font(.custom("CrimsonPro-Italic", size: 19.5))
                 .foregroundStyle(DesignSystem.Colors.muted)
-
-}
+            if !isNewUser {
+                Group {
+                    if !showTimeStat && currentStreak > 0 {
+                        HStack(spacing: 4) {
+                            Text("You've got a")
+                            Image(systemName: "flame.fill")
+                                .foregroundStyle(DesignSystem.Colors.amber)
+                            Text("\(currentStreak) day streak")
+                                .fontWeight(.semibold)
+                            Text("going!")
+                        }
+                    } else if totalTimePracticed > 0 {
+                        HStack(spacing: 4) {
+                            Text("Wow! You've spent")
+                            Text(formattedTimePracticed)
+                                .fontWeight(.semibold)
+                            Text("in the Shed!")
+                        }
+                    }
+                }
+                .font(.custom("CrimsonPro-Italic", size: 19.5))
+                .foregroundStyle(DesignSystem.Colors.muted)
+                .animation(.easeInOut(duration: 0.4), value: showTimeStat)
+                .onAppear {
+                    showTimeStat = Bool.random()
+                }
+            }
+        }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
@@ -433,7 +475,7 @@ struct PracticeHomeView: View {
                     .foregroundStyle(.white)
                 Text(isNewUser
                      ? "Adaptive session based on your level"
-                     : "Suggested Session: \(smartDescription) \u{2022} \(weakSpots) weak spots")
+                     : "Tap for Suggested Session: \(smartDescription) \u{2022} \(weakSpots) weak spots")
                     .font(DesignSystem.Typography.accentDescription)
                     .foregroundStyle(.white.opacity(0.85))
             }

@@ -121,7 +121,7 @@ public struct QuizView: View {
                     // ── Mode indicator ────────────────────────────────
                     modeIndicator
 
-                    // ── Timer bar (timed / tempo mode only) ──────────────────────
+                    // ── Timer bar (timed mode only) ──────────────────────
                     if vm.session.gameMode == .timed || vm.session.gameMode == .tempo {
                         timerBar
                     }
@@ -300,9 +300,7 @@ public struct QuizView: View {
     }
 
     private var timerBar: some View {
-        let total = vm.session.gameMode == .tempo
-            ? vm.tempoTimeAllowance
-            : Double(vm.settings.defaultTimerDuration)
+        let total = Double(vm.settings.defaultTimerDuration)
         let progress = total > 0 ? vm.timeRemaining / total : 0
         let barColor: Color = progress > 0.5 ? DesignSystem.Colors.correct : progress > 0.25 ? DesignSystem.Colors.amber : DesignSystem.Colors.wrong
         return HStack(spacing: 6) {
@@ -799,10 +797,6 @@ public struct QuizView: View {
                 if vm.bestStreak >= 10 { return "On Fire!" }
                 if vm.bestStreak >= 5  { return "Nice Run!" }
                 return "Keep Pushing!"
-            case .tempo:
-                if vm.tempoTimeAllowance <= 2.5 { return "Lightning Fast!" }
-                if completedAccuracy >= 0.9 { return "Outstanding!" }
-                return "Great Tempo!"
             default:
                 if completedAccuracy >= 0.9 { return "Outstanding!" }
                 if completedAccuracy >= 0.7 { return "Great Work!" }
@@ -814,8 +808,6 @@ public struct QuizView: View {
             switch vm.session.gameMode {
             case .streak:
                 return "You answered \(vm.bestStreak) in a row without a mistake."
-            case .tempo:
-                return String(format: "You reached a %.1f second time limit per note.", vm.tempoTimeAllowance)
             default:
                 if completedAccuracy >= 0.9 { return "You're mastering the fretboard." }
                 if completedAccuracy >= 0.7 { return "Your knowledge is growing steadily." }
@@ -870,12 +862,6 @@ public struct QuizView: View {
                 CompletedStatCard(label: "Avg Time",    value: avgTimeLabel,                       icon: "clock.fill",      color: DesignSystem.Colors.honey)
                 CompletedStatCard(label: "Best Streak", value: "\(vm.bestStreak)🔥",              icon: "flame",           color: DesignSystem.Colors.amber)
                 CompletedStatCard(label: "Correct",     value: "\(vm.correctCount)",               icon: "checkmark.circle", color: DesignSystem.Colors.correct)
-            case .tempo:
-                CompletedStatCard(label: "Best Streak", value: "\(vm.bestStreak)🔥",        icon: "flame.fill",       color: DesignSystem.Colors.amber)
-                CompletedStatCard(label: "Fastest",     value: String(format: "%.1fs", vm.tempoTimeAllowance),
-                                                                                              icon: "bolt.fill",        color: DesignSystem.Colors.honey)
-                CompletedStatCard(label: "Accuracy",    value: "\(Int(completedAccuracy * 100))%", icon: "target", color: accColor)
-                CompletedStatCard(label: "Questions",   value: "\(vm.attemptCount)",         icon: "list.number",      color: DesignSystem.Colors.cherry)
             default:
                 CompletedStatCard(label: "Accuracy",    value: "\(Int(completedAccuracy * 100))%", icon: "target", color: accColor)
                 CompletedStatCard(label: "Questions",   value: "\(vm.attemptCount)",         icon: "list.number",      color: DesignSystem.Colors.cherry)

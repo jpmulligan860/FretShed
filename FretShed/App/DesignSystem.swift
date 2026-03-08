@@ -327,11 +327,16 @@ extension View {
 // MARK: - GradientSlider
 
 /// A slider whose filled track uses a gradient instead of a flat color.
+/// Drag only activates when the initial touch lands near the thumb,
+/// preventing accidental value jumps when scrolling the page.
 struct GradientSlider: View {
     @Binding var value: Double
     var range: ClosedRange<Double>
     var step: Double = 0
     var gradient: LinearGradient = DesignSystem.Gradients.primary
+
+    // nil = not yet decided, true = on thumb, false = off thumb
+    @State private var dragStartedOnThumb: Bool? = nil
 
     private var fraction: Double {
         let span = range.upperBound - range.lowerBound
@@ -343,8 +348,10 @@ struct GradientSlider: View {
         GeometryReader { geo in
             let trackHeight: CGFloat = 6
             let thumbSize: CGFloat = 28
+            let hitTarget: CGFloat = 44 // Generous touch target around thumb
             let usable = geo.size.width - thumbSize
             let thumbX = usable * CGFloat(fraction)
+            let thumbCenter = thumbX + thumbSize / 2
 
             ZStack(alignment: .leading) {
                 // Background track
@@ -369,8 +376,15 @@ struct GradientSlider: View {
             .frame(height: geo.size.height)
             .contentShape(Rectangle())
             .gesture(
-                DragGesture(minimumDistance: 10)
+                DragGesture(minimumDistance: 0)
                     .onChanged { drag in
+                        // First event of this drag: decide if it started on the thumb
+                        if dragStartedOnThumb == nil {
+                            let dist = abs(drag.startLocation.x - thumbCenter)
+                            dragStartedOnThumb = dist <= hitTarget / 2
+                        }
+                        guard dragStartedOnThumb == true else { return }
+
                         let raw = Double((drag.location.x - thumbSize / 2) / usable)
                         let clamped = min(max(raw, 0), 1)
                         var scaled = range.lowerBound + clamped * (range.upperBound - range.lowerBound)
@@ -378,6 +392,9 @@ struct GradientSlider: View {
                             scaled = (scaled / step).rounded() * step
                         }
                         value = min(max(scaled, range.lowerBound), range.upperBound)
+                    }
+                    .onEnded { _ in
+                        dragStartedOnThumb = nil
                     }
             )
         }

@@ -344,46 +344,6 @@ final class QuizViewModelTests: XCTestCase {
         XCTAssertEqual(vm.bestStreak, 3)
     }
 
-    // MARK: - Tempo Mode
-
-    func test_tempoMode_allowanceShrinkesAfterCorrectAnswers() async throws {
-        let vm = makeVM(focusMode: .fullFretboard, gameMode: .tempo, container: container)
-        await vm.start()
-        let initialAllowance = vm.tempoTimeAllowance
-
-        let q = try XCTUnwrap(vm.currentQuestion)
-        vm.submit(detectedNote: q.note)
-        XCTAssertLessThan(vm.tempoTimeAllowance, initialAllowance,
-            "Allowance should shrink after a correct answer in tempo mode")
-    }
-
-    func test_tempoMode_allowanceDoesNotShrinkBelowFloor() async throws {
-        let vm = makeVM(focusMode: .fullFretboard, gameMode: .tempo, container: container)
-        await vm.start()
-
-        // Answer 50 correct answers — floor should prevent going below 2.0
-        for _ in 0..<50 {
-            guard vm.phase == .active else { break }
-            let q = try XCTUnwrap(vm.currentQuestion)
-            vm.submit(detectedNote: q.note)
-            vm.advanceManually()
-        }
-        XCTAssertGreaterThanOrEqual(vm.tempoTimeAllowance, 2.0,
-            "Tempo allowance should never drop below the 2s floor")
-    }
-
-    func test_tempoMode_wrongAnswerDoesNotShrinkAllowance() async throws {
-        let vm = makeVM(focusMode: .fullFretboard, gameMode: .tempo, container: container)
-        await vm.start()
-        let initialAllowance = vm.tempoTimeAllowance
-
-        let q = try XCTUnwrap(vm.currentQuestion)
-        let wrong = MusicalNote(rawValue: (q.note.rawValue + 1) % 12)!
-        vm.submit(detectedNote: wrong)
-        XCTAssertEqual(vm.tempoTimeAllowance, initialAllowance,
-            "Allowance should not change on a wrong answer in tempo mode")
-    }
-
     // MARK: - Circle of Fifths Mode
 
     func test_circleOfFifths_firstQuestionIsC() async throws {

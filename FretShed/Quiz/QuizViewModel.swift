@@ -48,7 +48,7 @@ public final class QuizViewModel: Identifiable {
     /// When true, countdown ticks are silenced (user-toggled mute button).
     public var isTimerMuted: Bool = false
     public private(set) var detectedNote: MusicalNote?
-    /// Current per-question time budget for Tempo mode (shrinks with each correct answer).
+    /// Current per-question time budget (legacy Tempo mode property, retained for backward compat).
     public private(set) var tempoTimeAllowance: Double = 10
     /// Remaining seconds for timed practice sessions (nil = no session time limit).
     public private(set) var sessionTimeRemaining: Double?
@@ -183,10 +183,6 @@ public final class QuizViewModel: Identifiable {
 
     private static let feedbackDuration: TimeInterval = 1.5
     private static let timerInterval: TimeInterval = 0.05
-    /// Tempo mode: each correct answer shaves this many seconds off the allowance.
-    private static let tempoDecrement: Double = 0.5
-    /// Tempo mode: the allowance will never drop below this floor (seconds).
-    private static let tempoFloor: Double = 2.0
     /// Feedback duration for the chord completion summary (untimed only).
     private static let chordCompleteFeedbackDuration: TimeInterval = 2.5
 
@@ -219,8 +215,6 @@ public final class QuizViewModel: Identifiable {
             logger.error("Failed to load mastery scores: \(error)")
             allScores = []
         }
-        // Initialise tempo allowance from settings so it resets cleanly on each session.
-        tempoTimeAllowance = Double(settings.defaultTimerDuration)
         // Start session countdown timer if a time limit is set.
         if session.sessionTimeLimitSeconds > 0 {
             sessionTimeRemaining = Double(session.sessionTimeLimitSeconds)
@@ -271,17 +265,12 @@ public final class QuizViewModel: Identifiable {
                         // Show chord summary — defer advancement to next question.
                         showingChordCompleteSummary = true
                     } else {
-                        // Timed / tempo: advance immediately.
+                        // Timed: advance immediately.
                         chordToneIndex = 0
                         answeredChordTones = []
                         chordIndex = (chordIndex + 1) % chordCount
                     }
                 }
-            }
-            // Tempo mode: tighten the per-question budget after each correct answer.
-            if session.gameMode == .tempo {
-                tempoTimeAllowance = max(Self.tempoFloor,
-                                        tempoTimeAllowance - Self.tempoDecrement)
             }
         } else {
             currentStreak = 0
@@ -380,11 +369,8 @@ public final class QuizViewModel: Identifiable {
         questionStartTime = Date()
         phase = .active
         switch session.gameMode {
-        case .timed:
+        case .timed, .tempo:
             timeRemaining = Double(settings.defaultTimerDuration)
-            startTimer()
-        case .tempo:
-            timeRemaining = tempoTimeAllowance
             startTimer()
         case .untimed, .streak:
             break

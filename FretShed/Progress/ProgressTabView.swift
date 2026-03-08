@@ -86,11 +86,14 @@ public struct ProgressTabView: View {
                                         MasteryHeatmapView(
                                             vm: vm,
                                             fretboardMap: container.fretboardMap,
-                                            availableWidth: (geo.size.width - 48) / 2
+                                            availableWidth: (geo.size.width - 48) / 2 - 32
                                         )
                                         HeatmapLegend(vm: vm, fretboardMap: container.fretboardMap, fretCount: defaultFretCount)
                                             .padding(.horizontal, 4)
                                     }
+                                    .padding(16)
+                                    .background(DesignSystem.Colors.surface,
+                                                in: RoundedRectangle(cornerRadius: 18))
                                     .frame(maxWidth: .infinity)
                                 }
                                 .padding(.horizontal, 16)
@@ -115,16 +118,18 @@ public struct ProgressTabView: View {
 
                                 VStack(alignment: .leading, spacing: 8) {
                                     masterySectionHeader
-                                        .padding(.horizontal, 16)
                                     MasteryHeatmapView(
                                         vm: vm,
                                         fretboardMap: container.fretboardMap,
-                                        availableWidth: geo.size.width - 32
+                                        availableWidth: geo.size.width - 64
                                     )
-                                    .padding(.horizontal, 16)
                                     HeatmapLegend(vm: vm, fretboardMap: container.fretboardMap, fretCount: defaultFretCount)
-                                        .padding(.horizontal, 20)
+                                        .padding(.horizontal, 4)
                                 }
+                                .padding(16)
+                                .background(DesignSystem.Colors.surface,
+                                            in: RoundedRectangle(cornerRadius: 18))
+                                .padding(.horizontal, 16)
 
                                 if !vm.accuracyTrend.isEmpty {
                                     accuracyChart
@@ -140,21 +145,36 @@ public struct ProgressTabView: View {
                             // Recent sessions (VStack replaces List to avoid
                             // List-inside-ScrollView issues on iOS 26)
                             VStack(alignment: .leading, spacing: 8) {
-                                HStack {
-                                    sectionHeader("RECENT SESSIONS")
-                                    infoButton { showSessionsInfo = true }
-                                    Spacer()
-                                }
-                                .padding(.horizontal, 16)
-
                                 if vm.filteredSessions.isEmpty {
-                                    if vm.isAnyFilterActive {
-                                        filteredEmptyState
-                                    } else {
-                                        sessionEmptyState
+                                    VStack(alignment: .leading, spacing: 8) {
+                                        HStack {
+                                            sectionHeader("RECENT SESSIONS")
+                                            infoButton { showSessionsInfo = true }
+                                            Spacer()
+                                        }
+                                        if vm.isAnyFilterActive {
+                                            filteredEmptyState
+                                                .padding(.horizontal, 0)
+                                        } else {
+                                            sessionEmptyState
+                                                .padding(.horizontal, 0)
+                                        }
                                     }
+                                    .padding(16)
+                                    .background(DesignSystem.Colors.surface,
+                                                in: RoundedRectangle(cornerRadius: 18))
+                                    .padding(.horizontal, 16)
                                 } else {
-                                    VStack(spacing: 0) {
+                                    VStack(alignment: .leading, spacing: 0) {
+                                        HStack {
+                                            sectionHeader("RECENT SESSIONS")
+                                            infoButton { showSessionsInfo = true }
+                                            Spacer()
+                                        }
+                                        .padding(.horizontal, 16)
+                                        .padding(.top, 16)
+                                        .padding(.bottom, 8)
+
                                         ForEach(vm.filteredSessions) { session in
                                             SessionRow(session: session)
                                                 .contentShape(Rectangle())
@@ -167,7 +187,7 @@ public struct ProgressTabView: View {
                                     }
                                     .background(
                                         DesignSystem.Colors.surface,
-                                        in: RoundedRectangle(cornerRadius: 16)
+                                        in: RoundedRectangle(cornerRadius: 18)
                                     )
                                     .padding(.horizontal, 16)
                                 }
@@ -412,11 +432,6 @@ public struct ProgressTabView: View {
                 .foregroundStyle(DesignSystem.Colors.text2)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.vertical, DesignSystem.Spacing.md)
-        .padding(.horizontal, DesignSystem.Spacing.md)
-        .background(DesignSystem.Colors.surface,
-                    in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
-        .padding(.horizontal, DesignSystem.Spacing.md)
     }
 
     private var sessionEmptyState: some View {
@@ -428,11 +443,6 @@ public struct ProgressTabView: View {
                 .foregroundStyle(DesignSystem.Colors.text2)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.vertical, DesignSystem.Spacing.md)
-        .padding(.horizontal, DesignSystem.Spacing.md)
-        .background(DesignSystem.Colors.surface,
-                    in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
-        .padding(.horizontal, DesignSystem.Spacing.md)
     }
 
     // MARK: - Accuracy Trend Chart
@@ -485,9 +495,14 @@ public struct ProgressTabView: View {
                 }
             }
             .chartXAxis {
-                AxisMarks(values: .stride(by: .day, count: max(1, vm.accuracyTrend.count / 5))) { _ in
+                AxisMarks(values: .stride(by: .day, count: max(1, vm.accuracyTrend.count / 4))) { value in
                     AxisGridLine()
-                    AxisValueLabel(format: .dateTime.month(.abbreviated).day())
+                    AxisValueLabel {
+                        if let date = value.as(Date.self) {
+                            Text(date, format: .dateTime.month(.defaultDigits).day())
+                                .font(.system(size: 9))
+                        }
+                    }
                 }
             }
             .frame(height: 160)
@@ -547,9 +562,14 @@ public struct ProgressTabView: View {
                 }
             }
             .chartXAxis {
-                AxisMarks(values: .stride(by: .day, count: max(1, vm.responseTimeTrend.count / 5))) { _ in
+                AxisMarks(values: .stride(by: .day, count: max(1, vm.responseTimeTrend.count / 4))) { value in
                     AxisGridLine()
-                    AxisValueLabel(format: .dateTime.month(.abbreviated).day())
+                    AxisValueLabel {
+                        if let date = value.as(Date.self) {
+                            Text(date, format: .dateTime.month(.defaultDigits).day())
+                                .font(.system(size: 9))
+                        }
+                    }
                 }
             }
             .frame(height: 160)

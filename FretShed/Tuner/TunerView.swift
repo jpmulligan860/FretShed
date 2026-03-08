@@ -214,12 +214,6 @@ public struct TunerView: View {
                     }
                 }
             }
-            #if DEBUG
-            .overlay(alignment: .bottom) {
-                TunerDiagnosticView(detector: detector)
-                    .padding(.bottom, 80)
-            }
-            #endif
             .alert("Microphone Access Required",
                    isPresented: Binding(
                     get: { detector.error != nil },

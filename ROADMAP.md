@@ -158,6 +158,7 @@ Estimated: 6–8 hours
 | SD.12 | Branded Launch Screen — LaunchScreen.storyboard with Woodshop colors, replaces blank UILaunchScreen | ✅ |
 | SD.13 | Repeat Last Session Tracking — coordinator-based `lastCompletedSession`, `isNewUser` fix, `sessionTimeLimitSeconds` copy on repeat | ✅ |
 | SD.14 | Repeat Last Subtitle + "Same Note" Rename — full focus mode + game mode subtitle, 2-line limit, FocusMode.singleNote label → "Same Note" | ✅ |
+| SD.15 | Pre-launch UI Polish — Settings reorganization (sections renamed/reordered, settings moved between sections, info buttons updated), removed Tempo game mode (3 modes: Relaxed/Timed/Streak), hid Chord Progression focus mode, focus mode 2-column grid reorder, session length slider, slider value colors to cherry, streak/time-practiced messages on Shed, Journey card consistency, GradientSlider drag fix, DiagnosticRunnerView in Settings, haptic feedback toggle | ✅ |
 
 ---
 

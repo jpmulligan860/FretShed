@@ -311,6 +311,8 @@ Estimated: 18–25 hours
 | 6.5 | Auto-tune PitchDetector from accuracy assessment data — analyze per-attempt detection metadata (confidence, cents, frequency) to auto-adjust per-string confidence thresholds, consecutive frame gate, and spectral flatness threshold. Prerequisite: detection metadata capture (shipped). | 3–4 hrs | 🔲 |
 | 6.6 | Tuner: Intonation comparison mode — play open string then 12th fret, compare readings to verify guitar intonation setup | 3–4 hrs | 🔲 |
 | 6.7 | Tuner: Pitch rate predictor (ghost needle) — translucent needle showing where pitch is heading based on rate of change | 2–3 hrs | 🔲 |
+| 6.8 | Tuner: Sweetened tuning offsets — per-string cent offsets for "sweetened" temperament (compensates for equal temperament intonation compromises on guitar, e.g., G string tuned slightly flat) | 2–3 hrs | 🔲 |
+| 6.9 | Tuner: Phase-based Goertzel tracking — re-attempt phase-based instantaneous frequency estimation if magnitude-only proves insufficient for sub-cent accuracy at low frequencies. Requires careful phase unwrapping and noise resilience testing on real guitar signals. | 3–4 hrs | 🔲 |
 
 ---
 

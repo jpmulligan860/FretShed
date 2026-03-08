@@ -289,7 +289,23 @@ Full analysis: `FretShed_Competitive_Analysis.md` in Claude.ai project files.
 - T.P2.5: Goertzel hybrid tracker (magnitude-based 3-bin parabolic interpolation, onset suppression, decay detection), thread-safe NSLock integration, TunerDiagnosticView (#if DEBUG), input source auto-detection in PitchDetector.start(), 17 GoertzelTracker unit tests. Phase tracking removed (unreliable for real guitar signals).
 - T.P3: TuningState hysteresis state machine (noSignal→outOfRange→approaching→inTune→settled with hysteresis thresholds), settled readout (enlarged "IN TUNE" with glow), background color wash (green overlay when in tune), string indicator pill (nearest open string badge), responsive dial (tick labels at ±50/±25/0, state-aware needle color red→amber→green, green zone glow), auto-hide level bar
 - T.P4: Adaptive update rate (absorbed into T.P2/T.P2.5/T.P3 — hop size, gain scheduling, hysteresis)
-- Post-launch: Intonation comparison mode (6.6), ghost needle pitch rate predictor (6.7)
+- Post-launch: Sweetened tuning offsets, intonation comparison mode (6.6), ghost needle pitch rate predictor (6.7), phase-based Goertzel tracking (if magnitude proves insufficient)
+
+### Tuner Architecture (Shipping — Goertzel Hybrid)
+
+**Pipeline:** YIN identifies the note → Goertzel magnitude (3-bin parabolic interpolation) tracks cents deviation from target frequency. This is the shipping architecture.
+
+**Why Goertzel replaced YIN for cents tracking:** YIN's autocorrelation degrades during note decay at low SNR, producing systematic flat-ward bias of 12–35 cents. No consumer-level filtering (EMA, median, decay stabilizer) can fix this — the bias is algorithmic. An algorithm switch to Goertzel was required.
+
+**Phase A changes (stay permanently):** Reverted the tuner "fast path" (was skipping crest factor + harmonic regularity gates), raised confidence floor to 0.765 (0.85 × 0.90), raised consumer hysteresis to 0.72. These protect YIN acquisition quality — Goertzel depends on YIN correctly identifying the note before taking over.
+
+**Sample rate fix:** Goertzel originally used hardcoded `sampleRate: 44100` instead of the actual hardware sample rate (`tapSampleRate`, which is 48000 on modern iPhones). This was the final fix that brought accuracy to ±1–3 cents.
+
+**Measured accuracy (device-tested Mar 2026):**
+- USB interface: sub-cent spread, ±1.5¢ mean accuracy across all 6 strings
+- Built-in mic: ±1¢ on plain strings (B, high E), ±5¢ on low wound strings (MEMS roll-off limitation at low frequencies)
+
+**Phase tracking status:** Disabled. Phase-based instantaneous frequency estimation was implemented and tested but produced 0% usable frames on real guitar signals (98% fell back to magnitude). Root cause: guitar signals have too much phase noise at 512-sample hop sizes. Deferred to post-launch if magnitude proves insufficient.
 
 **Next task:** Phase 4 (Monetization).
 

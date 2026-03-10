@@ -74,7 +74,8 @@ struct CalibrationView: View {
         NoteNameFormat(rawValue: noteFormatRaw) ?? .sharps
     }
 
-    @State private var displayCents: Double = 0
+    @State private var displayEngine = TunerDisplayEngine()
+    @State private var tuningState: TuningState = .noSignal
 
     var body: some View {
         NavigationStack {
@@ -146,14 +147,19 @@ struct CalibrationView: View {
             engine.cancel()
         }
         .onChange(of: engine.detector.detectedNote) { oldNote, newNote in
-            if newNote != nil && oldNote == nil {
-                displayCents = engine.detector.centsDeviation
+            if newNote == nil && oldNote != nil {
+                displayEngine.pushSilence()
+                tuningState = .noSignal
             }
         }
         .onChange(of: engine.detector.centsDeviation) { _, newCents in
             guard engine.detector.detectedNote != nil else { return }
-            let alpha = 0.1 + 0.3 * min(engine.detector.inputLevel, 1.0)
-            displayCents = alpha * newCents + (1.0 - alpha) * displayCents
+            let noteName = engine.detector.detectedNote?.displayName(format: noteFormat)
+            displayEngine.pushSample(cents: newCents, note: noteName)
+            let newState = displayEngine.tuningState
+            if newState != tuningState {
+                tuningState = newState
+            }
         }
     }
 
@@ -282,11 +288,10 @@ struct CalibrationView: View {
             // Note header
             tunerNoteHeader
 
-            // Needle display
-            NeedleDisplay(cents: displayCents,
-                          isActive: engine.detector.detectedNote != nil,
-                          tuningState: engine.detector.detectedNote != nil ? .approaching : .noSignal)
-                .animation(.easeInOut(duration: 0.15), value: displayCents)
+            // Needle display (matches main TunerView)
+            AnimatedNeedleView(displayEngine: displayEngine,
+                               isActive: engine.detector.detectedNote != nil,
+                               tuningState: tuningState)
 
             // Cents readout
             tunerCentsReadout
@@ -328,7 +333,7 @@ struct CalibrationView: View {
             if let note = engine.detector.detectedNote {
                 Text(note.displayName(format: noteFormat))
                     .font(DesignSystem.Typography.noteDisplay)
-                    .foregroundStyle(tuningColor)
+                    .foregroundStyle(tunerNeedleColor)
                     .contentTransition(.numericText())
                     .animation(.spring(duration: 0.2), value: note)
 
@@ -351,20 +356,24 @@ struct CalibrationView: View {
     }
 
     private var tunerCentsReadout: some View {
-        let c = displayCents
-        let sign = c >= 0 ? "+" : ""
-        return Text("\(sign)\(Int(c.rounded())) \u{00A2}")
-            .font(DesignSystem.Typography.subDisplay)
-            .foregroundStyle(tuningColor)
-            .contentTransition(.numericText())
-            .opacity(engine.detector.detectedNote != nil ? 1 : 0)
+        TimelineView(.animation) { _ in
+            let c = displayEngine.update(now: CACurrentMediaTime())
+            let sign = c >= 0 ? "+" : ""
+            Text("\(sign)\(String(format: "%.1f", c)) \u{00A2}")
+                .font(DesignSystem.Typography.subDisplay)
+                .foregroundStyle(tunerNeedleColor)
+                .contentTransition(.numericText())
+                .opacity(engine.detector.detectedNote != nil ? 1 : 0)
+        }
     }
 
-    private var tuningColor: Color {
-        DesignSystem.Colors.tuningColor(
-            centsDeviation: engine.detector.centsDeviation,
-            isActive: engine.detector.detectedNote != nil
-        )
+    private var tunerNeedleColor: Color {
+        switch tuningState {
+        case .noSignal: return DesignSystem.Colors.muted
+        case .outOfRange: return DesignSystem.Colors.wrong
+        case .approaching: return DesignSystem.Colors.amber
+        case .inTune, .settled: return DesignSystem.Colors.correct
+        }
     }
 
     // MARK: - Step 2: Noise Measurement
@@ -382,7 +391,7 @@ struct CalibrationView: View {
                     .contentTransition(.numericText())
                     .animation(.spring(duration: 0.2), value: remaining)
 
-                Text("Stay quiet and keep your guitar still.")
+                Text("Stay quiet — don't touch your strings.")
                     .font(DesignSystem.Typography.bodyLabel)
                     .foregroundStyle(DesignSystem.Colors.text2)
                     .multilineTextAlignment(.center)
@@ -526,23 +535,18 @@ struct CalibrationView: View {
                     .trim(from: 0, to: Double(engine.signalQualityScore))
                     .stroke(qualityColor, style: StrokeStyle(lineWidth: 8, lineCap: .round))
                     .rotationEffect(.degrees(-90))
-                VStack(spacing: 2) {
-                    Text("\(Int(engine.signalQualityScore * 100))%")
-                        .font(DesignSystem.Typography.subDisplay)
-                        .foregroundStyle(DesignSystem.Colors.text)
-                    Text("Quality")
-                        .font(DesignSystem.Typography.smallLabel)
-                        .foregroundStyle(DesignSystem.Colors.text2)
-                }
+                Text("\(Int(engine.signalQualityScore * 100))%")
+                    .font(DesignSystem.Typography.subDisplay)
+                    .foregroundStyle(DesignSystem.Colors.text)
             }
             .frame(width: 100, height: 100)
 
             // String results summary
-            HStack(alignment: .top, spacing: 16) {
+            HStack(alignment: .top, spacing: 32) {
                 resultsSummaryColumn("OPEN", entries: CalibrationEngine.openStringNotes, results: engine.stringResults)
                 resultsSummaryColumn("12TH FRET", entries: CalibrationEngine.frettedStringNotes, results: engine.frettedStringResults)
-                Spacer()
             }
+            .frame(maxWidth: .infinity)
 
             // Profile naming / save
             if recalibratingProfile != nil || existingActiveProfile != nil {

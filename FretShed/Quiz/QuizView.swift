@@ -39,8 +39,11 @@ public struct QuizView: View {
 
     // MARK: - Display Setting Helpers
 
-    private var highlighting: NoteHighlighting {
-        vm.settings.defaultNoteHighlighting
+    private var revealTiming: NoteRevealTiming {
+        vm.settings.defaultNoteRevealTiming
+    }
+    private var displayCount: NoteDisplayCount {
+        vm.settings.defaultNoteDisplayCount
     }
     private var noteDisplayMode: NoteDisplayMode {
         vm.settings.defaultNoteDisplayMode
@@ -49,27 +52,25 @@ public struct QuizView: View {
         vm.settings.defaultFretboardDisplay
     }
 
-    /// Whether to reveal all positions of the target note (after a correct or incorrect answer).
+    private var isFeedback: Bool {
+        vm.phase == .feedbackCorrect || vm.phase == .feedbackWrong
+    }
+
+    /// Whether to reveal all positions of the target note.
     private var revealAllPositions: Bool {
         if vm.settings.tapToAnswerEnabled && vm.phase == .active { return false }
-        switch highlighting {
-        case .allPositions:      return true
-        case .singleThenReveal:  return vm.phase == .feedbackCorrect || vm.phase == .feedbackWrong
-        case .singlePosition:    return false
-        }
+        guard displayCount == .allPositions else { return false }
+        return revealTiming == .beforePlaying || isFeedback
     }
 
     /// Whether to show the orange target dot on the fretboard.
-    /// Hidden during active questioning when "Reveal After" is set;
+    /// Hidden during active phase when "After Playing" is set;
     /// hidden during active phase in Tap To Answer mode (user must find from memory);
     /// revealed on both correct and incorrect feedback so the user
     /// always sees where the note is after each attempt.
     private var showTargetDot: Bool {
         if vm.settings.tapToAnswerEnabled && vm.phase == .active { return false }
-        switch highlighting {
-        case .singleThenReveal:  return vm.phase == .feedbackCorrect || vm.phase == .feedbackWrong
-        case .singlePosition, .allPositions: return true
-        }
+        return revealTiming == .beforePlaying || isFeedback
     }
 
     /// Whether to show note name labels inside the fret dots.
@@ -186,7 +187,7 @@ public struct QuizView: View {
             Button("End & Delete", role: .destructive) { Task { await vm.discardSession() } }
             Button("Continue", role: .cancel) {}
         } message: {
-            Text("Save your results or discard them entirely.")
+            Text("Save your progress or toss it.")
         }
         .task {
             vm.start()
@@ -387,7 +388,7 @@ public struct QuizView: View {
                     } else {
                         Image(systemName: "waveform.badge.magnifyingglass")
                             .foregroundStyle(DesignSystem.Colors.text2)
-                        Text("Measuring Mastery")
+                        Text("Getting to know you")
                             .font(DesignSystem.Typography.dataSmall)
                             .foregroundStyle(DesignSystem.Colors.text2)
                     }
@@ -801,7 +802,7 @@ public struct QuizView: View {
                 if completedAccuracy >= 0.9 { return "Outstanding!" }
                 if completedAccuracy >= 0.7 { return "Great Work!" }
                 if completedAccuracy >= 0.5 { return "Good Effort!" }
-                return "Keep Practicing!"
+                return "Keep At It!"
             }
         }()
         let subtitle: String = {
@@ -812,7 +813,7 @@ public struct QuizView: View {
                 if completedAccuracy >= 0.9 { return "You're mastering the fretboard." }
                 if completedAccuracy >= 0.7 { return "Your knowledge is growing steadily." }
                 if completedAccuracy >= 0.5 { return "Each session builds muscle memory." }
-                return "Repetition is the key to mastery."
+                return "Every rep gets you closer. Stick with it."
             }
         }()
 
@@ -1045,7 +1046,7 @@ public struct QuizView: View {
             Label("Microphone access required", systemImage: "mic.slash.fill")
                 .font(DesignSystem.Typography.bodyLabel)
                 .foregroundStyle(DesignSystem.Colors.wrong)
-            Text("FretShed needs the microphone to hear the notes you play.")
+            Text("FretShed needs mic access to hear your guitar.")
                 .font(DesignSystem.Typography.smallLabel)
                 .foregroundStyle(DesignSystem.Colors.text2)
                 .multilineTextAlignment(.center)
@@ -1075,7 +1076,7 @@ public struct QuizView: View {
             Label("Audio detection unavailable", systemImage: "speaker.slash.fill")
                 .font(DesignSystem.Typography.bodyLabel)
                 .foregroundStyle(DesignSystem.Colors.amber)
-            Text("Unable to start the microphone. Try restarting the app.")
+            Text("Couldn't start the mic. Try closing and reopening FretShed.")
                 .font(DesignSystem.Typography.smallLabel)
                 .foregroundStyle(DesignSystem.Colors.text2)
                 .multilineTextAlignment(.center)

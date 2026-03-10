@@ -18,6 +18,8 @@ public struct SessionSetupView: View {
     @State private var selectedStrings: Set<Int> = [6]
     @State private var selectedNote: MusicalNote = .e
     @State private var sessionLength: Int = 20
+    @State private var noteVisibility: NoteVisibility = .hiddenUntilAnswered
+    @State private var timerDuration: Int = 10
     @State private var selectedFrets: Set<Int> = [5, 6, 7, 8]
     // Chord progression state
     @State private var selectedPresetIndex: Int? = 0          // nil = custom
@@ -88,6 +90,8 @@ public struct SessionSetupView: View {
                 if let s = try? container.settingsRepository.loadSettings() {
                     sessionLength    = s.defaultSessionLength
                     selectedGameMode = s.defaultGameMode
+                    noteVisibility   = s.noteVisibility
+                    timerDuration    = s.defaultTimerDuration
                 }
             }
         }
@@ -104,6 +108,10 @@ public struct SessionSetupView: View {
                     VStack(spacing: 12) {
                         gameModeSection
                         sessionLengthSection
+                        if selectedGameMode == .timed {
+                            timerDurationSection
+                        }
+                        noteVisibilitySection
                     }
                     .padding(.vertical, 16)
                     .woodshopCard()
@@ -176,6 +184,10 @@ public struct SessionSetupView: View {
                     VStack(spacing: 12) {
                         gameModeSection
                         sessionLengthSection
+                        if selectedGameMode == .timed {
+                            timerDurationSection
+                        }
+                        noteVisibilitySection
                     }
                     .padding(.vertical, 16)
                     .woodshopCard()
@@ -320,8 +332,14 @@ public struct SessionSetupView: View {
     private var descriptionCard: some View {
         VStack(spacing: 0) {
             summaryRow(label: "Practice Mode", value: selectedGameMode.localizedLabel)
+            if selectedGameMode == .timed {
+                summaryDivider
+                summaryRow(label: "Timer", value: "\(timerDuration)s per question")
+            }
             summaryDivider
             summaryRow(label: "Questions", value: "\(sessionLength)")
+            summaryDivider
+            summaryRow(label: "Notes", value: noteVisibility.displayLabel)
             summaryDivider
             summaryRow(label: "Focus", value: selectedFocusMode.localizedLabel)
 
@@ -569,7 +587,64 @@ public struct SessionSetupView: View {
         if sessionLength <= 10 { return "Quick session — great for a warm-up" }
         if sessionLength <= 25 { return "Standard session — solid practice" }
         if sessionLength <= 50 { return "Extended session — deep focus work" }
-        return "Marathon session — maximum repetition"
+        return "Marathon session — for the dedicated"
+    }
+
+    private var timerDurationSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Label("Timer Duration", systemImage: "timer")
+                    .font(DesignSystem.Typography.smallLabel)
+                    .foregroundStyle(DesignSystem.Colors.text2)
+                Spacer()
+                Text("\(timerDuration)s")
+                    .font(DesignSystem.Typography.bodyLabel)
+                    .monospacedDigit()
+                    .foregroundStyle(DesignSystem.Colors.cherry)
+            }
+            .padding(.horizontal, 20)
+
+            GradientSlider(
+                value: Binding(
+                    get: { Double(timerDuration) },
+                    set: { timerDuration = Int($0) }
+                ),
+                range: 2...20,
+                step: 1
+            )
+            .frame(height: 36)
+            .padding(.horizontal, 20)
+        }
+    }
+
+    private var noteVisibilitySection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Label("Note Visibility", systemImage: "eye")
+                    .font(DesignSystem.Typography.smallLabel)
+                    .foregroundStyle(DesignSystem.Colors.text2)
+                Button {
+                    showPracticeModeInfo = true
+                } label: {
+                    Image(systemName: "questionmark.circle")
+                        .font(DesignSystem.Typography.smallLabel)
+                        .foregroundStyle(DesignSystem.Colors.text2)
+                }
+            }
+            .padding(.horizontal, 20)
+
+            HStack(spacing: 10) {
+                ForEach(NoteVisibility.allCases, id: \.self) { vis in
+                    NoteVisibilityChip(
+                        visibility: vis,
+                        isSelected: noteVisibility == vis
+                    ) {
+                        noteVisibility = vis
+                    }
+                }
+            }
+            .padding(.horizontal, 20)
+        }
     }
 
     private var fretPickerSection: some View {
@@ -969,9 +1044,11 @@ public struct SessionSetupView: View {
         Task { @MainActor in
             try? container.sessionRepository.save(session)
             let settings = (try? container.settingsRepository.loadSettings()) ?? UserSettings()
-            // Apply the session length chosen in this screen and persist it as the
-            // new default so quick-start and future sessions respect it.
+            // Persist choices as new defaults so quick-start and future sessions respect them.
             settings.defaultSessionLength = sessionLength
+            settings.defaultGameMode = selectedGameMode
+            settings.noteVisibility = noteVisibility
+            settings.defaultTimerDuration = timerDuration
             try? container.settingsRepository.saveSettings(settings)
             let vm = QuizViewModel(
                 session: session,
@@ -1066,24 +1143,34 @@ private struct PracticeModeInfoSheet: View {
 
     @Environment(\.dismiss) private var dismiss
 
-    private let modes: [(String, String, Color, String)] = [
+    private let items: [(String, String, Color, String)] = [
         ("Relaxed",  "metronome",           DesignSystem.Colors.correct,
          "No time pressure. Take as long as you need to identify each note. Great for beginners or focused learning."),
         ("Timed",    "timer",               DesignSystem.Colors.amber,
          "A countdown timer runs for each question. Answer before time runs out or it counts as wrong. Good for building speed."),
         ("Streak",   "flame.fill",          DesignSystem.Colors.cherry,
-         "See how many correct answers you can get in a row. One wrong answer ends your streak. Perfect for testing consistency.")
+         "See how many correct answers you can get in a row. One wrong answer ends your streak. Perfect for testing consistency."),
+        ("Session Length", "number.circle",  DesignSystem.Colors.honey,
+         "Number of questions per session. Short sessions (5–10) are great for warm-ups, longer sessions (25+) for deep practice."),
+        ("Timer Duration", "timer",         DesignSystem.Colors.amber,
+         "Seconds allowed per question in Timed mode. Only shown when Timed practice mode is selected."),
+        ("Hidden",   "eye.slash",           DesignSystem.Colors.gold,
+         "The target note position is hidden during the question and only revealed after you answer. The most challenging option — tests true recall."),
+        ("Show Target", "eye",             DesignSystem.Colors.honey,
+         "The target note position is shown on the fretboard during the question, so you can see where to play."),
+        ("Show All",  "eye.fill",          DesignSystem.Colors.amber,
+         "All octave positions of the target note are highlighted on the fretboard, helping you see the note pattern across the neck.")
     ]
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
-                    Text("Choose how you want to be challenged during your practice session.")
+                    Text("Configure your practice session: choose a mode, set session length, and control how notes appear on the fretboard.")
                         .font(DesignSystem.Typography.bodyLabel)
                         .foregroundStyle(DesignSystem.Colors.text2)
 
-                    ForEach(modes, id: \.0) { name, icon, color, desc in
+                    ForEach(items, id: \.0) { name, icon, color, desc in
                         HStack(alignment: .top, spacing: 12) {
                             Image(systemName: icon)
                                 .font(DesignSystem.Typography.sectionHeader)
@@ -1102,7 +1189,7 @@ private struct PracticeModeInfoSheet: View {
                 .padding(20)
             }
             .background(DesignSystem.Colors.background)
-            .navigationTitle("Practice Modes")
+            .navigationTitle("Session Options")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
@@ -1110,7 +1197,7 @@ private struct PracticeModeInfoSheet: View {
                 }
             }
         }
-        .presentationDetents([.medium])
+        .presentationDetents([.large])
         .presentationDragIndicator(.visible)
     }
 }
@@ -1208,20 +1295,18 @@ private struct FocusModeInfoSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     private let modes: [(String, String, Color, String)] = [
-        ("Same Note",          "music.note",          DesignSystem.Colors.amber,
-         "Practice finding one specific note across all strings. Great for memorizing where a note appears everywhere on the fretboard."),
-        ("String Selector",    "line.3.horizontal",   DesignSystem.Colors.honey,
-         "Focus on one or more specific strings. All notes on your selected strings will be quizzed."),
         ("Full Fretboard",     "rectangle.grid.3x2",  DesignSystem.Colors.cherry,
          "The full challenge — any note on any string. Tests your overall fretboard knowledge."),
+        ("Same Note",          "music.note",          DesignSystem.Colors.amber,
+         "Practice finding one specific note across all strings. Great for memorizing where a note appears everywhere on the fretboard."),
         ("Fretboard Position", "slider.horizontal.3", DesignSystem.Colors.gold,
          "Narrow the quiz to a specific fret range. Ideal for learning one area of the neck at a time."),
-        ("Circle of Fourths",  "circle.grid.2x1",     DesignSystem.Colors.honey,
-         "Notes are presented in circle-of-fourths order (C, F, Bb, Eb…). Useful for learning key signatures and jazz patterns. Can be constrained to specific strings or fret positions."),
-        ("Circle of Fifths",   "circle.dashed",       DesignSystem.Colors.amber,
-         "Notes follow the circle of fifths (C, G, D, A…). A classic tool for understanding key relationships. Can be constrained to specific strings or fret positions."),
-        ("Prioritize Weak Spots", "brain",            DesignSystem.Colors.gold,
-         "A toggle that works with any focus mode. When enabled, the app targets your weakest notes based on your mastery data.")
+        ("Natural Notes",      "textformat.abc",      DesignSystem.Colors.correct,
+         "Only natural notes (A, B, C, D, E, F, G) — no sharps or flats. A great starting point for beginners."),
+        ("String Selector",    "line.3.horizontal",   DesignSystem.Colors.honey,
+         "Focus on one or more specific strings. All notes on your selected strings will be quizzed."),
+        ("Sharps & Flats",     "number",              DesignSystem.Colors.cherry,
+         "Only sharps and flats — the notes between the naturals. Perfect for filling in the gaps once you know the natural notes.")
     ]
 
     var body: some View {
@@ -1274,6 +1359,30 @@ private struct GameModeChip: View {
     var body: some View {
         Button(action: onTap) {
             Text(mode.localizedLabel)
+                .font(DesignSystem.Typography.bodyLabel)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 10)
+                .background(
+                    isSelected ? DesignSystem.Colors.cherry : DesignSystem.Colors.surface2,
+                    in: RoundedRectangle(cornerRadius: DesignSystem.Radius.sm)
+                )
+                .foregroundStyle(isSelected ? .white : .primary)
+        }
+        .buttonStyle(.plain)
+        .animation(.easeInOut(duration: 0.15), value: isSelected)
+    }
+}
+
+// MARK: - NoteVisibilityChip
+
+private struct NoteVisibilityChip: View {
+    let visibility: NoteVisibility
+    let isSelected: Bool
+    let onTap: () -> Void
+
+    var body: some View {
+        Button(action: onTap) {
+            Text(visibility.displayLabel)
                 .font(DesignSystem.Typography.bodyLabel)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 10)

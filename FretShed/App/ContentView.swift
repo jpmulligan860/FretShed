@@ -95,12 +95,12 @@ struct ContentView: View {
         }
 
         // ── Calibration gate alert ──────────────────────────────────
-        .alert("Audio Setup Required", isPresented: $quiz.showCalibrationGate) {
-            Button("Calibrate Now") { quiz.handleCalibrateNow() }
-            Button("Use Tap Mode") { quiz.handleUseTapModeFromGate() }
+        .alert("Guitar Audio or Tap Mode?", isPresented: $quiz.showCalibrationGate) {
+            Button("Calibrate") { quiz.handleCalibrateNow() }
+            Button("Tap Mode") { quiz.handleUseTapModeFromGate() }
             Button("Cancel", role: .cancel) { quiz.handleCancelGate() }
         } message: {
-            Text("Audio calibration is required for note detection. You can calibrate now or use tap mode to practice without audio.")
+            Text("FretShed listens to your guitar — but it needs a quick setup first. Calibrate now (takes ~1 min), or use Tap Mode to answer by tapping instead.")
         }
 
         .task {
@@ -271,7 +271,7 @@ struct PracticeHomeView: View {
             Text("The Shed")
                 .font(DesignSystem.Typography.screenTitle)
                 .foregroundStyle(DesignSystem.Colors.text)
-            Text(isNewUser ? "Welcome to the Woodshed, let's get to work." : "Welcome back to the Shed.")
+            Text(isNewUser ? "Welcome to the Woodshed — let's get to work." : "Welcome back to the Shed.")
                 .font(.custom("CrimsonPro-Italic", size: 19.5))
                 .foregroundStyle(DesignSystem.Colors.muted)
             if !isNewUser {
@@ -321,7 +321,7 @@ struct PracticeHomeView: View {
                             Circle()
                                 .fill(DesignSystem.Colors.amber.opacity(0.12))
                                 .frame(width: 44, height: 44)
-                            Image(systemName: "guitars.fill")
+                            Image(systemName: "waveform.badge.mic")
                                 .font(.body.weight(.semibold))
                                 .foregroundStyle(DesignSystem.Colors.amber)
                         }
@@ -329,10 +329,10 @@ struct PracticeHomeView: View {
                             Text("Calibrate My Guitar First")
                                 .font(DesignSystem.Typography.bodyLabel)
                                 .foregroundStyle(DesignSystem.Colors.text)
-                            Text("FretShed is most accurate when you profile your rig.")
+                            Text("FretShed is most accurate when it knows your guitar and room.")
                                 .font(DesignSystem.Typography.smallLabel)
                                 .foregroundStyle(DesignSystem.Colors.muted)
-                            Text("Tap here and follow the instructions")
+                            Text("Tap here — takes about a minute")
                                 .font(DesignSystem.Typography.smallLabel)
                                 .foregroundStyle(DesignSystem.Colors.cherry)
                         }
@@ -379,7 +379,7 @@ struct PracticeHomeView: View {
                                         .font(.caption2.weight(.bold))
                                         .foregroundStyle(DesignSystem.Colors.muted)
                                 }
-                                Text("Tap to add a new guitar rig or change guitars.")
+                                Text("Tap to add another guitar or switch rigs.")
                                     .font(DesignSystem.Typography.smallLabel)
                                     .foregroundStyle(DesignSystem.Colors.muted)
                             }
@@ -475,7 +475,7 @@ struct PracticeHomeView: View {
                     .foregroundStyle(.white)
                 Text(isNewUser
                      ? "Adaptive session based on your level"
-                     : "Tap for Suggested Session: \(smartDescription) \u{2022} \(weakSpots) weak spots")
+                     : "Suggested session: \(smartDescription) \u{2022} \(weakSpots) weak spots")
                     .font(DesignSystem.Typography.accentDescription)
                     .foregroundStyle(.white.opacity(0.85))
             }
@@ -537,13 +537,26 @@ struct PracticeHomeView: View {
         }
     }
 
+    @ViewBuilder
+    private func presetIconView(_ icon: String) -> some View {
+        if icon.hasPrefix("custom.singleString") {
+            SingleStringIcon(
+                highlightedString: Int(icon.split(separator: ".").last ?? "3") ?? 3,
+                size: 20
+            )
+            .frame(width: 24)
+        } else {
+            Image(systemName: icon)
+                .font(.body)
+                .foregroundStyle(DesignSystem.Colors.cherry)
+                .frame(width: 24)
+        }
+    }
+
     private func presetCard(icon: String, title: String, subtitle: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             HStack(spacing: 10) {
-                Image(systemName: icon)
-                    .font(.body)
-                    .foregroundStyle(DesignSystem.Colors.cherry)
-                    .frame(width: 24)
+                presetIconView(icon)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
                         .font(DesignSystem.Typography.bodyLabel)

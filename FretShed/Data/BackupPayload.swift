@@ -267,6 +267,8 @@ struct SettingsBackup: Codable {
     let defaultStringOrderingRaw: String
     let defaultFretboardDisplayRaw: String
     let defaultNoteHighlightingRaw: String
+    let defaultNoteRevealTimingRaw: String?
+    let defaultNoteDisplayCountRaw: String?
     let defaultNoteAcceptanceModeRaw: String
     let defaultNoteDisplayModeRaw: String
     let correctSoundEnabled: Bool
@@ -299,6 +301,8 @@ struct SettingsBackup: Codable {
         self.defaultStringOrderingRaw = settings.defaultStringOrderingRaw
         self.defaultFretboardDisplayRaw = settings.defaultFretboardDisplayRaw
         self.defaultNoteHighlightingRaw = settings.defaultNoteHighlightingRaw
+        self.defaultNoteRevealTimingRaw = settings.defaultNoteRevealTimingRaw
+        self.defaultNoteDisplayCountRaw = settings.defaultNoteDisplayCountRaw
         self.defaultNoteAcceptanceModeRaw = settings.defaultNoteAcceptanceModeRaw
         self.defaultNoteDisplayModeRaw = settings.defaultNoteDisplayModeRaw
         self.correctSoundEnabled = settings.correctSoundEnabled
@@ -331,6 +335,14 @@ struct SettingsBackup: Codable {
         settings.defaultStringOrderingRaw = defaultStringOrderingRaw
         settings.defaultFretboardDisplayRaw = defaultFretboardDisplayRaw
         settings.defaultNoteHighlightingRaw = defaultNoteHighlightingRaw
+        if let timing = defaultNoteRevealTimingRaw {
+            settings.defaultNoteRevealTimingRaw = timing
+        }
+        if let count = defaultNoteDisplayCountRaw {
+            settings.defaultNoteDisplayCountRaw = count
+        }
+        // If backup is from before the split, migration will populate from legacy field.
+        settings.migrateNoteHighlightingIfNeeded()
         settings.defaultNoteAcceptanceModeRaw = defaultNoteAcceptanceModeRaw
         settings.defaultNoteDisplayModeRaw = defaultNoteDisplayModeRaw
         settings.correctSoundEnabled = correctSoundEnabled

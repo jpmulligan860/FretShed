@@ -85,6 +85,7 @@
 		QLC001A1B2C3D4E5F6A7B8C9 /* QuizLaunchCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = QLC002A1B2C3D4E5F6A7B8C9 /* QuizLaunchCoordinator.swift */; };
 		SLGL01A1B2C3D4E5F6A7B8C9 /* SubscriptionLegalText.swift in Sources */ = {isa = PBXBuildFile; fileRef = SLGL02A1B2C3D4E5F6A7B8C9 /* SubscriptionLegalText.swift */; };
 		TDS001A1B2C3D4E5F6A7B8C9 /* TestDataSeeder.swift in Sources */ = {isa = PBXBuildFile; fileRef = TDS002A1B2C3D4E5F6A7B8C9 /* TestDataSeeder.swift */; };
+DA04DCB9488A3FFD8F562761 /* SingleStringIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D6536D58B3B99C27DDF6F64 /* SingleStringIcon.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -180,6 +181,7 @@
 		QLC002A1B2C3D4E5F6A7B8C9 /* QuizLaunchCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuizLaunchCoordinator.swift; sourceTree = "<group>"; };
 		SLGL02A1B2C3D4E5F6A7B8C9 /* SubscriptionLegalText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionLegalText.swift; sourceTree = "<group>"; };
 		TDS002A1B2C3D4E5F6A7B8C9 /* TestDataSeeder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestDataSeeder.swift; sourceTree = "<group>"; };
+8D6536D58B3B99C27DDF6F64 /* SingleStringIcon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SingleStringIcon.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -333,6 +335,7 @@
 		81693F56DABECB08A376F795 /* App */ = {
 			isa = PBXGroup;
 			children = (
+				8D6536D58B3B99C27DDF6F64 /* SingleStringIcon.swift */,
 				CBA577A659DD4B654B8F0FC8 /* AppContainer.swift */,
 				5E9FD485AF026B4DD2A37DAD /* BaselinePrior.swift */,
 				83CC05DC4F6BC279CF06E4BE /* ContentView.swift */,
@@ -542,6 +545,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				DA04DCB9488A3FFD8F562761 /* SingleStringIcon.swift in Sources */,
 				721F80E6AEB10D3E83D48022 /* AppContainer.swift in Sources */,
 				C6CBB4F9D7052F2111DD9F7A /* Attempt.swift in Sources */,
 				509F2DA23C4EB8FEB01F7D33 /* AudioCalibrationProfile.swift in Sources */,

@@ -151,6 +151,7 @@ public struct ProgressTabView: View {
                                             sectionHeader("RECENT SESSIONS")
                                             infoButton { showSessionsInfo = true }
                                             Spacer()
+                                            filterMenu
                                         }
                                         if vm.isAnyFilterActive {
                                             filteredEmptyState
@@ -170,6 +171,7 @@ public struct ProgressTabView: View {
                                             sectionHeader("RECENT SESSIONS")
                                             infoButton { showSessionsInfo = true }
                                             Spacer()
+                                            filterMenu
                                         }
                                         .padding(.horizontal, 16)
                                         .padding(.top, 16)
@@ -259,7 +261,7 @@ public struct ProgressTabView: View {
                 title: "Avg Response Time",
                 items: [
                     ("What it shows", "Your average time to answer correctly, tracked over the last 30 days of practice."),
-                    ("How it's calculated", "Only correct answers are included. Incorrect answers and timeouts are excluded. A lower time means faster note recognition.")
+                    ("How it's calculated", "Only correct answers are counted — a lower time means faster recognition.")
                 ]
             )
         }
@@ -298,7 +300,7 @@ public struct ProgressTabView: View {
             }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("\"Delete Sessions Only\" removes your history and recalculates mastery from scratch — your heatmap will be cleared. \"Delete Sessions & Reset Mastery\" performs a full wipe of all data. Neither action can be undone.")
+            Text("\"Delete Sessions Only\" removes your history and resets the heatmap. \"Delete Sessions & Reset Mastery\" performs a full wipe of all data. Neither action can be undone.")
         }
     }
 
@@ -332,7 +334,7 @@ public struct ProgressTabView: View {
             VStack(spacing: DesignSystem.Spacing.sm) {
                 Text("No progress yet")
                     .font(DesignSystem.Typography.screenTitle)
-                Text("Complete your first session to start tracking your fretboard mastery.")
+                Text("Play your first session to start tracking your progress.")
                     .font(DesignSystem.Typography.bodyLabel)
                     .foregroundStyle(DesignSystem.Colors.text2)
                     .multilineTextAlignment(.center)
@@ -392,7 +394,7 @@ public struct ProgressTabView: View {
                 Label("Today's Sessions", systemImage: vm.todayFilter ? "checkmark" : "")
             }
             Divider()
-            ForEach(FocusMode.allCases, id: \.self) { mode in
+            ForEach(FocusMode.activeCases, id: \.self) { mode in
                 Button {
                     vm.todayFilter = false
                     vm.gameModeFilter = nil
@@ -703,9 +705,7 @@ private struct SessionRow: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            Image(systemName: modeIcon(session.focusMode))
-                .font(DesignSystem.Typography.sectionHeader)
-                .foregroundStyle(modeColor(session.focusMode))
+            sessionIcon
                 .frame(width: 36, height: 36)
                 .background(modeColor(session.focusMode).opacity(0.1),
                             in: RoundedRectangle(cornerRadius: 8))
@@ -754,6 +754,22 @@ private struct SessionRow: View {
         .padding(.vertical, 10)
     }
 
+    @ViewBuilder
+    private var sessionIcon: some View {
+        if session.focusMode == .singleString {
+            let targetString = session.targetStrings.first ?? 3
+            SingleStringIcon(
+                highlightedString: targetString,
+                size: 20,
+                accentColor: modeColor(session.focusMode)
+            )
+        } else {
+            Image(systemName: modeIcon(session.focusMode))
+                .font(DesignSystem.Typography.sectionHeader)
+                .foregroundStyle(modeColor(session.focusMode))
+        }
+    }
+
     private func durationLabel(_ interval: TimeInterval) -> String {
         let mins = Int(interval) / 60
         let secs = Int(interval) % 60
@@ -779,15 +795,15 @@ private struct SessionRow: View {
     private func modeColor(_ mode: FocusMode) -> Color {
         switch mode {
         case .fullFretboard:       return DesignSystem.Colors.cherry
-        case .singleNote:          return DesignSystem.Colors.amber
-        case .circleOfFifths:      return DesignSystem.Colors.honey
+        case .singleString:        return DesignSystem.Colors.amber
+        case .singleNote:          return DesignSystem.Colors.honey
         case .fretboardPosition:   return DesignSystem.Colors.gold
-        case .accuracyAssessment:  return DesignSystem.Colors.cherry
         case .naturalNotes:        return DesignSystem.Colors.correct
-        case .sharpsAndFlats:      return DesignSystem.Colors.honey
-        case .circleOfFourths,
-             .singleString,
-             .chordProgression:    return DesignSystem.Colors.amber
+        case .sharpsAndFlats:      return DesignSystem.Colors.cherryLight
+        case .accuracyAssessment:  return DesignSystem.Colors.cherry
+        case .circleOfFourths:     return DesignSystem.Colors.amber
+        case .circleOfFifths:      return DesignSystem.Colors.honey
+        case .chordProgression:    return DesignSystem.Colors.gold
         }
     }
 
@@ -805,9 +821,9 @@ private struct MasteryInfoSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     private let levels: [(String, Color, String, String)] = [
-        ("Struggling",  DesignSystem.Colors.masteryStruggling, "0 – 49%",   "You're building familiarity with this note. Keep practicing to strengthen recognition."),
-        ("Learning",    DesignSystem.Colors.masteryLearning,   "50 – 89%",  "You're making progress. With more repetition, this note will become second nature."),
-        ("Proficient",  DesignSystem.Colors.masteryProficient, "90 – 100%", "You're scoring well on this note. Keep going to lock it in as mastered."),
+        ("Struggling",  DesignSystem.Colors.masteryStruggling, "0 – 49%",   "This one's still new. The more you see it, the faster it'll click."),
+        ("Learning",    DesignSystem.Colors.masteryLearning,   "50 – 89%",  "Getting there! A bit more practice and this note will feel automatic."),
+        ("Proficient",  DesignSystem.Colors.masteryProficient, "90 – 100%", "You know this note well. A few more reps and it'll be locked in."),
         ("Mastered",    DesignSystem.Colors.masteryMastered,   "90%+ · 15+ attempts", "You consistently identify this note correctly across many attempts. Great work!")
     ]
 

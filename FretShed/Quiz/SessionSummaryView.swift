@@ -267,7 +267,7 @@ public struct SessionSummaryView: View {
 
     private var smartPracticeSummary: String {
         if !vm.hasBaselineMastery {
-            return "Measuring your mastery — keep practicing and adaptive targeting will kick in."
+            return "Still learning your strengths — keep playing and the smart targeting will kick in."
         }
 
         var lines: [String] = []
@@ -275,7 +275,7 @@ public struct SessionSummaryView: View {
         if vm.weakSpotQuestionCount > 0 {
             lines.append("\(vm.weakSpotQuestionCount) of \(vm.attemptCount) questions targeted your weakest positions.")
         } else {
-            lines.append("No weak spots detected — you're performing well across the board.")
+            lines.append("No weak spots found — you're solid across the board.")
         }
 
         let sorted = vm.weakSpotsTargetedStrings.sorted { $0.value > $1.value }
@@ -328,7 +328,7 @@ public struct SessionSummaryView: View {
             if accuracy >= 0.9 { return "Outstanding!" }
             if accuracy >= 0.7 { return "Great Work!" }
             if accuracy >= 0.5 { return "Good Effort!" }
-            return "Keep Practicing!"
+            return "Keep At It!"
         }
     }
 
@@ -340,7 +340,7 @@ public struct SessionSummaryView: View {
             if accuracy >= 0.9 { return "You're mastering the fretboard." }
             if accuracy >= 0.7 { return "Your knowledge is growing steadily." }
             if accuracy >= 0.5 { return "Each session builds muscle memory." }
-            return "Repetition is the key to mastery."
+            return "Every rep gets you closer. Stick with it."
         }
     }
 

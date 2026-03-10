@@ -316,6 +316,7 @@ public final class SwiftDataSettingsRepository: SettingsRepository {
         let descriptor = FetchDescriptor<UserSettings>()
         let existing = try context.fetch(descriptor)
         if let settings = existing.first {
+            settings.migrateNoteHighlightingIfNeeded()
             return settings
         }
         let defaults = UserSettings()

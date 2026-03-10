@@ -36,6 +36,11 @@ public enum FocusMode: String, CaseIterable, Codable, Sendable, Hashable {
         }
     }
 
+    /// Focus modes currently available in the UI. Add new modes here as they ship.
+    public static var activeCases: [FocusMode] {
+        [.fullFretboard, .fretboardPosition, .singleString, .singleNote, .naturalNotes, .sharpsAndFlats]
+    }
+
     /// True for modes available to free-tier users.
     public var isFreeMode: Bool {
         switch self {

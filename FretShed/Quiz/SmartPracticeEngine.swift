@@ -154,7 +154,7 @@ final class SmartPracticeEngine {
                     targetStrings: [weakest],
                     isAdaptive: true
                 )
-                return (session, "Single String", "Weakest: \(Self.stringOrdinal(weakest)) — \(name)", "guitars")
+                return (session, "Single String", "Weakest: \(Self.stringOrdinal(weakest)) — \(name)", "custom.singleString.\(weakest)")
 
             case .sameNote:
                 let weakest = Self.weakestNote(from: allScores, fretboardMap: fretboardMap, strings: Self.freeStrings, fretEnd: Self.freeFretEnd)

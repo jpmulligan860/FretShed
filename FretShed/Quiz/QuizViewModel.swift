@@ -247,7 +247,7 @@ public final class QuizViewModel: Identifiable {
                 UINotificationFeedbackGenerator().notificationOccurred(.success)
             }
             if settings.correctSoundEnabled {
-                MetroDroneEngine.shared.playSoundCue(.correct, volume: settings.correctSoundVolume)
+                MetroDroneEngine.shared.playSoundCue(.correct, volume: 0.7)
             }
             // Advance to the next note in the circle after a correct answer.
             if session.focusMode == .circleOfFourths || session.focusMode == .circleOfFifths {
@@ -279,7 +279,7 @@ public final class QuizViewModel: Identifiable {
                 UINotificationFeedbackGenerator().notificationOccurred(.error)
             }
             if settings.incorrectSoundEnabled {
-                MetroDroneEngine.shared.playSoundCue(.incorrect, volume: settings.correctSoundVolume)
+                MetroDroneEngine.shared.playSoundCue(.incorrect, volume: 0.7)
             }
         }
         timerTask?.cancel()
@@ -680,7 +680,7 @@ public final class QuizViewModel: Identifiable {
         timerTask?.cancel()
         // Play an initial countdown tick when the timer starts.
         if !isTimerMuted {
-            MetroDroneEngine.shared.playCountdownTick(volume: settings.metronomeVolume)
+            MetroDroneEngine.shared.playCountdownTick(volume: 0.7)
         }
         timerTask = Task {
             var elapsed = 0.0
@@ -692,7 +692,7 @@ public final class QuizViewModel: Identifiable {
                 if elapsed >= 1.0 && timeRemaining > 0 {
                     elapsed -= 1.0
                     if !isTimerMuted {
-                        MetroDroneEngine.shared.playCountdownTick(volume: settings.metronomeVolume)
+                        MetroDroneEngine.shared.playCountdownTick(volume: 0.7)
                     }
                 }
                 if timeRemaining == 0 { handleTimeout() }

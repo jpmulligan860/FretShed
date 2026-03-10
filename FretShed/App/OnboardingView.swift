@@ -36,19 +36,14 @@ struct OnboardingView: View {
             .tabViewStyle(.page(indexDisplayMode: .never))
             .animation(.easeInOut(duration: 0.3), value: currentPage)
 
-            // Top chrome: page dots + skip
+            // Top chrome: skip button
             VStack {
-                ZStack {
-                    pageIndicator
-                        .frame(maxWidth: .infinity)
-
+                HStack {
+                    Spacer()
                     if currentPage > 0 {
-                        HStack {
-                            Spacer()
-                            Button("Skip") { complete() }
-                                .font(DesignSystem.Typography.bodyLabel)
-                                .foregroundStyle(DesignSystem.Colors.muted)
-                        }
+                        Button("Skip") { complete() }
+                            .font(DesignSystem.Typography.bodyLabel)
+                            .foregroundStyle(DesignSystem.Colors.muted)
                     }
                 }
                 .padding(.top, 60)
@@ -81,22 +76,12 @@ struct OnboardingView: View {
             Spacer()
 
             VStack(spacing: DesignSystem.Spacing.lg) {
-                Image(systemName: "guitars.fill")
-                    .font(.system(size: 72))
+                Text("FretShed")
+                    .font(.custom("Montserrat-Black", size: 52))
                     .foregroundStyle(DesignSystem.Gradients.sunburst)
 
-                VStack(spacing: DesignSystem.Spacing.sm) {
-                    Text("Welcome to")
-                        .font(DesignSystem.Typography.mediumTitle)
-                        .foregroundStyle(DesignSystem.Colors.text)
-
-                    Text("FretShed")
-                        .font(DesignSystem.Typography.display)
-                        .foregroundStyle(DesignSystem.Gradients.sunburst)
-                }
-
-                Text("The guitar trainer that actually\ngets your notes right.")
-                    .font(DesignSystem.Typography.tagline)
+                Text("Finally get your notes right.")
+                    .font(.custom("CrimsonPro-Italic", size: 20))
                     .foregroundStyle(DesignSystem.Colors.text2)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, DesignSystem.Spacing.lg)
@@ -124,9 +109,6 @@ struct OnboardingView: View {
         VStack(spacing: 0) {
             Spacer().frame(height: 90)
 
-            DesignSystem.Typography.capsLabel("ABOUT FRETSHED")
-                .padding(.bottom, DesignSystem.Spacing.sm)
-
             Text("How it works")
                 .font(DesignSystem.Typography.subDisplay)
                 .foregroundStyle(DesignSystem.Colors.text)
@@ -134,10 +116,21 @@ struct OnboardingView: View {
 
             VStack(spacing: 0) {
                 featureRow(
-                    icon: "tuningfork",
+                    icon: "brain",
                     color: DesignSystem.Colors.cherry,
+                    title: "Adaptive Learning",
+                    subtitle: "FretShed learns the notes you find hardest and targets your weak spots."
+                )
+
+                Divider()
+                    .overlay(DesignSystem.Colors.border)
+                    .padding(.horizontal, DesignSystem.Spacing.md)
+
+                featureRow(
+                    icon: "tuningfork",
+                    color: DesignSystem.Colors.amber,
                     title: "Flexible Fretboard Trainer",
-                    subtitle: "FretShed listens and instantly identifies if you played the right note."
+                    subtitle: "FretShed listens to your guitar and tells you instantly if you nailed it."
                 )
 
                 Divider()
@@ -146,20 +139,9 @@ struct OnboardingView: View {
 
                 featureRow(
                     icon: "slider.horizontal.3",
-                    color: DesignSystem.Colors.amber,
-                    title: "Great Practice Tools",
-                    subtitle: "Tuner, Metronome, Speed Trainer and Drones keep practice interesting."
-                )
-
-                Divider()
-                    .overlay(DesignSystem.Colors.border)
-                    .padding(.horizontal, DesignSystem.Spacing.md)
-
-                featureRow(
-                    icon: "brain",
                     color: DesignSystem.Colors.honey,
-                    title: "Adaptive Learning",
-                    subtitle: "FretShed learns the notes you find hardest and targets your weak spots."
+                    title: "Great Practice Tools",
+                    subtitle: "Tuner, Metronome, Speed Trainer, and Drone keep practice interesting."
                 )
 
                 Divider()
@@ -195,15 +177,12 @@ struct OnboardingView: View {
         VStack(spacing: 0) {
             Spacer().frame(height: 90)
 
-            DesignSystem.Typography.capsLabel("GETTING STARTED")
-                .padding(.bottom, DesignSystem.Spacing.sm)
-
-            Text("Where are you at?")
+            Text("Where are you?")
                 .font(DesignSystem.Typography.subDisplay)
                 .foregroundStyle(DesignSystem.Colors.text)
                 .padding(.bottom, DesignSystem.Spacing.xs)
 
-            Text("This helps FretShed focus your practice\non what you actually need.")
+            Text("Select the category that best reflects\nyour current fretboard knowledge.")
                 .font(DesignSystem.Typography.tagline)
                 .foregroundStyle(DesignSystem.Colors.text2)
                 .multilineTextAlignment(.center)

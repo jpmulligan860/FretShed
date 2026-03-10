@@ -246,15 +246,21 @@ public final class PitchDetector {
         // an implicit isolation assertion in its thunk — AVAudioEngine calls the
         // tap on a private realtime queue, which makes that assertion fatal.
         let playbackTS = MetroDroneEngine.lastPlaybackTime
-        let calNoiseFloor = calibratedNoiseFloor
-        let calAGCGain = calibratedAGCGain
         // Re-detect input source now that the audio session is active.
         // The route info is only populated after session activation, so
         // detectCurrent() called earlier (e.g. in applySettings) returns .unknown.
+        let profileSource = calibratedInputSource  // What the profile was calibrated with
         let detectedSource = AudioInputSource.detectCurrent()
         if detectedSource != .unknown {
             calibratedInputSource = detectedSource
         }
+        // If the actual hardware differs from the calibration profile's input source,
+        // don't pre-seed noise floor/AGC — those values are tuned for the profiled
+        // device and would cause very slow adaptation on a different input (e.g. USB
+        // profile's low noise floor on built-in mic lets ambient noise through the gate).
+        let sourceMatches = profileSource == nil || calibratedInputSource == profileSource
+        let calNoiseFloor = sourceMatches ? calibratedNoiseFloor : nil
+        let calAGCGain = sourceMatches ? calibratedAGCGain : nil
         let calInputSource = calibratedInputSource
         let (tapClosure, tapState) = makeTapClosure(
             isStopping: isStopping,
@@ -604,7 +610,12 @@ public final class PitchDetector {
                 // Re-detect input source for the new route.
                 let newSource = AudioInputSource.detectCurrent()
                 self.calibratedInputSource = newSource
-                logger.info("Audio route changed (\(reason == .newDeviceAvailable ? "new device" : "device removed")) — input: \(newSource.displayName), restarting engine")
+                // If new hardware matches the calibration profile, use profile's
+                // noise floor/AGC; otherwise let adaptive algorithms start fresh.
+                let routeMatches = profileSource == nil || newSource == profileSource
+                let routeNoiseFloor = routeMatches ? self.calibratedNoiseFloor : nil
+                let routeAGCGain = routeMatches ? self.calibratedAGCGain : nil
+                logger.info("Audio route changed (\(reason == .newDeviceAvailable ? "new device" : "device removed")) — input: \(newSource.displayName), profileMatch: \(routeMatches), restarting engine")
                 self.engine.inputNode.removeTap(onBus: 0)
                 self.engine.stop()
                 self.engine = AVAudioEngine()
@@ -621,8 +632,8 @@ public final class PitchDetector {
                     sampleRate: sr,
                     continuation: pitchContinuation,
                     playbackTimestamp: playbackTS,
-                    calibratedNoiseFloor: calNoiseFloor,
-                    calibratedAGCGain: calAGCGain,
+                    calibratedNoiseFloor: routeNoiseFloor,
+                    calibratedAGCGain: routeAGCGain,
                     calibratedInputSource: newSource,
                     sustainEnabled: sustainEnabled
                 )

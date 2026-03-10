@@ -82,10 +82,65 @@ public enum FretboardDisplay: String, CaseIterable, Codable, Sendable {
 }
 
 /// How many fret positions are highlighted for the target note.
+/// Legacy enum — kept for SwiftData backward compatibility and backup/restore.
 public enum NoteHighlighting: String, CaseIterable, Codable, Sendable {
     case singlePosition     = "singlePosition"
     case allPositions       = "allPositions"
     case singleThenReveal   = "singleThenReveal"
+}
+
+/// When the target note position is revealed on the fretboard.
+public enum NoteRevealTiming: String, CaseIterable, Codable, Sendable {
+    case afterPlaying  = "afterPlaying"
+    case beforePlaying = "beforePlaying"
+}
+
+/// How many positions of the target note are displayed.
+public enum NoteDisplayCount: String, CaseIterable, Codable, Sendable {
+    case singlePosition = "singlePosition"
+    case allPositions   = "allPositions"
+}
+
+/// Combined note visibility preset — simplifies two settings into one picker.
+public enum NoteVisibility: String, CaseIterable, Codable, Sendable {
+    /// Target position hidden during the question, revealed after answering.
+    case hiddenUntilAnswered = "hiddenUntilAnswered"
+    /// Target position shown during the question (single dot).
+    case showTargetPosition  = "showTargetPosition"
+    /// All octave positions shown during the question.
+    case showAllPositions    = "showAllPositions"
+
+    public var displayLabel: String {
+        switch self {
+        case .hiddenUntilAnswered: return "Hidden"
+        case .showTargetPosition:  return "Show Target"
+        case .showAllPositions:    return "Show All"
+        }
+    }
+
+    /// Decomposes into the two underlying settings.
+    public var revealTiming: NoteRevealTiming {
+        switch self {
+        case .hiddenUntilAnswered: return .afterPlaying
+        case .showTargetPosition, .showAllPositions: return .beforePlaying
+        }
+    }
+
+    public var displayCount: NoteDisplayCount {
+        switch self {
+        case .hiddenUntilAnswered, .showTargetPosition: return .singlePosition
+        case .showAllPositions: return .allPositions
+        }
+    }
+
+    /// Reconstructs from the two underlying settings.
+    public static func from(timing: NoteRevealTiming, count: NoteDisplayCount) -> NoteVisibility {
+        switch (timing, count) {
+        case (.afterPlaying, _):           return .hiddenUntilAnswered
+        case (.beforePlaying, .singlePosition): return .showTargetPosition
+        case (.beforePlaying, .allPositions):   return .showAllPositions
+        }
+    }
 }
 
 /// Whether the user must play the correct string or just the correct pitch.
@@ -126,6 +181,8 @@ public final class UserSettings {
     public var defaultStringOrderingRaw: String
     public var defaultFretboardDisplayRaw: String
     public var defaultNoteHighlightingRaw: String
+    public var defaultNoteRevealTimingRaw: String
+    public var defaultNoteDisplayCountRaw: String
     public var defaultNoteAcceptanceModeRaw: String
     public var defaultNoteDisplayModeRaw: String
 
@@ -183,6 +240,25 @@ public final class UserSettings {
         set { defaultNoteHighlightingRaw = newValue.rawValue }
     }
 
+    public var defaultNoteRevealTiming: NoteRevealTiming {
+        get { NoteRevealTiming(rawValue: defaultNoteRevealTimingRaw) ?? .afterPlaying }
+        set { defaultNoteRevealTimingRaw = newValue.rawValue }
+    }
+
+    public var defaultNoteDisplayCount: NoteDisplayCount {
+        get { NoteDisplayCount(rawValue: defaultNoteDisplayCountRaw) ?? .singlePosition }
+        set { defaultNoteDisplayCountRaw = newValue.rawValue }
+    }
+
+    /// Combined note visibility preset — reads/writes the two underlying fields.
+    public var noteVisibility: NoteVisibility {
+        get { NoteVisibility.from(timing: defaultNoteRevealTiming, count: defaultNoteDisplayCount) }
+        set {
+            defaultNoteRevealTiming = newValue.revealTiming
+            defaultNoteDisplayCount = newValue.displayCount
+        }
+    }
+
     public var defaultNoteAcceptanceMode: NoteAcceptanceMode {
         get { NoteAcceptanceMode(rawValue: defaultNoteAcceptanceModeRaw) ?? .exactString }
         set { defaultNoteAcceptanceModeRaw = newValue.rawValue }
@@ -214,6 +290,8 @@ public final class UserSettings {
         self.defaultStringOrderingRaw = StringOrdering.random.rawValue
         self.defaultFretboardDisplayRaw = FretboardDisplay.fullFretboard.rawValue
         self.defaultNoteHighlightingRaw = NoteHighlighting.singlePosition.rawValue
+        self.defaultNoteRevealTimingRaw = NoteRevealTiming.afterPlaying.rawValue
+        self.defaultNoteDisplayCountRaw = NoteDisplayCount.singlePosition.rawValue
         self.defaultNoteAcceptanceModeRaw = NoteAcceptanceMode.exactString.rawValue
         self.defaultNoteDisplayModeRaw = NoteDisplayMode.showNames.rawValue
         self.correctSoundEnabled = true
@@ -222,7 +300,7 @@ public final class UserSettings {
         self.isMetronomeEnabled = true
         self.metronomeVolume = 0.7
         self.hapticFeedbackEnabled = true
-        self.tapModeEnabled = true
+        self.tapModeEnabled = false
         self.tapToAnswerEnabled = false
         self.tunerDisplayStyleRaw = TunerDisplayStyle.needle.rawValue
         self.referenceAHz = 440
@@ -232,6 +310,27 @@ public final class UserSettings {
         self.practiceReminderMinute = 0
         self.streakReminderEnabled = false
         self.showAccuracyAssessment = true
+    }
+
+    /// Migrates legacy `defaultNoteHighlightingRaw` to the new two-field model.
+    /// Call after loading from SwiftData. Safe to call multiple times.
+    public func migrateNoteHighlightingIfNeeded() {
+        // If new fields are already populated, nothing to do.
+        guard defaultNoteRevealTimingRaw.isEmpty || defaultNoteDisplayCountRaw.isEmpty else { return }
+        switch NoteHighlighting(rawValue: defaultNoteHighlightingRaw) {
+        case .singlePosition:
+            defaultNoteRevealTimingRaw = NoteRevealTiming.beforePlaying.rawValue
+            defaultNoteDisplayCountRaw = NoteDisplayCount.singlePosition.rawValue
+        case .allPositions:
+            defaultNoteRevealTimingRaw = NoteRevealTiming.beforePlaying.rawValue
+            defaultNoteDisplayCountRaw = NoteDisplayCount.allPositions.rawValue
+        case .singleThenReveal:
+            defaultNoteRevealTimingRaw = NoteRevealTiming.afterPlaying.rawValue
+            defaultNoteDisplayCountRaw = NoteDisplayCount.allPositions.rawValue
+        case nil:
+            defaultNoteRevealTimingRaw = NoteRevealTiming.afterPlaying.rawValue
+            defaultNoteDisplayCountRaw = NoteDisplayCount.singlePosition.rawValue
+        }
     }
 }
 

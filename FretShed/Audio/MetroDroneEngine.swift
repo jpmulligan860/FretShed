@@ -443,17 +443,17 @@ final class MetroDroneEngine {
         accentBuffer = makeClickBuffer(
             toneFreq: 1400, noiseFreq: 2800,
             toneAmp: 0.8, noiseAmp: 0.6,
-            mixAmp: 1.4, format: monoFormat
+            mixAmp: 2.8, format: monoFormat
         )
         normalBuffer = makeClickBuffer(
             toneFreq: 900, noiseFreq: 2000,
             toneAmp: 0.7, noiseAmp: 0.5,
-            mixAmp: 1.1, format: monoFormat
+            mixAmp: 2.2, format: monoFormat
         )
         subClickBuffer = makeClickBuffer(
             toneFreq: 1200, noiseFreq: 2400,
             toneAmp: 0.55, noiseAmp: 0.40,
-            mixAmp: 0.9, format: monoFormat
+            mixAmp: 1.8, format: monoFormat
         )
 
         // Build sound cue buffers

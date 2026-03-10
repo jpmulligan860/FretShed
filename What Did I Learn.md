@@ -18,6 +18,8 @@ Building FretShed from a working prototype to an App Store-ready product taught 
 
 **Polish is not optional.** The gap between "it works" and "it ships" is enormous. Phase 3.6 was supposed to be 8 tasks. It became 14. Every one of those extra tasks made the app feel intentional instead of cobbled together. Budget 30% more time than you think you need for the last mile.
 
+**Copy is a feature, not a garnish.** A systematic copy review — every string in every view, judged against a consistent tone — found ~30 changes in one pass. The difference between "Unable to start the microphone" and "Couldn't start the mic" is the difference between an app that feels like a developer made it and one that feels like a musician made it. Do the copy sweep before launch, not after.
+
 ---
 
 ## Session Log
@@ -140,3 +142,18 @@ Building FretShed from a working prototype to an App Store-ready product taught 
 2. **Document what you removed and why.** Phase tracking removal, onset threshold addition, thread safety fix — all documented in CLAUDE.md with rationale. Future me will want to try phase tracking again in 6 months. Past me left a note: "Don't. It doesn't work on real guitar signals."
 
 3. **The two-AI workflow works.** Claude.ai for strategy, competitive analysis, expert review, and research. Claude Code for implementation, debugging, and testing. The Goertzel research findings doc (drafted in Claude.ai, implemented in Claude Code) was the cleanest handoff of the project. Define the interface between your AI tools the same way you'd define an API.
+
+---
+
+### Session: Mar 2026 — Copy Review & UI Polish (SD.16–SD.17)
+*The "Words Matter More Than You Think" Session*
+
+1. **Do a systematic copy review before launch.** Going through every user-facing string in one pass (organized by view, judged against a "knowledgeable guitar teacher" tone) found ~30 improvements. Individually small, collectively transformative. The app went from sounding like a developer wrote it to sounding like a musician wrote it.
+
+2. **Tone consistency beats clever copy.** Having a single guiding principle — "knowledgeable guitar teacher: warm, encouraging, practical" — made every copy decision fast. "Unable to start the microphone" → "Couldn't start the mic." "Repetition is the key to mastery" → "Every rep gets you closer." No overthinking, just match the tone.
+
+3. **Remove features from info sheets when you defer them.** Circle of Fourths/Fifths and Prioritize Weak Spots were deferred to post-launch but still appeared in the Focus Mode info sheet. Users don't care about your roadmap — if it's not in the app, it shouldn't be in the documentation.
+
+4. **Duplicate UI affordances where users expect them.** Adding the filter menu next to the "RECENT SESSIONS" header (in addition to its original location) was a 5-minute change that makes the feature discoverable from the most obvious place. Don't make users hunt for controls.
+
+5. **Context can run out at the worst time.** Two sessions in a row hit context limits during the session end protocol. The fix: keep sessions shorter, or front-load the creative work and leave the mechanical wrap-up for when context is thin. The session end checklist is long — start it earlier than you think.

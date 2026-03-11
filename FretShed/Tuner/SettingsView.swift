@@ -4,6 +4,9 @@
 import SwiftUI
 import SwiftData
 import UniformTypeIdentifiers
+import OSLog
+
+private let logger = Logger(subsystem: "com.jpm.fretshed", category: "SettingsView")
 
 // MARK: - SettingsView
 
@@ -306,7 +309,11 @@ public struct SettingsView: View {
                 if let profile = renamingProfile {
                     let trimmed = renameText.trimmingCharacters(in: .whitespacesAndNewlines)
                     profile.name = trimmed.isEmpty ? nil : trimmed
-                    try? container.calibrationRepository.save(profile)
+                    do {
+                        try container.calibrationRepository.save(profile)
+                    } catch {
+                        logger.error("Failed to save renamed profile: \(error.localizedDescription)")
+                    }
                     reloadProfiles()
                 }
             }
@@ -315,7 +322,11 @@ public struct SettingsView: View {
         .alert("Delete Profile?", isPresented: $showDeleteConfirmation) {
             Button("Delete", role: .destructive) {
                 if let profile = deletingProfile {
-                    try? container.calibrationRepository.delete(profile)
+                    do {
+                        try container.calibrationRepository.delete(profile)
+                    } catch {
+                        logger.error("Failed to delete profile: \(error.localizedDescription)")
+                    }
                     reloadProfiles()
                 }
             }
@@ -374,7 +385,11 @@ public struct SettingsView: View {
     }
 
     private func setActiveProfile(_ profile: AudioCalibrationProfile) {
-        try? container.calibrationRepository.setActive(profile)
+        do {
+            try container.calibrationRepository.setActive(profile)
+        } catch {
+            logger.error("Failed to set active profile: \(error.localizedDescription)")
+        }
         reloadProfiles()
     }
 
@@ -502,7 +517,11 @@ public struct SettingsView: View {
                             get: { Double(activeProfile.userGainTrimDB) },
                             set: {
                                 activeProfile.userGainTrimDB = Float($0)
-                                try? container.calibrationRepository.save(activeProfile)
+                                do {
+                                    try container.calibrationRepository.save(activeProfile)
+                                } catch {
+                                    logger.error("Failed to save gain trim: \(error.localizedDescription)")
+                                }
                             }
                         ),
                         range: -6...6,
@@ -523,7 +542,11 @@ public struct SettingsView: View {
                             get: { Double(activeProfile.userGateTrimDB) },
                             set: {
                                 activeProfile.userGateTrimDB = Float($0)
-                                try? container.calibrationRepository.save(activeProfile)
+                                do {
+                                    try container.calibrationRepository.save(activeProfile)
+                                } catch {
+                                    logger.error("Failed to save gate trim: \(error.localizedDescription)")
+                                }
                             }
                         ),
                         range: -6...6,
@@ -782,12 +805,18 @@ public struct SettingsView: View {
         // Load from the repository so the returned object is tracked by SwiftData.
         // Do NOT fall back to a bare UserSettings() — that creates a detached object
         // whose mutations are never persisted.
-        settings = try? container.settingsRepository.loadSettings()
-        if settings == nil {
+        do {
+            settings = try container.settingsRepository.loadSettings()
+        } catch {
+            logger.warning("Settings load failed, retrying: \(error.localizedDescription)")
             // Retry once after a brief delay to handle app-startup race conditions
             // where SwiftData's model container hasn't fully initialised yet.
             try? await Task.sleep(for: .milliseconds(300))
-            settings = try? container.settingsRepository.loadSettings()
+            do {
+                settings = try container.settingsRepository.loadSettings()
+            } catch {
+                logger.error("Settings load failed on retry: \(error.localizedDescription)")
+            }
         }
         // Notifications disabled for now — uncomment when ready to ship reminders
         // if let s = settings {
@@ -796,7 +825,11 @@ public struct SettingsView: View {
     }
 
     private func save(_ settings: UserSettings) {
-        try? container.settingsRepository.saveSettings(settings)
+        do {
+            try container.settingsRepository.saveSettings(settings)
+        } catch {
+            logger.error("Failed to save settings: \(error.localizedDescription)")
+        }
     }
 
     private func launchAccuracyAssessment() {

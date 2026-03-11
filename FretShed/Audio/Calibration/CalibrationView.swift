@@ -14,6 +14,9 @@
 // Presented as .fullScreenCover from ContentView or SettingsView.
 
 import SwiftUI
+import OSLog
+
+private let logger = Logger(subsystem: "com.jpm.fretshed", category: "CalibrationView")
 
 // MARK: - CalibrationStep
 
@@ -131,7 +134,11 @@ struct CalibrationView: View {
         .task {
             // Auto-detect existing active profile for overwrite (when not explicitly passed)
             if recalibratingProfile == nil && !forceNewProfile {
-                existingActiveProfile = try? container.calibrationRepository.activeProfile()
+                do {
+                    existingActiveProfile = try container.calibrationRepository.activeProfile()
+                } catch {
+                    logger.warning("Failed to load active profile: \(error.localizedDescription)")
+                }
             }
             let skipTuning = isRecalibration || recalibratingProfile != nil || existingActiveProfile != nil
             if skipTuning {
@@ -639,7 +646,11 @@ struct CalibrationView: View {
         existing.signalQualityScore = newProfile.signalQualityScore
         existing.stringResultsData = newProfile.stringResultsData
         existing.frettedStringResultsData = newProfile.frettedStringResultsData
-        try? container.calibrationRepository.save(existing)
+        do {
+            try container.calibrationRepository.save(existing)
+        } catch {
+            logger.error("Failed to save recalibrated profile: \(error.localizedDescription)")
+        }
     }
 
     private func saveAndClose() {
@@ -654,19 +665,29 @@ struct CalibrationView: View {
             profile.guitarType = selectedGuitarType
             profile.isActive = true
 
-            if let allProfiles = try? container.calibrationRepository.allProfiles() {
+            do {
+                let allProfiles = try container.calibrationRepository.allProfiles()
                 for p in allProfiles { p.isActive = false }
+            } catch {
+                logger.warning("Failed to load profiles for deactivation: \(error.localizedDescription)")
             }
-            try? container.calibrationRepository.save(profile)
+            do {
+                try container.calibrationRepository.save(profile)
+            } catch {
+                logger.error("Failed to save new calibration profile: \(error.localizedDescription)")
+            }
 
             UserDefaults.standard.set(profile.id.uuidString, forKey: LocalUserPreferences.Key.activeCalibrationProfileID)
         }
 
         UserDefaults.standard.set(true, forKey: LocalUserPreferences.Key.hasCompletedCalibration)
 
-        if let settings = try? container.settingsRepository.loadSettings() {
+        do {
+            let settings = try container.settingsRepository.loadSettings()
             settings.tapModeEnabled = false
-            try? container.settingsRepository.saveSettings(settings)
+            try container.settingsRepository.saveSettings(settings)
+        } catch {
+            logger.warning("Failed to disable tap mode after calibration: \(error.localizedDescription)")
         }
 
         engine.cancel()

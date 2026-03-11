@@ -11,6 +11,9 @@
 
 import SwiftUI
 import Combine
+import OSLog
+
+private let logger = Logger(subsystem: "com.jpm.fretshed", category: "ContentView")
 
 // MARK: - ContentView
 
@@ -694,11 +697,20 @@ struct PracticeHomeView: View {
     }
 
     private func loadProfiles() {
-        allProfiles = (try? container.calibrationRepository.allProfiles()) ?? []
+        do {
+            allProfiles = try container.calibrationRepository.allProfiles()
+        } catch {
+            logger.error("Failed to load calibration profiles: \(error.localizedDescription)")
+            allProfiles = []
+        }
     }
 
     private func setActiveProfile(_ profile: AudioCalibrationProfile) {
-        try? container.calibrationRepository.setActive(profile)
+        do {
+            try container.calibrationRepository.setActive(profile)
+        } catch {
+            logger.error("Failed to set active profile: \(error.localizedDescription)")
+        }
         loadProfiles()
     }
 

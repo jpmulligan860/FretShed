@@ -22,8 +22,21 @@ struct BackupManager {
         let sessions = try container.sessionRepository.allSessions()
         let attempts = try container.attemptRepository.allAttempts()
         let masteryScores = try container.masteryRepository.allScores()
-        let settings = try? container.settingsRepository.loadSettings()
-        let allCalibrationProfiles = (try? container.calibrationRepository.allProfiles()) ?? []
+        let settings: UserSettings? = {
+            do {
+                return try container.settingsRepository.loadSettings()
+            } catch {
+                logger.warning("Failed to load settings for backup: \(error.localizedDescription)")
+                return nil
+            }
+        }()
+        let allCalibrationProfiles: [AudioCalibrationProfile]
+        do {
+            allCalibrationProfiles = try container.calibrationRepository.allProfiles()
+        } catch {
+            logger.warning("Failed to load profiles for backup: \(error.localizedDescription)")
+            allCalibrationProfiles = []
+        }
 
         let payload = BackupPayload(
             version: 1,

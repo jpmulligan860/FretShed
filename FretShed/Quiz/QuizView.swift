@@ -202,6 +202,8 @@ public struct QuizView: View {
                 // AGC caused level display and detection problems because the
                 // calibrated value (captured after playing 6 strings) was often
                 // too low for the quiz context.
+                // Pre-seed BEFORE start() — these values are snapshotted into the
+                // tap closure during start(), so they must be set first.
                 if let profile = try? container.calibrationRepository.activeProfile() {
                     let gateTrimMultiplier = pow(10.0, profile.userGateTrimDB / 20.0)
                     detector.calibratedNoiseFloor = profile.measuredNoiseFloorRMS * gateTrimMultiplier

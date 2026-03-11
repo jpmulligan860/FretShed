@@ -137,6 +137,9 @@ public final class PitchDetector {
 
     /// Task that drains the pitch stream and updates published properties.
     private var _consumerTask: Task<Void, Never>? = nil
+    /// Current tap state — updated on route change so the consumer always
+    /// targets the active TapProcessingState (e.g. for Goertzel set/reset).
+    private var _currentTapState: TapProcessingState?
 
     // MARK: - Start / Stop
 
@@ -166,7 +169,10 @@ public final class PitchDetector {
                 // System negotiates to 256; reduces input-to-DSP latency from ~93ms to ~6-12ms.
                 try session.setPreferredIOBufferDuration(0.005)
             } else {
-                try session.setPreferredIOBufferDuration(Double(bufferSize) / 44100.0)
+                // Advisory hint — system rounds to nearest hardware buffer size.
+                // Using 48000 (modern iPhone default) since setPreferredSampleRate(44100)
+                // is also advisory and hardware typically stays at 48000.
+                try session.setPreferredIOBufferDuration(Double(bufferSize) / 48000.0)
             }
             try session.setActive(true, options: .notifyOthersOnDeactivation)
 
@@ -274,6 +280,7 @@ public final class PitchDetector {
             sustainEnabled: sustainEnabled
         )
         inputNode.installTap(onBus: 0, bufferSize: bufferSize, format: tapFormat, block: tapClosure)
+        _currentTapState = tapState
 
         // Consume the stream on the main actor. This task holds no reference
         // to self until it is already executing on the main actor, which is safe.
@@ -320,6 +327,8 @@ public final class PitchDetector {
 
             for await result in pitchStream {
                 guard let self else { break }
+                // Use the current tap state (may change on route change).
+                guard let tapState = self._currentTapState else { break }
                 switch result {
                 case .none:
                     // Within hold window: keep existing note/cents on screen.
@@ -626,7 +635,7 @@ public final class PitchDetector {
                     commonFormat: .pcmFormatFloat32, sampleRate: sr,
                     channels: 1, interleaved: false
                 ) else { return }
-                let (newTap, _) = makeTapClosure(
+                let (newTap, newTapState) = makeTapClosure(
                     isStopping: isStopping,
                     confidenceThreshold: threshold,
                     sampleRate: sr,
@@ -637,6 +646,9 @@ public final class PitchDetector {
                     calibratedInputSource: newSource,
                     sustainEnabled: sustainEnabled
                 )
+                // Update the shared reference so the consumer task's Goertzel
+                // calls (reset/setTarget) go to the new state, not the old one.
+                self._currentTapState = newTapState
                 inputNode.installTap(onBus: 0, bufferSize: self.bufferSize, format: fmt, block: newTap)
                 try? self.engine.start()
             }
@@ -654,6 +666,7 @@ public final class PitchDetector {
         engine.stop()
         _consumerTask?.cancel()
         _consumerTask = nil
+        _currentTapState = nil
         NotificationCenter.default.removeObserver(
             self,
             name: AVAudioSession.interruptionNotification,
@@ -1182,37 +1195,39 @@ private final class TapProcessingState: @unchecked Sendable {
 
     // Goertzel tracker: set target frequency by consumer when tracking begins.
     // Tap closure runs Goertzel on the analysis buffer for drift-free cents.
-    // Protected by goertzelLock because the audio thread calls measureCents()
-    // while the consumer (MainActor) calls reset()/setTarget().
+    // Protected by os_unfair_lock (not NSLock) because the audio thread calls
+    // measureCents() — os_unfair_lock is the fastest mutex on Apple platforms
+    // and avoids NSLock's Obj-C dispatch overhead on the realtime thread.
+    // Critical section is ~50μs (one Goertzel pass over 4096 samples).
     private var _goertzel = GoertzelTracker()
-    private let goertzelLock = NSLock()
+    private var _goertzelLock = os_unfair_lock()
 
     /// Thread-safe Goertzel measurement (called from audio thread tap closure).
     func goertzelMeasure(buffer: UnsafePointer<Float>, count: Int) -> (cents: Double, method: String, magRatio: Double)? {
-        goertzelLock.lock()
-        defer { goertzelLock.unlock() }
+        os_unfair_lock_lock(&_goertzelLock)
+        defer { os_unfair_lock_unlock(&_goertzelLock) }
         guard let cents = _goertzel.measureCents(buffer: buffer, count: count) else { return nil }
         return (cents, _goertzel.lastMethod, _goertzel.magnitudeRatio)
     }
 
     /// Thread-safe Goertzel target setup (called from consumer / MainActor).
     func goertzelSetTarget(frequency: Double, sampleRate: Double) {
-        goertzelLock.lock()
-        defer { goertzelLock.unlock() }
+        os_unfair_lock_lock(&_goertzelLock)
+        defer { os_unfair_lock_unlock(&_goertzelLock) }
         _goertzel.setTarget(frequency: frequency, sampleRate: sampleRate, hopSize: 0)
     }
 
     /// Thread-safe Goertzel reset (called from consumer / MainActor).
     func goertzelReset() {
-        goertzelLock.lock()
-        defer { goertzelLock.unlock() }
+        os_unfair_lock_lock(&_goertzelLock)
+        defer { os_unfair_lock_unlock(&_goertzelLock) }
         _goertzel.reset()
     }
 
     /// Thread-safe read of target frequency (called from consumer for diagnostics).
     var goertzelTargetFrequency: Double {
-        goertzelLock.lock()
-        defer { goertzelLock.unlock() }
+        os_unfair_lock_lock(&_goertzelLock)
+        defer { os_unfair_lock_unlock(&_goertzelLock) }
         return _goertzel.targetFrequency
     }
 

@@ -36,8 +36,6 @@
 		7BC1FC21CCA1EAF1B325D5CC /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E3FF02A66FF10C9470B4575 /* OnboardingView.swift */; };
 		83CA8031BF7C507EDA2148B6 /* SessionSummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6BFA7C97D6BCC3CC6978867E /* SessionSummaryView.swift */; };
 		8C67D2972E1BB431096B7236 /* TunerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 712A49EB16F90D326925F1C7 /* TunerView.swift */; };
-		DCST01A1B2C3D4E5F6A7B8C9 /* DecayStabilizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = DCST02A1B2C3D4E5F6A7B8C9 /* DecayStabilizer.swift */; };
-		DCST03A1B2C3D4E5F6A7B8C9 /* DecayStabilizerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DCST04A1B2C3D4E5F6A7B8C9 /* DecayStabilizerTests.swift */; };
 		SPE001A1B2C3D4E5F6A7B8C9 /* SmartPracticeEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = SPE002A1B2C3D4E5F6A7B8C9 /* SmartPracticeEngineTests.swift */; };
 		BKT001A1B2C3D4E5F6A7B8C9 /* BackupManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BKT002A1B2C3D4E5F6A7B8C9 /* BackupManagerTests.swift */; };
 		CET001A1B2C3D4E5F6A7B8C9 /* CalibrationEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CET002A1B2C3D4E5F6A7B8C9 /* CalibrationEngineTests.swift */; };
@@ -74,7 +72,6 @@
 		CE44A94F491D5F6CCA57A9E5 /* MetroDroneView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2BA6E158C16D88608168965 /* MetroDroneView.swift */; };
 		D0470482E5CE63A0853FDE7A /* UserSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9594943EB347CFE0054D2D86 /* UserSettings.swift */; };
 		D32DCBD142D6A49D7E74EE68 /* PracticeLogTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0D7B77AA22E14EB8A7365EA /* PracticeLogTests.swift */; };
-		DB87639E0EB0C6EC51A29659 /* NotificationScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE2D409E59D0757557617013 /* NotificationScheduler.swift */; };
 		DCAE617288969A478DD93580 /* MetroDroneViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A95FA82F4B28C9E7BB45E46A /* MetroDroneViewModel.swift */; };
 		E1F858BAF82851FEC88FF535 /* MasteryAlgorithmTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2A41CF0B30565F2D2FE92A7 /* MasteryAlgorithmTests.swift */; };
 		E407C544B041E87FCB8059C5 /* ChordProgressionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3409FE657D2975DA48C4D978 /* ChordProgressionTests.swift */; };
@@ -122,8 +119,6 @@ DA04DCB9488A3FFD8F562761 /* SingleStringIcon.swift in Sources */ = {isa = PBXBui
 		6BFA7C97D6BCC3CC6978867E /* SessionSummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionSummaryView.swift; sourceTree = "<group>"; };
 		6E3FF02A66FF10C9470B4575 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		712A49EB16F90D326925F1C7 /* TunerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TunerView.swift; sourceTree = "<group>"; };
-		DCST02A1B2C3D4E5F6A7B8C9 /* DecayStabilizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DecayStabilizer.swift; sourceTree = "<group>"; };
-		DCST04A1B2C3D4E5F6A7B8C9 /* DecayStabilizerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DecayStabilizerTests.swift; sourceTree = "<group>"; };
 		SPE002A1B2C3D4E5F6A7B8C9 /* SmartPracticeEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartPracticeEngineTests.swift; sourceTree = "<group>"; };
 		BKT002A1B2C3D4E5F6A7B8C9 /* BackupManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupManagerTests.swift; sourceTree = "<group>"; };
 		CET002A1B2C3D4E5F6A7B8C9 /* CalibrationEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalibrationEngineTests.swift; sourceTree = "<group>"; };
@@ -181,7 +176,6 @@ DA04DCB9488A3FFD8F562761 /* SingleStringIcon.swift in Sources */ = {isa = PBXBui
 		F2406449DF0972C37B03AE40 /* MetroDroneModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetroDroneModels.swift; sourceTree = "<group>"; };
 		F4A56A5807EDBEDFF6EC3BBB /* CalibrationEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalibrationEngine.swift; sourceTree = "<group>"; };
 		FD139E6B657D0E39796CC232 /* FretShedTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FretShedTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		FE2D409E59D0757557617013 /* NotificationScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationScheduler.swift; sourceTree = "<group>"; };
 		FF830EB86FB19BE84235BC01 /* Attempt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Attempt.swift; sourceTree = "<group>"; };
 		PRIV010000000000000000001 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		QLC002A1B2C3D4E5F6A7B8C9 /* QuizLaunchCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuizLaunchCoordinator.swift; sourceTree = "<group>"; };
@@ -224,7 +218,6 @@ DA04DCB9488A3FFD8F562761 /* SingleStringIcon.swift in Sources */ = {isa = PBXBui
 				9A49C34D79598F0C40D67A54 /* QuizViewModelTests.swift */,
 				9FE5B2CFA6EF2400E6CCF60B /* SettingsTests.swift */,
 				940F20D459475ADCDF1F786C /* SignalMeasurementTests.swift */,
-				DCST04A1B2C3D4E5F6A7B8C9 /* DecayStabilizerTests.swift */,
 				GRTL04A1B2C3D4E5F6A7B8C9 /* GoertzelTrackerTests.swift */,
 				SPE002A1B2C3D4E5F6A7B8C9 /* SmartPracticeEngineTests.swift */,
 				BKT002A1B2C3D4E5F6A7B8C9 /* BackupManagerTests.swift */,
@@ -262,7 +255,6 @@ DA04DCB9488A3FFD8F562761 /* SingleStringIcon.swift in Sources */ = {isa = PBXBui
 		506BA9E636029B910BF8FF46 = {
 			isa = PBXGroup;
 			children = (
-				FE2D409E59D0757557617013 /* NotificationScheduler.swift */,
 				5773D0A6622D273623BE9DF8 /* FretShed */,
 				28F354A992ECFC3E26A370E7 /* FretShed */,
 				4A5749E5E3EE724458EEB270 /* FretShedTests */,
@@ -306,7 +298,6 @@ DA04DCB9488A3FFD8F562761 /* SingleStringIcon.swift in Sources */ = {isa = PBXBui
 		5B8B3473E3FF274F645F732F /* Tuner */ = {
 			isa = PBXGroup;
 			children = (
-				DCST02A1B2C3D4E5F6A7B8C9 /* DecayStabilizer.swift */,
 				GRTL02A1B2C3D4E5F6A7B8C9 /* GoertzelTracker.swift */,
 				92DAA6EC80EF1378C99C5A2B /* PitchDetector.swift */,
 				B249D088A3BF526B9663DD4D /* SettingsView.swift */,
@@ -576,7 +567,6 @@ DA04DCB9488A3FFD8F562761 /* SingleStringIcon.swift in Sources */ = {isa = PBXBui
 				CE44A94F491D5F6CCA57A9E5 /* MetroDroneView.swift in Sources */,
 				DCAE617288969A478DD93580 /* MetroDroneViewModel.swift in Sources */,
 				0ED47C8599C45EBD4037907C /* MusicalNote.swift in Sources */,
-				DB87639E0EB0C6EC51A29659 /* NotificationScheduler.swift in Sources */,
 				7BC1FC21CCA1EAF1B325D5CC /* OnboardingView.swift in Sources */,
 				F42692AFF7D645247CCBD61F /* PitchDetector.swift in Sources */,
 				94BC7C432D4A4DB84D559C90 /* ProgressTabView.swift in Sources */,
@@ -602,7 +592,6 @@ DA04DCB9488A3FFD8F562761 /* SingleStringIcon.swift in Sources */ = {isa = PBXBui
 				C847309B899C791A4ADA05B3 /* SwiftDataStore.swift in Sources */,
 				8C67D2972E1BB431096B7236 /* TunerView.swift in Sources */,
 				F53C65121B3DCC244E38FD57 /* TunerDisplayEngine.swift in Sources */,
-				DCST01A1B2C3D4E5F6A7B8C9 /* DecayStabilizer.swift in Sources */,
 				GRTL01A1B2C3D4E5F6A7B8C9 /* GoertzelTracker.swift in Sources */,
 				DIAG01A1B2C3D4E5F6A7B8C9 /* TunerDiagnosticView.swift in Sources */,
 				D0470482E5CE63A0853FDE7A /* UserSettings.swift in Sources */,
@@ -623,7 +612,6 @@ DA04DCB9488A3FFD8F562761 /* SingleStringIcon.swift in Sources */ = {isa = PBXBui
 				2A150C28DE7C57576FDEF755 /* QuizViewModelTests.swift in Sources */,
 				F3201BA22FA3FAFF4F0AF8DB /* SettingsTests.swift in Sources */,
 				3BA1749981D64C8E7900D5BF /* SignalMeasurementTests.swift in Sources */,
-				DCST03A1B2C3D4E5F6A7B8C9 /* DecayStabilizerTests.swift in Sources */,
 				GRTL03A1B2C3D4E5F6A7B8C9 /* GoertzelTrackerTests.swift in Sources */,
 				SPE001A1B2C3D4E5F6A7B8C9 /* SmartPracticeEngineTests.swift in Sources */,
 				BKT001A1B2C3D4E5F6A7B8C9 /* BackupManagerTests.swift in Sources */,

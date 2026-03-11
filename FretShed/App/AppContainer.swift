@@ -23,7 +23,7 @@ private let logger = Logger(subsystem: "com.jpm.fretshed", category: "AppContain
 /// }
 /// ```
 @MainActor
-public final class AppContainer: ObservableObject {
+public final class AppContainer {
 
     // MARK: Infrastructure
 

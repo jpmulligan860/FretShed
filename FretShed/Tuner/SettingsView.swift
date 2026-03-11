@@ -818,10 +818,6 @@ public struct SettingsView: View {
                 logger.error("Settings load failed on retry: \(error.localizedDescription)")
             }
         }
-        // Notifications disabled for now — uncomment when ready to ship reminders
-        // if let s = settings {
-        //     NotificationScheduler.shared.sync(settings: s)
-        // }
     }
 
     private func save(_ settings: UserSettings) {

@@ -15,6 +15,12 @@ struct BackupManager {
 
     let container: AppContainer
 
+    private static let filenameDateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM-dd-HHmmss"
+        return f
+    }()
+
     // MARK: - Export
 
     func exportBackup() throws -> URL {
@@ -53,9 +59,7 @@ struct BackupManager {
         encoder.dateEncodingStrategy = .iso8601
         let data = try encoder.encode(payload)
 
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyy-MM-dd-HHmmss"
-        let fileName = "FretShed-Backup-\(dateFormatter.string(from: Date())).json"
+        let fileName = "FretShed-Backup-\(Self.filenameDateFormatter.string(from: Date())).json"
 
         let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
         let fileURL = documentsURL.appendingPathComponent(fileName)
@@ -87,9 +91,7 @@ struct BackupManager {
         encoder.dateEncodingStrategy = .iso8601
         let data = try encoder.encode(payload)
 
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyy-MM-dd-HHmmss"
-        let fileName = "FretShed-Diagnostic-\(dateFormatter.string(from: Date())).json"
+        let fileName = "FretShed-Diagnostic-\(Self.filenameDateFormatter.string(from: Date())).json"
 
         let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(fileName)
         try data.write(to: tempURL, options: .atomic)

@@ -7,7 +7,7 @@
 //   2 — Baseline selection ("Where are you at?")
 //
 // Microphone permission is deferred to calibration (when the mic is first needed).
-// Notification permission is disabled for now (NotificationScheduler exists but is not called).
+// Notification permission is deferred to a future release.
 //
 // Wired via FretShedApp: shown as fullScreenCover when !hasCompletedOnboarding.
 // Setting hasCompletedOnboarding = true (via @AppStorage) dismisses the cover.

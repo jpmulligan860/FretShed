@@ -109,6 +109,7 @@ struct SessionBackup: Codable {
     let overallMasteryAtEnd: Double
     let chordProgressionDataBase64: String?
     let calibrationProfileID: UUID?
+    let sessionTimeLimitSeconds: Int?
 
     init(from session: Session) {
         self.id = session.id
@@ -129,6 +130,7 @@ struct SessionBackup: Codable {
         self.overallMasteryAtEnd = session.overallMasteryAtEnd
         self.chordProgressionDataBase64 = session.chordProgressionData?.base64EncodedString()
         self.calibrationProfileID = session.calibrationProfileID
+        self.sessionTimeLimitSeconds = session.sessionTimeLimitSeconds
     }
 
     func toModel() -> Session {
@@ -154,6 +156,7 @@ struct SessionBackup: Codable {
             session.chordProgressionData = Data(base64Encoded: base64)
         }
         session.calibrationProfileID = calibrationProfileID
+        session.sessionTimeLimitSeconds = sessionTimeLimitSeconds ?? 0
         return session
     }
 }
@@ -262,8 +265,8 @@ struct SettingsBackup: Codable {
     let defaultTimerDuration: Int
     let defaultSessionLength: Int
     let hintTimeoutSeconds: Int
-    let circleDirectionRaw: String
-    let masteryThreshold: Double
+    let circleDirectionRaw: String?   // Removed from model — kept for backward-compatible import
+    let masteryThreshold: Double?     // Removed from model — kept for backward-compatible import
     let defaultStringOrderingRaw: String
     let defaultFretboardDisplayRaw: String
     let defaultNoteHighlightingRaw: String
@@ -296,8 +299,8 @@ struct SettingsBackup: Codable {
         self.defaultTimerDuration = settings.defaultTimerDuration
         self.defaultSessionLength = settings.defaultSessionLength
         self.hintTimeoutSeconds = settings.hintTimeoutSeconds
-        self.circleDirectionRaw = settings.circleDirectionRaw
-        self.masteryThreshold = settings.masteryThreshold
+        self.circleDirectionRaw = nil
+        self.masteryThreshold = nil
         self.defaultStringOrderingRaw = settings.defaultStringOrderingRaw
         self.defaultFretboardDisplayRaw = settings.defaultFretboardDisplayRaw
         self.defaultNoteHighlightingRaw = settings.defaultNoteHighlightingRaw
@@ -330,8 +333,7 @@ struct SettingsBackup: Codable {
         settings.defaultTimerDuration = defaultTimerDuration
         settings.defaultSessionLength = defaultSessionLength
         settings.hintTimeoutSeconds = hintTimeoutSeconds
-        settings.circleDirectionRaw = circleDirectionRaw
-        settings.masteryThreshold = masteryThreshold
+        // circleDirectionRaw and masteryThreshold removed from model — skip on import
         settings.defaultStringOrderingRaw = defaultStringOrderingRaw
         settings.defaultFretboardDisplayRaw = defaultFretboardDisplayRaw
         settings.defaultNoteHighlightingRaw = defaultNoteHighlightingRaw

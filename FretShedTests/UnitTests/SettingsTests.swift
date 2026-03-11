@@ -33,8 +33,6 @@ final class SettingsTests: XCTestCase {
         XCTAssertEqual(settings.defaultGameMode, .untimed)
         XCTAssertEqual(settings.defaultTimerDuration, 10)
         XCTAssertEqual(settings.hintTimeoutSeconds, 5)
-        XCTAssertEqual(settings.circleDirection, .fourths)
-        XCTAssertEqual(settings.masteryThreshold, 0.90, accuracy: 0.001)
         XCTAssertTrue(settings.correctSoundEnabled)
         XCTAssertTrue(settings.isMetronomeEnabled)
         XCTAssertTrue(settings.hapticFeedbackEnabled)
@@ -63,8 +61,6 @@ final class SettingsTests: XCTestCase {
         settings.defaultGameMode = .streak
         settings.defaultTimerDuration = 15
         settings.hintTimeoutSeconds = 3
-        settings.circleDirection = .fifths
-        settings.masteryThreshold = 0.85
         settings.defaultStringOrdering = .inOrder
         settings.defaultNoteAcceptanceMode = .anyString
         try repo.saveSettings(settings)
@@ -74,8 +70,6 @@ final class SettingsTests: XCTestCase {
         XCTAssertEqual(reloaded.defaultGameMode, .streak)
         XCTAssertEqual(reloaded.defaultTimerDuration, 15)
         XCTAssertEqual(reloaded.hintTimeoutSeconds, 3)
-        XCTAssertEqual(reloaded.circleDirection, .fifths)
-        XCTAssertEqual(reloaded.masteryThreshold, 0.85, accuracy: 0.001)
         XCTAssertEqual(reloaded.defaultStringOrdering, .inOrder)
         XCTAssertEqual(reloaded.defaultNoteAcceptanceMode, .anyString)
     }
@@ -138,16 +132,6 @@ final class SettingsTests: XCTestCase {
             try repo.saveSettings(settings)
             let reloaded = try repo.loadSettings()
             XCTAssertEqual(reloaded.defaultGameMode, mode)
-        }
-    }
-
-    func test_allCircleDirections_persistAndRestore() throws {
-        for direction in CircleDirection.allCases {
-            let settings = try repo.loadSettings()
-            settings.circleDirection = direction
-            try repo.saveSettings(settings)
-            let reloaded = try repo.loadSettings()
-            XCTAssertEqual(reloaded.circleDirection, direction)
         }
     }
 

@@ -592,12 +592,10 @@ public struct SettingsView: View {
             }
 
             // Diagnostics
-            if settings?.showAccuracyAssessment != false {
-                Button {
-                    launchAccuracyAssessment()
-                } label: {
-                    Label("Run Accuracy Assessment", systemImage: "waveform.badge.magnifyingglass")
-                }
+            Button {
+                launchAccuracyAssessment()
+            } label: {
+                Label("Run Accuracy Assessment", systemImage: "waveform.badge.magnifyingglass")
             }
 
             Button {

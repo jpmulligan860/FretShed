@@ -176,8 +176,6 @@ public final class UserSettings {
     public var defaultTimerDuration: Int           // seconds
     public var defaultSessionLength: Int           // number of questions per session
     public var hintTimeoutSeconds: Int
-    public var circleDirectionRaw: String
-    public var masteryThreshold: Double
     public var defaultStringOrderingRaw: String
     public var defaultFretboardDisplayRaw: String
     public var defaultNoteHighlightingRaw: String
@@ -209,20 +207,12 @@ public final class UserSettings {
     public var practiceReminderMinute: Int
     public var streakReminderEnabled: Bool
 
-    // Feature flags (pre-launch testing — remove before release)
-    /// Nil is treated as true so existing DB rows (migrated as nil) show the button.
-    public var showAccuracyAssessment: Bool?
 
     // MARK: Computed Typed Accessors
 
     public var defaultGameMode: GameMode {
         get { GameMode(rawValue: defaultGameModeRaw) ?? .untimed }
         set { defaultGameModeRaw = newValue.rawValue }
-    }
-
-    public var circleDirection: CircleDirection {
-        get { CircleDirection(rawValue: circleDirectionRaw) ?? .fourths }
-        set { circleDirectionRaw = newValue.rawValue }
     }
 
     public var defaultStringOrdering: StringOrdering {
@@ -285,8 +275,6 @@ public final class UserSettings {
         self.defaultTimerDuration = 10
         self.defaultSessionLength = 7
         self.hintTimeoutSeconds = 5
-        self.circleDirectionRaw = CircleDirection.fourths.rawValue
-        self.masteryThreshold = 0.90
         self.defaultStringOrderingRaw = StringOrdering.random.rawValue
         self.defaultFretboardDisplayRaw = FretboardDisplay.fullFretboard.rawValue
         self.defaultNoteHighlightingRaw = NoteHighlighting.singlePosition.rawValue
@@ -309,7 +297,6 @@ public final class UserSettings {
         self.practiceReminderHour = 18
         self.practiceReminderMinute = 0
         self.streakReminderEnabled = false
-        self.showAccuracyAssessment = true
     }
 
     /// Migrates legacy `defaultNoteHighlightingRaw` to the new two-field model.

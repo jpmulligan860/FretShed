@@ -762,7 +762,10 @@ final class AccelerateYIN: @unchecked Sendable {
         self.fftN = windowSize * 2
         let log2 = vDSP_Length(log2(Double(windowSize * 2)))
         self.log2n = log2
-        self.fftSetup = vDSP_create_fftsetup(log2, FFTRadix(kFFTRadix2))!
+        guard let setup = vDSP_create_fftsetup(log2, FFTRadix(kFFTRadix2)) else {
+            fatalError("AccelerateYIN: Failed to create FFT setup (log2n=\(log2))")
+        }
+        self.fftSetup = setup
 
         let halfFFT = windowSize  // fftN / 2
         realp = .allocate(capacity: halfFFT); realp.initialize(repeating: 0, count: halfFFT)

@@ -412,7 +412,9 @@ final class MetroDroneEngine {
         eng.attach(player)
         eng.attach(cue)
 
-        let monoFormat = AVAudioFormat(standardFormatWithSampleRate: Self.sampleRate, channels: 1)!
+        guard let monoFormat = AVAudioFormat(standardFormatWithSampleRate: Self.sampleRate, channels: 1) else {
+            fatalError("MetroDroneEngine: Failed to create audio format (rate=\(Self.sampleRate))")
+        }
         eng.connect(player, to: eng.mainMixerNode, format: monoFormat)
         eng.connect(cue, to: eng.mainMixerNode, format: monoFormat)
 

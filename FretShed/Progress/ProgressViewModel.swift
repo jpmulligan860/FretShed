@@ -207,7 +207,7 @@ public final class ProgressViewModel {
 
         // If no session today, try starting from yesterday
         if !practiceDays.contains(today) {
-            let yesterday = calendar.date(byAdding: .day, value: -1, to: today)!
+            guard let yesterday = calendar.date(byAdding: .day, value: -1, to: today) else { return 0 }
             if practiceDays.contains(yesterday) {
                 checkDate = yesterday
             } else {
@@ -218,7 +218,8 @@ public final class ProgressViewModel {
         var streak = 0
         while practiceDays.contains(checkDate) {
             streak += 1
-            checkDate = calendar.date(byAdding: .day, value: -1, to: checkDate)!
+            guard let prevDay = calendar.date(byAdding: .day, value: -1, to: checkDate) else { break }
+            checkDate = prevDay
         }
         return streak
     }

@@ -176,6 +176,21 @@ Estimated: 6–8 hours
 
 ---
 
+## Pre-Phase 4 — Codebase Review
+
+**6-pass review + 6-batch fix plan. Hardened the codebase before monetization.**
+
+| # | Task | Status |
+|---|---|---|
+| B1 | SwiftData model cleanup — removed 4 dead UserSettings properties, fixed BackupPayload sessionTimeLimitSeconds data loss, backward-compatible import for removed fields | ✅ |
+| B2 | Force-unwrap safety — replaced 3 force-unwrapped date/format operations with guard+fatalError in ProgressViewModel, MetroDroneEngine | ✅ |
+| B3 | Audio thread safety — replaced NSLock with os_unfair_lock for Goertzel tracker, fixed I/O buffer sample rate (44100→48000), fixed stale TapProcessingState on route change | ✅ |
+| B4 | Error logging — added OSLog logging to 15+ silent try? mutations across SettingsView, ContentView, CalibrationView, BackupManager | ✅ |
+| B5 | Test coverage — 44 new tests: SmartPracticeEngineTests (12), BackupManagerTests (14), CalibrationEngineTests (18). Test count: 259→303 | ✅ |
+| B6 | Dead code cleanup — deleted DecayStabilizer (superseded), deleted NotificationScheduler (disabled), removed ObservableObject from AppContainer, extracted DateFormatter in BackupManager | ✅ |
+
+---
+
 ## Phase 4 — Monetization
 
 **StoreKit 2 paywall — your revenue engine.**

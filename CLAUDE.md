@@ -217,15 +217,18 @@ Full analysis: `FretShed_Competitive_Analysis.md` in Claude.ai project files.
 **Phase 2:** Tasks 2.1–2.17 complete ✅ (Design System fully applied to all tabs)
 **Phase 3:** Tasks 3.1–3.7 complete ✅
 **Phase 3.6:** Shed Redesign complete ✅ (SD.1–SD.15)
+**Pre-Phase 4 Review:** Complete (6 batches)
 **Phase 4:** Not started
 **Phase 5:** Not started
-**Test suite:** 260 tests passing (3 pre-existing session length default failures)
+**Test suite:** 286 tests passing (3 pre-existing session length default failures)
 
 **Pre-launch UI Polish (SD.15) — COMPLETE.** Settings page fully reorganized: 4 sections (Global Display, Session Settings, Guitar Rig Settings, Developer) + Licenses. Detection & Input section removed (empty after moves). Tempo game mode removed from UI (kept in enum for SwiftData backward compat via `selectableCases`). Chord Progression focus mode hidden from UI (kept for future add-on). Focus modes reordered in 2-column grid. Session length changed to GradientSlider. Slider value labels use cherry accent. Haptic Feedback toggle added to Session Settings. Shed page: streak counter + time-practiced alternating messages. Journey page: section titles/info inside cards, date axis formatting. GradientSlider drag fix. DiagnosticRunnerView in Settings Developer section.
 
 **UI Polish & Icons (SD.16) — COMPLETE.** Settings section reordering (Guitar Rig Settings moved up, Session Settings moved down). TestDataSeeder rewrite with session variety. SingleStringIcon SF Symbol replacement. Focus mode color coding. Onboarding skip button removal. tapModeEnabled default fix (false). Metronome volume boost (0.3→0.6). CalibrationView cleanup (removed redundant background/padding).
 
 **Copy Review (SD.17) — COMPLETE.** Comprehensive copy review across all views with "knowledgeable guitar teacher" tone. ~30 copy changes: onboarding, calibration, quiz alerts, session summary, progress tab, settings info sheets, session setup. Removed Circle of Fourths/Fifths and Prioritize Weak Spots from Focus Mode info sheet (deferred features). Added duplicate filter menu to Recent Sessions header on Journey page.
+
+**Pre-Phase 4 Codebase Review (Mar 2026) — COMPLETE.** 6-pass review (architecture, SwiftData, audio pipeline, view layer, App Store risks, code hygiene) produced 28 findings. 6-batch fix plan executed: (B1) Removed 4 dead UserSettings properties + fixed BackupPayload sessionTimeLimitSeconds data loss; (B2) Replaced 3 force-unwraps with safe guards; (B3) os_unfair_lock for Goertzel tracker, I/O buffer sample rate fix 44100→48000, stale TapProcessingState fix on route change; (B4) OSLog error logging on 15+ silent try? mutations; (B5) 44 new tests (SmartPracticeEngine 12, BackupManager 14, CalibrationEngine 18); (B6) Deleted DecayStabilizer + NotificationScheduler, removed ObservableObject from AppContainer, extracted DateFormatter. Test count: 259→286.
 
 **Audio Calibration System (F22) — IMPLEMENTED.** Full calibration flow: silence measurement → 6-string test → profile saved to SwiftData. Quiz launch gated on calibration. Do This First card with action buttons. Settings > Audio Setup with trim sliders. PitchDetector pre-seeded from calibration profile.
 

@@ -20,6 +20,8 @@ Building FretShed from a working prototype to an App Store-ready product taught 
 
 **Copy is a feature, not a garnish.** A systematic copy review — every string in every view, judged against a consistent tone — found ~30 changes in one pass. The difference between "Unable to start the microphone" and "Couldn't start the mic" is the difference between an app that feels like a developer made it and one that feels like a musician made it. Do the copy sweep before launch, not after.
 
+**Audit before you monetize.** A structured 6-pass codebase review before Phase 4 found a silent sample rate bug, a backup data loss issue, and 28 other problems. Batching fixes by dependency order (schema → crashes → thread safety → logging → tests → cleanup) made each fix independently committable. The dead code deletion alone removed 600+ lines. Systematic reviews catch what incremental development misses — schedule one before every major milestone.
+
 ---
 
 ## Session Log
@@ -157,3 +159,16 @@ Building FretShed from a working prototype to an App Store-ready product taught 
 4. **Duplicate UI affordances where users expect them.** Adding the filter menu next to the "RECENT SESSIONS" header (in addition to its original location) was a 5-minute change that makes the feature discoverable from the most obvious place. Don't make users hunt for controls.
 
 5. **Context can run out at the worst time.** Two sessions in a row hit context limits during the session end protocol. The fix: keep sessions shorter, or front-load the creative work and leave the mechanical wrap-up for when context is thin. The session end checklist is long — start it earlier than you think.
+
+---
+
+### Session: Mar 2026 — Pre-Phase 4 Codebase Review
+*The "Audit Before You Monetize" Session*
+
+1. **Run a structured codebase audit before major milestones.** A 6-pass review (architecture, data layer, audio pipeline, view layer, App Store risks, code hygiene) found 28 issues — 7 critical. The I/O buffer sample rate bug (hardcoded 44100 when hardware runs at 48000) had been silently present since the tuner rewrite. Systematic audits catch what incremental development misses.
+
+2. **Batch your fixes by dependency order.** Schema changes first (they affect backup compatibility), then crash fixes, then thread safety, then logging, then tests, then cleanup. Each batch was independently committable and testable. No batch blocked another.
+
+3. **Dead code removal is underrated.** Deleting DecayStabilizer (-17 tests, -200 lines) and NotificationScheduler (-400 lines) reduced the codebase surface area measurably. Both files were "keeping for later" candidates that had been superseded months ago. If it's in git history, it doesn't need to be in the repo.
+
+4. **Write tests for your data pipeline, not just your algorithms.** The 14 BackupManager round-trip tests caught the missing sessionTimeLimitSeconds field immediately. Before these tests, a user could export, import, and silently lose all their timed session data. The bug had existed since the field was added.

@@ -38,6 +38,9 @@
 		8C67D2972E1BB431096B7236 /* TunerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 712A49EB16F90D326925F1C7 /* TunerView.swift */; };
 		DCST01A1B2C3D4E5F6A7B8C9 /* DecayStabilizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = DCST02A1B2C3D4E5F6A7B8C9 /* DecayStabilizer.swift */; };
 		DCST03A1B2C3D4E5F6A7B8C9 /* DecayStabilizerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DCST04A1B2C3D4E5F6A7B8C9 /* DecayStabilizerTests.swift */; };
+		SPE001A1B2C3D4E5F6A7B8C9 /* SmartPracticeEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = SPE002A1B2C3D4E5F6A7B8C9 /* SmartPracticeEngineTests.swift */; };
+		BKT001A1B2C3D4E5F6A7B8C9 /* BackupManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BKT002A1B2C3D4E5F6A7B8C9 /* BackupManagerTests.swift */; };
+		CET001A1B2C3D4E5F6A7B8C9 /* CalibrationEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CET002A1B2C3D4E5F6A7B8C9 /* CalibrationEngineTests.swift */; };
 		GRTL01A1B2C3D4E5F6A7B8C9 /* GoertzelTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = GRTL02A1B2C3D4E5F6A7B8C9 /* GoertzelTracker.swift */; };
 		DIAG01A1B2C3D4E5F6A7B8C9 /* TunerDiagnosticView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DIAG02A1B2C3D4E5F6A7B8C9 /* TunerDiagnosticView.swift */; };
 		GRTL03A1B2C3D4E5F6A7B8C9 /* GoertzelTrackerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = GRTL04A1B2C3D4E5F6A7B8C9 /* GoertzelTrackerTests.swift */; };
@@ -121,6 +124,9 @@ DA04DCB9488A3FFD8F562761 /* SingleStringIcon.swift in Sources */ = {isa = PBXBui
 		712A49EB16F90D326925F1C7 /* TunerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TunerView.swift; sourceTree = "<group>"; };
 		DCST02A1B2C3D4E5F6A7B8C9 /* DecayStabilizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DecayStabilizer.swift; sourceTree = "<group>"; };
 		DCST04A1B2C3D4E5F6A7B8C9 /* DecayStabilizerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DecayStabilizerTests.swift; sourceTree = "<group>"; };
+		SPE002A1B2C3D4E5F6A7B8C9 /* SmartPracticeEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartPracticeEngineTests.swift; sourceTree = "<group>"; };
+		BKT002A1B2C3D4E5F6A7B8C9 /* BackupManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupManagerTests.swift; sourceTree = "<group>"; };
+		CET002A1B2C3D4E5F6A7B8C9 /* CalibrationEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalibrationEngineTests.swift; sourceTree = "<group>"; };
 		GRTL02A1B2C3D4E5F6A7B8C9 /* GoertzelTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoertzelTracker.swift; sourceTree = "<group>"; };
 		DIAG02A1B2C3D4E5F6A7B8C9 /* TunerDiagnosticView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TunerDiagnosticView.swift; sourceTree = "<group>"; };
 		GRTL04A1B2C3D4E5F6A7B8C9 /* GoertzelTrackerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoertzelTrackerTests.swift; sourceTree = "<group>"; };
@@ -220,6 +226,9 @@ DA04DCB9488A3FFD8F562761 /* SingleStringIcon.swift in Sources */ = {isa = PBXBui
 				940F20D459475ADCDF1F786C /* SignalMeasurementTests.swift */,
 				DCST04A1B2C3D4E5F6A7B8C9 /* DecayStabilizerTests.swift */,
 				GRTL04A1B2C3D4E5F6A7B8C9 /* GoertzelTrackerTests.swift */,
+				SPE002A1B2C3D4E5F6A7B8C9 /* SmartPracticeEngineTests.swift */,
+				BKT002A1B2C3D4E5F6A7B8C9 /* BackupManagerTests.swift */,
+				CET002A1B2C3D4E5F6A7B8C9 /* CalibrationEngineTests.swift */,
 			);
 			path = UnitTests;
 			sourceTree = "<group>";
@@ -616,6 +625,9 @@ DA04DCB9488A3FFD8F562761 /* SingleStringIcon.swift in Sources */ = {isa = PBXBui
 				3BA1749981D64C8E7900D5BF /* SignalMeasurementTests.swift in Sources */,
 				DCST03A1B2C3D4E5F6A7B8C9 /* DecayStabilizerTests.swift in Sources */,
 				GRTL03A1B2C3D4E5F6A7B8C9 /* GoertzelTrackerTests.swift in Sources */,
+				SPE001A1B2C3D4E5F6A7B8C9 /* SmartPracticeEngineTests.swift in Sources */,
+				BKT001A1B2C3D4E5F6A7B8C9 /* BackupManagerTests.swift in Sources */,
+				CET001A1B2C3D4E5F6A7B8C9 /* CalibrationEngineTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

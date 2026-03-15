@@ -61,6 +61,17 @@ final class QuizLaunchCoordinator {
     /// ContentView observes this and triggers a reload on ProgressViewModel.
     var needsProgressReload = false
 
+    // MARK: Phase Context (for results screen)
+
+    /// The learning phase before the quiz started — used to detect phase advancement.
+    var phaseBeforeQuiz: LearningPhase?
+
+    /// Musical context from the last Smart Practice session plan.
+    var lastSessionGroups: [NoteGroup]?
+
+    /// Next session recommendation text, set after quiz completes.
+    var nextSessionRecommendation: String?
+
     // MARK: Internal
 
     var pendingQuizVM: QuizViewModel?

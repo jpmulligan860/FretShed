@@ -3,7 +3,7 @@
 
 import SwiftUI
 
-public struct QuizView: View {
+struct QuizView: View {
 
     @State private var vm: QuizViewModel
     @State private var detector = PitchDetector()
@@ -13,9 +13,14 @@ public struct QuizView: View {
     var onDone: (() -> Void)? = nil
     var onViewProgress: (() -> Void)? = nil
     var onRepeat: (() -> Void)? = nil
+    var phaseBeforeQuiz: LearningPhase?
+    var sessionNoteGroups: [NoteGroup]?
     @State private var showEndConfirm = false
     @State private var showFretHint = false
     @State private var insightCard: InsightCard?
+    @State private var phaseContextCard: (headline: String, body: String)?
+    @State private var nextSessionRec: String?
+    @State private var phaseAdvancementMessage: String?
     @State private var diagnosticShareURL: URL? = nil
     @State private var showDiagnosticShare = false
     @State private var storedCorrectMessage: String = "Nice!"
@@ -98,14 +103,18 @@ public struct QuizView: View {
         return low...high
     }
 
-    public init(vm: QuizViewModel,
-                onDone: (() -> Void)? = nil,
-                onViewProgress: (() -> Void)? = nil,
-                onRepeat: (() -> Void)? = nil) {
+    init(vm: QuizViewModel,
+         onDone: (() -> Void)? = nil,
+         onViewProgress: (() -> Void)? = nil,
+         onRepeat: (() -> Void)? = nil,
+         phaseBeforeQuiz: LearningPhase? = nil,
+         sessionNoteGroups: [NoteGroup]? = nil) {
         _vm = State(initialValue: vm)
         self.onDone = onDone
         self.onViewProgress = onViewProgress
         self.onRepeat = onRepeat
+        self.phaseBeforeQuiz = phaseBeforeQuiz
+        self.sessionNoteGroups = sessionNoteGroups
     }
 
     public var body: some View {
@@ -763,6 +772,7 @@ public struct QuizView: View {
                         VStack(spacing: 16) {
                             completedStatsGrid
                             completedInsightCardView
+                            completedPhaseCards
                         }
                         .padding(.horizontal, 20)
                         .padding(.vertical, 20)
@@ -788,6 +798,10 @@ public struct QuizView: View {
                             completedInsightCardView
                                 .padding(.horizontal, 20)
                                 .padding(.top, 12)
+
+                            completedPhaseCards
+                                .padding(.horizontal, 20)
+                                .padding(.top, 8)
                         }
                         .padding(.bottom, 16)
                     }
@@ -945,6 +959,113 @@ public struct QuizView: View {
             masteryScores: masteryScores,
             baselineLevel: baselineLevel
         )
+        loadPhaseContext()
+    }
+
+    private func loadPhaseContext() {
+        let phaseManager = LearningPhaseManager()
+        let currentPhase = phaseManager.currentPhase
+
+        // Check for phase advancement
+        if let before = phaseBeforeQuiz, currentPhase.rawValue > before.rawValue {
+            let allSessions = (try? container.sessionRepository.allSessions()) ?? []
+            phaseAdvancementMessage = PhaseInsightLibrary.advancementMessage(
+                to: currentPhase,
+                sessionCount: allSessions.count
+            )
+        }
+
+        // Next session recommendation
+        let smartEngine = SmartPracticeEngine(
+            masteryRepository: container.masteryRepository,
+            sessionRepository: container.sessionRepository,
+            fretboardMap: container.fretboardMap
+        )
+        nextSessionRec = try? smartEngine.peekNextSessionDescription()
+
+        // Musical context from session note groups
+        if let groups = sessionNoteGroups, let firstGroup = groups.first {
+            let noteNames = firstGroup.targets.map { $0.note.sharpName }
+            let sessionCount = (try? container.sessionRepository.allSessions().count) ?? 0
+            let body = PhaseInsightLibrary.musicalContextMessage(
+                from: firstGroup.context,
+                noteNames: noteNames,
+                sessionCount: sessionCount
+            )
+            phaseContextCard = (headline: firstGroup.context.description, body: body)
+        }
+    }
+
+    // MARK: - Phase Context Cards
+
+    @ViewBuilder
+    private var completedPhaseCards: some View {
+        // Phase advancement celebration
+        if let celebration = phaseAdvancementMessage {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 6) {
+                    Image(systemName: "star.fill")
+                        .foregroundStyle(DesignSystem.Colors.honey)
+                    Text("PHASE COMPLETE")
+                        .font(DesignSystem.Typography.smallLabel)
+                        .foregroundStyle(DesignSystem.Colors.honey)
+                        .tracking(1.0)
+                }
+                Text(celebration)
+                    .font(DesignSystem.Typography.sectionHeader)
+                    .foregroundStyle(DesignSystem.Colors.text)
+            }
+            .padding(16)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .woodshopCard()
+            .overlay(
+                RoundedRectangle(cornerRadius: DesignSystem.Radius.md)
+                    .stroke(DesignSystem.Colors.honey.opacity(0.5), lineWidth: 2)
+            )
+        }
+
+        // Musical context reveal
+        if let context = phaseContextCard {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 6) {
+                    Image(systemName: "music.note.list")
+                        .foregroundStyle(DesignSystem.Colors.cherry)
+                    Text("MUSICAL CONTEXT")
+                        .font(DesignSystem.Typography.smallLabel)
+                        .foregroundStyle(DesignSystem.Colors.cherry)
+                        .tracking(1.0)
+                }
+                Text(context.headline)
+                    .font(DesignSystem.Typography.sectionHeader)
+                    .foregroundStyle(DesignSystem.Colors.text)
+                Text(context.body)
+                    .font(DesignSystem.Typography.accentDescription)
+                    .foregroundStyle(DesignSystem.Colors.text2)
+            }
+            .padding(16)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .woodshopCard()
+        }
+
+        // Next session recommendation
+        if let rec = nextSessionRec {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 6) {
+                    Image(systemName: "arrow.right.circle.fill")
+                        .foregroundStyle(DesignSystem.Colors.correct)
+                    Text("NEXT UP")
+                        .font(DesignSystem.Typography.smallLabel)
+                        .foregroundStyle(DesignSystem.Colors.correct)
+                        .tracking(1.0)
+                }
+                Text(rec)
+                    .font(DesignSystem.Typography.bodyLabel)
+                    .foregroundStyle(DesignSystem.Colors.text)
+            }
+            .padding(16)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .woodshopCard()
+        }
     }
 
     private var completedButtons: some View {

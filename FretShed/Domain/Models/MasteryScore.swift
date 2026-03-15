@@ -58,6 +58,17 @@ public final class MasteryScore {
         return numerator / denominator
     }
 
+    /// Effective mastery score with temporal decay applied.
+    /// Cells practiced recently retain their score; cells not practiced decay toward the prior.
+    /// Cells with more correct recalls decay slower (stronger memories are more durable).
+    public var effectiveScore: Double {
+        MasteryCalculator.effectiveScore(
+            rawScore: score,
+            correctAttempts: correctAttempts,
+            lastAttemptDate: lastAttemptDate
+        )
+    }
+
     /// `true` when the mastery threshold has been sustainably reached.
     public var isMastered: Bool {
         score >= Self.masteredThreshold && totalAttempts >= Self.masteredMinAttempts
@@ -115,6 +126,50 @@ public enum MasteryCalculator {
         let numerator = Double(correct) + MasteryScore.alpha
         let denominator = Double(total) + MasteryScore.alpha + MasteryScore.beta
         return numerator / denominator
+    }
+
+    // MARK: - Temporal Decay
+
+    /// Base decay rate (lambda). Tuned so that after 30 days with no practice,
+    /// a baseline cell retains ~30% of its score.
+    /// Decay curve: retention = exp(-lambda * days)
+    ///   1 day: ~96%,  3 days: ~89%,  7 days: ~76%,  14 days: ~57%,  30 days: ~30%
+    public static let baseLambda: Double = 0.0401
+
+    /// Durability modifier scale. Higher correct count → slower decay.
+    /// effectiveLambda = baseLambda / (1 + durabilityScale * correctCount)
+    public static let durabilityScale: Double = 0.05
+
+    /// The prior score for a cell with no data (alpha / (alpha + beta)).
+    public static let priorScore: Double = MasteryScore.alpha / (MasteryScore.alpha + MasteryScore.beta)
+
+    /// Computes the effective (decayed) mastery score.
+    /// - Parameters:
+    ///   - rawScore: The stored Bayesian mastery score (0–1).
+    ///   - correctAttempts: Total correct answers for this cell (modifies decay rate).
+    ///   - lastAttemptDate: When the cell was last practiced. Nil = use prior.
+    ///   - referenceDate: The current date (injectable for testing).
+    /// - Returns: Effective score in [0, 1], decayed toward the prior.
+    public static func effectiveScore(
+        rawScore: Double,
+        correctAttempts: Int,
+        lastAttemptDate: Date?,
+        referenceDate: Date = Date()
+    ) -> Double {
+        guard let lastDate = lastAttemptDate else {
+            // Never practiced — return the prior
+            return priorScore
+        }
+
+        let daysSince = referenceDate.timeIntervalSince(lastDate) / (24 * 3600)
+        guard daysSince > 0 else { return rawScore }
+
+        // More correct recalls = slower decay
+        let effectiveLambda = baseLambda / (1.0 + durabilityScale * Double(max(0, correctAttempts)))
+        let retention = exp(-effectiveLambda * daysSince)
+
+        // Decay toward the prior, not toward zero
+        return priorScore + (rawScore - priorScore) * retention
     }
 
     /// Weighted average mastery across multiple cells.

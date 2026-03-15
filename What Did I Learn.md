@@ -24,6 +24,8 @@ Building FretShed from a working prototype to an App Store-ready product taught 
 
 **If two systems advise the user, they must agree.** The insight engine and smart practice engine both analyzed mastery data independently — and gave contradictory advice. "Work on your D string" followed by a Full Fretboard quiz. The fix was simple: the message should come from the same engine that builds the session. Any time you have parallel recommendation systems, make one authoritative and the other a consumer.
 
+**Layer your learning systems like your signal chain.** The Smart Practice Redesign stacked five independent systems (phase manager, temporal decay, note grouping, session planning, messaging) that each do one thing well. When they needed to communicate — like passing phase context from the Shed page through a quiz to the results screen — explicit data flow (coordinator properties) beat implicit coordination (both systems reading the same state independently) every time.
+
 ---
 
 ## Session Log
@@ -189,3 +191,18 @@ Building FretShed from a working prototype to an App Store-ready product taught 
 4. **Non-scrollable layouts and dynamic content don't mix.** The session results used a fixed VStack with Spacers. Adding the insight card meant it got squeezed into whatever space was left. Switching to ScrollView with pinned buttons was the right call — always assume content will grow.
 
 5. **Side effects in "peek" methods will ruin your day.** SmartPracticeEngine.nextSession() rotated the mode on every call. Using it to generate a description for the CTA would have rotated the mode every time the Shed page appeared. A separate `peekNextSessionDescription()` with no side effects was essential.
+
+---
+
+### Session: Mar 2026 — Smart Practice Redesign (SP.1–SP.6)
+*The "Stack Five Systems and Make Them Talk" Session*
+
+1. **Explicit data flow beats implicit coordination.** Passing phase context from Shed → quiz → results required three stops: snapshot the phase before quiz (`coordinator.phaseBeforeQuiz`), carry the session groups (`coordinator.lastSessionGroups`), then compare post-quiz phase to detect advancement. Every attempt to have both ends read the same state independently produced subtle bugs. The coordinator-as-bridge pattern worked because it made the data flow visible and debuggable.
+
+2. **Templated messages need automated vocabulary enforcement.** PhaseInsightLibrary has ~70 templates with banned words ("dropped", "regressed", "back to", "lost"). A unit test that checks every template against the banned list caught "back to" in a review session message on the first run. Automated enforcement is non-negotiable when your message pool is large enough that manual review will miss things.
+
+3. **Phase-specific heatmap overlays are cheap and informative.** Computing `focusCells` from LearningPhaseManager state and overlaying a cherry border on matching cells was ~40 lines of code. The visual payoff is disproportionate — users immediately see where the app wants them to focus. The key insight: different phases need different overlay strategies (single string vs. cross-string vs. full region vs. none).
+
+4. **Context windows have a budget — front-load creative work.** Two sessions in a row hit context limits during the session end protocol. The Smart Practice Redesign was 6 phases of implementation-heavy work. The lesson: do the implementation and testing first, then the mechanical wrap-up (CLAUDE.md, ROADMAP.md, commit). Don't save creative decisions for when context is thin.
+
+5. **Access control matters even in single-module apps.** QuizView was marked `public` for no reason. Adding `phaseBeforeQuiz: LearningPhase?` to its init immediately failed because LearningPhase is internal. The fix was trivial (remove `public`), but it's a reminder: default to internal, only widen access when you have a reason.

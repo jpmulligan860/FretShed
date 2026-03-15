@@ -135,7 +135,9 @@ struct ContentView: View {
             vm: vm,
             onDone: { quiz.handleQuizDone(vm: vm) },
             onViewProgress: { quiz.handleViewProgress(vm: vm) },
-            onRepeat: { quiz.handleQuizRepeat(vm: vm) }
+            onRepeat: { quiz.handleQuizRepeat(vm: vm) },
+            phaseBeforeQuiz: quiz.phaseBeforeQuiz,
+            sessionNoteGroups: quiz.lastSessionGroups
         )
         // Fill the safe-area region. Interactive content (buttons) stays
         // within the safe area so iOS 26 delivers taps normally.
@@ -222,6 +224,11 @@ struct PracticeHomeView: View {
     @State private var rigPickerExpanded = false
     @State private var showTimeStat = false
     @State private var smartSessionLine: String = ""
+    @State private var phaseDisplayName: String = ""
+    @State private var phaseNumber: Int = 1
+    @State private var phaseTarget: String = ""
+    @State private var phaseProgress: String?
+    @State private var phaseProximity: String?
 
     @AppStorage(LocalUserPreferences.Key.hasCompletedCalibration)
     private var hasCompletedCalibration = false
@@ -241,6 +248,7 @@ struct PracticeHomeView: View {
         ScrollView {
             VStack(spacing: 20) {
                 header
+                if !isNewUser { phaseStepIndicator }
                 rigProfileCard
                 primaryCTA
                 customSessionCTA
@@ -472,25 +480,74 @@ struct PracticeHomeView: View {
         Button {
             launchSmartPractice()
         } label: {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(isNewUser ? "Start Practice" : "Smart Practice")
-                    .font(DesignSystem.Typography.screenTitle)
-                    .foregroundStyle(.white)
-                Text((isNewUser ? "START HERE" : "ADAPTED TO YOUR PROGRESS").uppercased())
-                    .font(DesignSystem.Typography.sectionLabel)
-                    .tracking(1.5)
-                    .foregroundStyle(.white)
-                Text(isNewUser
-                     ? "Adaptive session based on your level"
-                     : smartSessionLine)
-                    .font(DesignSystem.Typography.accentDescription)
-                    .foregroundStyle(.white.opacity(0.85))
+            VStack(alignment: .leading, spacing: 6) {
+                if isNewUser {
+                    Text("Start Practice")
+                        .font(DesignSystem.Typography.screenTitle)
+                        .foregroundStyle(.white)
+                    Text("START HERE")
+                        .font(DesignSystem.Typography.sectionLabel)
+                        .tracking(1.5)
+                        .foregroundStyle(.white)
+                    Text("Adaptive session based on your level")
+                        .font(DesignSystem.Typography.accentDescription)
+                        .foregroundStyle(.white.opacity(0.85))
+                } else {
+                    HStack {
+                        Text("Smart Practice")
+                            .font(DesignSystem.Typography.screenTitle)
+                            .foregroundStyle(.white)
+                        Spacer()
+                        Text("PHASE \(phaseNumber)")
+                            .font(DesignSystem.Typography.sectionLabel)
+                            .tracking(1.5)
+                            .foregroundStyle(.white.opacity(0.7))
+                    }
+                    Text(phaseTarget)
+                        .font(DesignSystem.Typography.bodyLabel)
+                        .foregroundStyle(.white.opacity(0.9))
+                    if let progress = phaseProgress {
+                        Text(progress)
+                            .font(DesignSystem.Typography.accentDescription)
+                            .foregroundStyle(.white.opacity(0.75))
+                    }
+                    if let proximity = phaseProximity {
+                        Text(proximity)
+                            .font(DesignSystem.Typography.accentDescription)
+                            .foregroundStyle(DesignSystem.Colors.honey)
+                    }
+                }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(16)
             .background(DesignSystem.Gradients.primary, in: RoundedRectangle(cornerRadius: 16))
         }
         .buttonStyle(.plain)
+    }
+
+    // MARK: - Phase Step Indicator
+
+    private var phaseStepIndicator: some View {
+        HStack(spacing: 4) {
+            ForEach(LearningPhase.allCases, id: \.rawValue) { phase in
+                VStack(spacing: 2) {
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(phase.rawValue <= phaseNumber
+                              ? DesignSystem.Colors.cherry
+                              : DesignSystem.Colors.border)
+                        .frame(height: 3)
+                    if phase.rawValue == phaseNumber {
+                        Text(phase.displayName)
+                            .font(DesignSystem.Typography.smallLabel)
+                            .foregroundStyle(DesignSystem.Colors.cherry)
+                    } else {
+                        Text(phase.displayName)
+                            .font(DesignSystem.Typography.smallLabel)
+                            .foregroundStyle(DesignSystem.Colors.muted)
+                    }
+                }
+            }
+        }
     }
 
     // MARK: - Quick Start Presets
@@ -699,8 +756,9 @@ struct PracticeHomeView: View {
         weakSpots = (try? engine.weakSpotCount()) ?? 0
         alternativeTiles = (try? engine.alternativeSessions()) ?? []
 
-        // Load insight card
+        // Load insight card and phase display
         updateSmartSessionLine()
+        updatePhaseDisplay(engine: engine)
     }
 
     private func loadProfiles() {
@@ -737,6 +795,7 @@ struct PracticeHomeView: View {
             smartDescription = engine.nextModeDescription()
             weakSpots = (try? engine.weakSpotCount()) ?? 0
             alternativeTiles = (try? engine.alternativeSessions()) ?? []
+            updatePhaseDisplay(engine: engine)
         }
     }
 
@@ -753,9 +812,23 @@ struct PracticeHomeView: View {
         }
     }
 
+    private func updatePhaseDisplay(engine: SmartPracticeEngine) {
+        if let info = try? engine.phaseDisplayInfo() {
+            phaseDisplayName = info.phaseName
+            phaseNumber = info.phaseNumber
+            phaseTarget = info.target
+            phaseProgress = info.progress
+            phaseProximity = info.proximity
+        }
+    }
+
     private func launchSmartPractice() {
         guard let engine = smartEngine else { return }
+        // Snapshot phase before quiz for advancement detection
+        coordinator.phaseBeforeQuiz = LearningPhase(rawValue: phaseNumber)
         guard let (session, _) = try? engine.nextSession() else { return }
+        // Store session groups for musical context on results screen
+        coordinator.lastSessionGroups = engine.lastSessionPlan?.groups
         coordinator.launchSession(session)
     }
 }

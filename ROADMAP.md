@@ -205,6 +205,21 @@ Estimated: 6–8 hours
 
 ---
 
+## Smart Practice Redesign
+
+**6-phase redesign: 4-phase learning progression, temporal decay, note grouping, phase-aware messaging, and heatmap focus indicator.**
+
+| # | Task | Status |
+|---|---|---|
+| SP.1 | Learning Phase Manager — `LearningPhaseManager` (@Observable, UserDefaults-persisted), 4-phase progression (Foundation → Connection → Expansion → Fluency), automatic advancement criteria, `naturalNoteCells()` helper | ✅ |
+| SP.2 | Temporal Decay — `effectiveScore = prior + (rawScore - prior) * exp(-lambda * days)` with durability modifier (more attempts = slower decay), integrated into SmartPracticeEngine weak-spot targeting | ✅ |
+| SP.3 | Note Grouping Engine — `NoteGroupingEngine` produces musically meaningful groups (scale fragments, triads, octave pairs, chord tones) with `NoteGroupContext` metadata (key, musical name, interval names) | ✅ |
+| SP.4 | Phase-Aware Session Planning — SmartPracticeEngine reads LearningPhaseManager to select phase-appropriate focus modes, note targets, and session structure | ✅ |
+| SP.5 | Messaging & UI Integration — `PhaseInsightLibrary` (~70 templates, 5 categories per phase), phase display on Shed CTA (step indicator + progress + proximity), phase context cards on quiz results (advancement celebration, musical context, next session rec), QuizLaunchCoordinator carries phase context | ✅ |
+| SP.6 | Heatmap Focus Indicator — Cherry-bordered overlay on MasteryHeatmapView cells matching current learning target (phase-specific: target string naturals → cross-string naturals → all free-tier → none) | ✅ |
+
+---
+
 ## Phase 4 — Monetization
 
 **StoreKit 2 paywall — your revenue engine.**
@@ -383,7 +398,7 @@ Mark tasks complete by changing `🔲` to `✅` as you go. When a full phase is 
 ### Outbound (changes Claude.ai needs to know about)
 | Date | What Changed | Target | Status |
 |---|---|---|---|
-| | | | |
+| 2026-03-15 | Smart Practice Redesign (SP.1–SP.6) complete + Session Insight Engine (INS.1–INS.5) complete. Test count 398. Next: Phase 4. | ROADMAP_STRATEGY.md, CLAUDE_STRATEGY.md | 🔲 Pending |
 
 ### Inbound (changes requested by Claude.ai)
 | Date | Change Requested | Source | Status |

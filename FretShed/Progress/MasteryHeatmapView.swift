@@ -20,6 +20,8 @@ struct MasteryHeatmapView: View {
     /// feedback loops (the onGeometryChange pattern caused infinite layout
     /// cycles on iOS 26).
     var availableWidth: CGFloat = 350
+    /// When true, shows a subtle focus indicator around the current learning target region.
+    var showFocusIndicator: Bool = true
 
     @AppStorage(LocalUserPreferences.Key.noteNameFormat)
     private var noteFormatRaw: String = LocalUserPreferences.Default.noteNameFormat
@@ -37,6 +39,48 @@ struct MasteryHeatmapView: View {
     ]
     private var fretRange: ClosedRange<Int> {
         0...max(defaultFretCount, 5)
+    }
+
+    /// The set of (string, fret) positions in the current learning focus.
+    private var focusCells: Set<CellPosition> {
+        guard showFocusIndicator else { return [] }
+        let phaseManager = LearningPhaseManager()
+        let phase = phaseManager.currentPhase
+
+        switch phase {
+        case .foundation:
+            guard let target = phaseManager.currentTargetString else { return [] }
+            let naturals = phaseManager.naturalNoteCells(onString: target)
+            return Set(naturals.map { CellPosition(string: target, fret: $0.fret) })
+
+        case .connection:
+            // Highlight natural note positions on all completed + in-progress strings
+            var cells: Set<CellPosition> = []
+            let targetStrings = phaseManager.phaseOneCompletedStrings.isEmpty
+                ? Set(LearningPhaseManager.freeStrings)
+                : phaseManager.phaseOneCompletedStrings
+            for string in targetStrings {
+                let naturals = phaseManager.naturalNoteCells(onString: string)
+                for cell in naturals {
+                    cells.insert(CellPosition(string: string, fret: cell.fret))
+                }
+            }
+            return cells
+
+        case .expansion:
+            // All positions on free-tier strings
+            var cells: Set<CellPosition> = []
+            for string in LearningPhaseManager.freeStrings {
+                for fret in LearningPhaseManager.freeFretStart...LearningPhaseManager.freeFretEnd {
+                    cells.insert(CellPosition(string: string, fret: fret))
+                }
+            }
+            return cells
+
+        case .fluency:
+            // Full fretboard — no focus indicator needed
+            return []
+        }
     }
 
     /// Cell size computed from the parent-provided available width.
@@ -77,12 +121,19 @@ struct MasteryHeatmapView: View {
                         let scoreObj = note.flatMap { vm.scoreGrid[string][$0.rawValue] }
                         let level = note.map { vm.masteryLevel(note: $0, string: string) } ?? .struggling
                         let attempted = scoreObj != nil
+                        let inFocus = focusCells.contains(CellPosition(string: string, fret: fret))
                         HeatCell(
                             level: level,
                             isAttempted: attempted,
                             noteName: note?.displayName(format: noteFormat)
                         )
                         .frame(width: cellSize, height: cellSize)
+                        .overlay(
+                            inFocus
+                                ? RoundedRectangle(cornerRadius: 4)
+                                    .stroke(DesignSystem.Colors.cherry.opacity(0.4), lineWidth: 1.5)
+                                : nil
+                        )
                         .onTapGesture {
                             if let note {
                                 Task { await vm.selectCell(note: note, string: string) }
@@ -211,4 +262,12 @@ struct HeatmapLegend: View {
             Text("\(label) (\(count))")
         }
     }
+}
+
+// MARK: - CellPosition
+
+/// Lightweight hashable position for focus region tracking.
+private struct CellPosition: Hashable {
+    let string: Int
+    let fret: Int
 }

@@ -136,6 +136,7 @@ struct ContentView: View {
             onDone: { quiz.handleQuizDone(vm: vm) },
             onViewProgress: { quiz.handleViewProgress(vm: vm) },
             onRepeat: { quiz.handleQuizRepeat(vm: vm) },
+            onNextSession: { notes in quiz.handleNextSession(vm: vm, targetNotes: notes) },
             phaseBeforeQuiz: quiz.phaseBeforeQuiz,
             sessionNoteGroups: quiz.lastSessionGroups
         )
@@ -272,6 +273,7 @@ struct PracticeHomeView: View {
                 smartDescription = engine.nextModeDescription()
                 weakSpots = (try? engine.weakSpotCount()) ?? 0
                 alternativeTiles = (try? engine.alternativeSessions()) ?? []
+                updatePhaseDisplay(engine: engine)
             }
             updateSmartSessionLine()
         }
@@ -498,7 +500,7 @@ struct PracticeHomeView: View {
                             .font(DesignSystem.Typography.screenTitle)
                             .foregroundStyle(.white)
                         Spacer()
-                        Text("PHASE \(phaseNumber)")
+                        Text(phaseDisplayName.uppercased())
                             .font(DesignSystem.Typography.sectionLabel)
                             .tracking(1.5)
                             .foregroundStyle(.white.opacity(0.7))

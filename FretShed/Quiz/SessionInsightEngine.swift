@@ -18,6 +18,18 @@ final class SessionInsightEngine {
         return false // conservative default: treat all users as free tier
     }
 
+    /// User's preferred note name format, read from UserDefaults.
+    private var noteFormat: NoteNameFormat {
+        let raw = UserDefaults.standard.string(forKey: LocalUserPreferences.Key.noteNameFormat)
+            ?? LocalUserPreferences.Default.noteNameFormat
+        return NoteNameFormat(rawValue: raw) ?? .sharps
+    }
+
+    /// Display name for a note using the user's preferred format.
+    private func noteName(_ note: MusicalNote) -> String {
+        note.displayName(format: noteFormat)
+    }
+
     private static let freeStrings: Set<Int> = [4, 5, 6]
     private static let freeFretEnd = 7
     private static let freeCellCount = 24   // 3 strings × 8 frets
@@ -55,10 +67,13 @@ final class SessionInsightEngine {
     func insightForSummary(
         session: Session,
         sessionAttempts: [Attempt],
-        allSessions: [Session],
+        allSessions allSessionsNewestFirst: [Session],
         masteryScores: [MasteryScore],
         baselineLevel: BaselineLevel
     ) -> InsightCard {
+        // allSessions from the repository is sorted newest-first (.reverse).
+        // The insight engine expects oldest-first (chronological) throughout.
+        let allSessions = allSessionsNewestFirst.reversed() as [Session]
         let sessionCount = allSessions.count
         let stage = computeMasteryStage(scores: masteryScores)
         let filteredScores = scoresForAccessibleStrings(masteryScores)
@@ -123,10 +138,11 @@ final class SessionInsightEngine {
 
     /// Called from PracticeHomeView on appear.
     func insightForShed(
-        allSessions: [Session],
+        allSessions allSessionsNewestFirst: [Session],
         masteryScores: [MasteryScore],
         baselineLevel: BaselineLevel
     ) -> InsightCard? {
+        let allSessions = allSessionsNewestFirst.reversed() as [Session]
         let sessionCount = allSessions.count
         guard sessionCount > 0 else { return nil }
 
@@ -353,18 +369,22 @@ final class SessionInsightEngine {
             candidates.append((type: .strongString, salience: card.1, card: card.0))
         }
 
-        // Hardest note
-        if !mustBePositive, let card = buildHardestNoteCard(scores: scores, sessionCount: sessionCount) {
+        // Hardest note — only consider notes actually tested in this session
+        let sessionNoteKeys = Set(sessionAttempts.map { "\($0.targetNoteRaw)-\($0.targetString)" })
+        let sessionRelevantScores = scores.filter {
+            sessionNoteKeys.contains("\($0.noteRaw)-\($0.stringNumber)")
+        }
+        if !mustBePositive, let card = buildHardestNoteCard(scores: sessionRelevantScores, sessionCount: sessionCount) {
             candidates.append((type: .hardestNote, salience: card.1, card: card.0))
         }
 
-        // Close to level up
-        if !mustBePositive, let card = buildCloseToLevelUpCard(scores: scores, sessionCount: sessionCount) {
+        // Close to level up — only session-relevant notes
+        if !mustBePositive, let card = buildCloseToLevelUpCard(scores: sessionRelevantScores, sessionCount: sessionCount) {
             candidates.append((type: .closeToLevelUp, salience: card.1, card: card.0))
         }
 
-        // Cold spot
-        if !mustBePositive, let card = buildColdSpotCard(scores: scores, sessionCount: sessionCount) {
+        // Cold spot — only session-relevant notes
+        if !mustBePositive, let card = buildColdSpotCard(scores: sessionRelevantScores, sessionCount: sessionCount) {
             candidates.append((type: .coldSpot, salience: card.1, card: card.0))
         }
 
@@ -410,6 +430,7 @@ final class SessionInsightEngine {
         sessionCount: Int
     ) -> (Double, InsightCard)? {
         guard allSessions.count >= 2 else { return nil }
+        // allSessions is chronological (oldest-first), so second-to-last is the previous session
         let prevSession = allSessions[allSessions.count - 2]
         let delta = session.accuracyPercent - prevSession.accuracyPercent
         guard abs(delta) >= 3 else { return nil } // Only surface meaningful deltas
@@ -511,7 +532,7 @@ final class SessionInsightEngine {
             sessionCount: sessionCount
         )
         headline = headline
-            .replacingOccurrences(of: "[NOTE]", with: worst.note.sharpName)
+            .replacingOccurrences(of: "[NOTE]", with: worst.note.displayName(format: noteFormat))
 
         let body = InsightPhraseLibrary.normalisingClause(
             note: worst.note, string: worst.stringNumber, sessionCount: sessionCount
@@ -536,10 +557,10 @@ final class SessionInsightEngine {
             $0.score >= 0.40 && $0.score < 0.50 && $0.totalAttempts >= 3
         }
         let closeToProficient = scores.filter {
-            $0.score >= 0.80 && $0.score < 0.90 && $0.totalAttempts >= 5
+            $0.score >= 0.65 && $0.score < 0.75 && $0.totalAttempts >= 5
         }
         let closeToMastered = scores.filter {
-            $0.score >= 0.90 && $0.totalAttempts >= 10 && $0.totalAttempts < 15
+            $0.score >= 0.75 && $0.totalAttempts >= 10 && $0.totalAttempts < 15
         }
 
         let allClose = closeToLearning + closeToProficient + closeToMastered
@@ -554,17 +575,27 @@ final class SessionInsightEngine {
 
         if let first = allClose.first {
             headline = headline
-                .replacingOccurrences(of: "[NOTE]", with: first.note.sharpName)
+                .replacingOccurrences(of: "[NOTE]", with: first.note.displayName(format: noteFormat))
                 .replacingOccurrences(of: "[STRING]", with: stringDisplayName(first.stringNumber))
         }
+
+        // Build body listing the specific notes
+        let noteDescriptions = allClose.prefix(8).map { score in
+            "\(noteName(score.note)) on string \(score.stringNumber)"
+        }
+        let body = noteDescriptions.joined(separator: ", ")
+
+        // Collect unique target notes for the Next Up session
+        let targetNotes = Array(Set(allClose.map(\.note)))
 
         let salience = Double(allClose.count) * 10.0
         let card = InsightCard(
             type: .closeToLevelUp,
             headline: headline,
-            body: nil,
+            body: body,
             isPositive: false,
-            isMilestone: false
+            isMilestone: false,
+            targetNotes: targetNotes
         )
         return (card, salience)
     }
@@ -583,7 +614,7 @@ final class SessionInsightEngine {
             sessionCount: sessionCount
         )
         headline = headline
-            .replacingOccurrences(of: "[NOTE]", with: worst.note.sharpName)
+            .replacingOccurrences(of: "[NOTE]", with: worst.note.displayName(format: noteFormat))
             .replacingOccurrences(of: "[STRING]", with: stringDisplayName(worst.stringNumber))
 
         let body = InsightPhraseLibrary.normalisingClause(
@@ -634,7 +665,7 @@ final class SessionInsightEngine {
 
         if let first = newCells.first {
             headline = headline
-                .replacingOccurrences(of: "[NOTE]", with: first.note.sharpName)
+                .replacingOccurrences(of: "[NOTE]", with: first.note.displayName(format: noteFormat))
                 .replacingOccurrences(of: "[STRING]", with: stringDisplayName(first.string))
         }
 
@@ -695,7 +726,7 @@ final class SessionInsightEngine {
 
         let first = transitions[0]
         headline = headline
-            .replacingOccurrences(of: "[NOTE]", with: first.note.sharpName)
+            .replacingOccurrences(of: "[NOTE]", with: first.note.displayName(format: noteFormat))
             .replacingOccurrences(of: "[STRING]", with: stringDisplayName(first.string))
             .replacingOccurrences(of: "[TIER]", with: first.newTier.localizedLabel)
             .replacingOccurrences(of: "[COUNT]", with: "\(transitions.count)")
@@ -726,7 +757,7 @@ final class SessionInsightEngine {
         sessionCount: Int,
         stage: MasteryStage
     ) -> InsightCard {
-        var headline = card.headline
+        let headline = card.headline
         var body = card.body
 
         // Struggling phase framing (sessions 1–8, exploring/consolidating stage)
@@ -791,8 +822,9 @@ final class SessionInsightEngine {
             if attempt.wasCorrect { current.correct += 1 }
             totals[attempt.targetString] = current
         }
-        return totals.mapValues { counts in
-            counts.total > 0 ? (Double(counts.correct) / Double(counts.total)) * 100 : 0
+        // Require at least 3 attempts on a string for a meaningful accuracy reading
+        return totals.compactMapValues { counts in
+            counts.total >= 3 ? (Double(counts.correct) / Double(counts.total)) * 100 : nil
         }
     }
 

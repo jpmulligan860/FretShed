@@ -176,9 +176,9 @@ enum TestDataSeeder {
             context.insert(session)
         }
 
-        // Force some cells into proficient tier (green): ≥90% score, <15 attempts.
+        // Force some cells into proficient tier (green): ≥75% score, <15 attempts.
         // These are naturals on strings 5–6 at mid-frets — "known but not drilled."
-        // We set them to exactly 8 correct / 8 total → Bayesian (10/11) = 0.909.
+        // 8 correct / 8 total → Bayesian (10/11) = 0.909, well above 0.75 threshold.
         let proficientCells: [(MusicalNote, Int)] = [
             (.c, 5),   // C on A string, fret 3
             (.g, 6),   // G on low E string, fret 3

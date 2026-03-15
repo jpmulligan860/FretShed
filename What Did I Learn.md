@@ -26,6 +26,8 @@ Building FretShed from a working prototype to an App Store-ready product taught 
 
 **Layer your learning systems like your signal chain.** The Smart Practice Redesign stacked five independent systems (phase manager, temporal decay, note grouping, session planning, messaging) that each do one thing well. When they needed to communicate — like passing phase context from the Shed page through a quiz to the results screen — explicit data flow (coordinator properties) beat implicit coordination (both systems reading the same state independently) every time.
 
+**Display functions must not mutate state.** A "peek" method that quietly advanced the learning phase before the pre-quiz snapshot was taken suppressed the celebration card entirely. The fix was obvious in hindsight: if a method's name suggests it reads state, it must not write state. Side effects in read paths create timing bugs that are invisible until a real user hits them — and they always do.
+
 ---
 
 ## Session Log
@@ -206,3 +208,18 @@ Building FretShed from a working prototype to an App Store-ready product taught 
 4. **Context windows have a budget — front-load creative work.** Two sessions in a row hit context limits during the session end protocol. The Smart Practice Redesign was 6 phases of implementation-heavy work. The lesson: do the implementation and testing first, then the mechanical wrap-up (CLAUDE.md, ROADMAP.md, commit). Don't save creative decisions for when context is thin.
 
 5. **Access control matters even in single-module apps.** QuizView was marked `public` for no reason. Adding `phaseBeforeQuiz: LearningPhase?` to its init immediately failed because LearningPhase is internal. The fix was trivial (remove `public`), but it's a reminder: default to internal, only widen access when you have a reason.
+
+---
+
+### Session: Mar 2026 — Phase Transition Bug Fixes (SP.7)
+*The "Users Don't Follow Your Happy Path" Session*
+
+1. **Test with real data, not just fresh installs.** The Foundation phase got stuck because `currentTargetString` was nil — something that only happens when TestDataSeeder creates mastery data without calling `initializeForBaseline()`. Auto-recovery code (`autoDetectCompletedStrings()`) was needed because real users accumulate state in ways your init flow doesn't anticipate.
+
+2. **Evaluation functions should not live in display functions.** `phaseDisplayInfo()` called `evaluateAdvancement()` as a side effect, which could advance the phase *before* the pre-quiz snapshot was taken — suppressing the celebration card. Making display functions purely read-only eliminated an entire class of race conditions. If a method's name suggests it reads state, it shouldn't write state.
+
+3. **Gate fast progression explicitly.** Users with prior mastery could skip Foundation → Connection → Expansion in a single session because advancement criteria were already satisfied from earlier play. A simple `sessionsInCurrentPhase` minimum (3 sessions) prevents phase-skipping while still allowing natural progression. Not every constraint is pedagogically deep — sometimes "slow down" is the right answer.
+
+4. **When two UI elements recommend actions, they must agree.** The "Next Up" button showed one session description but launched a different session because `insightCard.targetNotes` was always passed regardless of which recommendation was displayed. Adding a tracking flag (`nextSessionUsesTargetNotes`) that matches the label to the action was a 3-line fix for a deeply confusing UX bug.
+
+5. **Contradictions destroy trust.** A trophy card saying "Steady but flat" appearing above a "PHASE COMPLETE!" celebration makes the user doubt both messages. When two independent systems (insight engine + phase advancement) generate results screen content, the more significant event must override the less significant one. Phase advancement > session insight, always.

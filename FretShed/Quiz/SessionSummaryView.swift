@@ -47,7 +47,6 @@ public struct SessionSummaryView: View {
                     VStack(spacing: 12) {
                         Spacer()
                         trophyHeader
-                        masteryBadge
                         if !attempts.isEmpty {
                             positionsStat
                         }
@@ -65,7 +64,6 @@ public struct SessionSummaryView: View {
                             if !attempts.isEmpty {
                                 SessionHeatmapView(attempts: attempts, fretboardMap: container.fretboardMap)
                             }
-                            insightCardView
                         }
                         .padding(.horizontal, 20)
                         .padding(.vertical, 20)
@@ -92,17 +90,11 @@ public struct SessionSummaryView: View {
                                     .padding(.top, 16)
                             }
 
-                            masteryBadge
-                                .padding(.top, 16)
-
                             if !attempts.isEmpty {
                                 positionsStat
                                     .padding(.top, 8)
                             }
 
-                            insightCardView
-                                .padding(.horizontal, 20)
-                                .padding(.top, 12)
                         }
                         .padding(.bottom, 16)
                     }
@@ -134,7 +126,10 @@ public struct SessionSummaryView: View {
     // MARK: - Sub-Views
 
     private var trophyHeader: some View {
-        VStack(spacing: 8) {
+        let insightHeadline = insightCard?.headline
+        let insightBody = insightCard?.body
+
+        return VStack(spacing: 10) {
             ZStack {
                 Circle()
                     .fill(.white.opacity(0.15))
@@ -145,15 +140,20 @@ public struct SessionSummaryView: View {
                     .symbolEffect(.bounce, value: true)
             }
 
-            Text(trophyTitle)
-                .font(DesignSystem.Typography.screenTitle)
-                .foregroundStyle(.white)
-
-            Text(trophySubtitle)
-                .font(DesignSystem.Typography.accentDescription)
-                .foregroundStyle(.white.opacity(0.85))
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 24)
+            if let headline = insightHeadline {
+                Text(headline)
+                    .font(.custom("Montserrat-ExtraBold", size: 28))
+                    .foregroundStyle(.white)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 20)
+                if let body = insightBody {
+                    Text(body)
+                        .font(.custom("CrimsonPro-Italic", size: 18))
+                        .foregroundStyle(.white.opacity(0.75))
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 24)
+                }
+            }
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 24)
@@ -176,18 +176,6 @@ public struct SessionSummaryView: View {
                 StatCard(label: "Correct",     value: "\(vm.correctCount)",         icon: "checkmark.circle", color: DesignSystem.Colors.correct)
             }
         }
-    }
-
-    private var masteryBadge: some View {
-        HStack(spacing: 6) {
-            Image(systemName: "graduationcap.fill")
-            Text(vm.session.masteryLevel.localizedLabel)
-        }
-        .font(DesignSystem.Typography.bodyLabel)
-        .padding(.horizontal, 18)
-        .padding(.vertical, 8)
-        .background(masteryColor.opacity(0.15), in: Capsule())
-        .foregroundStyle(masteryColor)
     }
 
     private var buttonStack: some View {
@@ -253,43 +241,6 @@ public struct SessionSummaryView: View {
         .padding(.trailing, 20)
     }
 
-    // MARK: - Insight Card
-
-    @ViewBuilder
-    private var insightCardView: some View {
-        if let card = insightCard {
-            VStack(alignment: .leading, spacing: 8) {
-                HStack(spacing: 6) {
-                    Image(systemName: card.isMilestone ? "trophy.fill" : "brain")
-                        .foregroundStyle(card.isMilestone ? DesignSystem.Colors.gold : DesignSystem.Colors.amber)
-                    Text(card.isMilestone ? "MILESTONE" : "INSIGHT")
-                        .font(DesignSystem.Typography.smallLabel)
-                        .foregroundStyle(card.isMilestone ? DesignSystem.Colors.gold : DesignSystem.Colors.amber)
-                        .tracking(1.0)
-                }
-
-                Text(card.headline)
-                    .font(DesignSystem.Typography.sectionHeader)
-                    .foregroundStyle(DesignSystem.Colors.text)
-
-                if let body = card.body {
-                    Text(body)
-                        .font(DesignSystem.Typography.accentDescription)
-                        .foregroundStyle(DesignSystem.Colors.text2)
-                }
-            }
-            .padding(16)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .woodshopCard()
-            .overlay(
-                card.isMilestone
-                    ? RoundedRectangle(cornerRadius: DesignSystem.Radius.md)
-                        .stroke(DesignSystem.Colors.gold.opacity(0.5), lineWidth: 2)
-                    : nil
-            )
-        }
-    }
-
     // MARK: - Computed
 
     private var uniquePositionCount: Int {
@@ -314,38 +265,7 @@ public struct SessionSummaryView: View {
         return "hand.thumbsup.fill"
     }
 
-    private var trophyColor: Color {
-        if accuracy >= 0.9 { return DesignSystem.Colors.honey }
-        if accuracy >= 0.7 { return DesignSystem.Colors.amber }
-        return DesignSystem.Colors.cherry
-    }
 
-    private var trophyTitle: String {
-        switch vm.session.gameMode {
-        case .streak:
-            if vm.bestStreak >= 20 { return "Unstoppable!" }
-            if vm.bestStreak >= 10 { return "On Fire!" }
-            if vm.bestStreak >= 5  { return "Nice Run!" }
-            return "Keep Pushing!"
-        default:
-            if accuracy >= 0.9 { return "Outstanding!" }
-            if accuracy >= 0.7 { return "Great Work!" }
-            if accuracy >= 0.5 { return "Good Effort!" }
-            return "Keep At It!"
-        }
-    }
-
-    private var trophySubtitle: String {
-        switch vm.session.gameMode {
-        case .streak:
-            return "You answered \(vm.bestStreak) in a row without a mistake."
-        default:
-            if accuracy >= 0.9 { return "You're mastering the fretboard." }
-            if accuracy >= 0.7 { return "Your knowledge is growing steadily." }
-            if accuracy >= 0.5 { return "Each session builds muscle memory." }
-            return "Every rep gets you closer. Stick with it."
-        }
-    }
 
     private var accuracyColor: Color {
         if accuracy >= 0.8 { return DesignSystem.Colors.correct }
@@ -353,9 +273,6 @@ public struct SessionSummaryView: View {
         return DesignSystem.Colors.wrong
     }
 
-    private var masteryColor: Color {
-        DesignSystem.Colors.masteryColor(for: vm.session.overallMasteryAtEnd)
-    }
 }
 
 // MARK: - StatCard

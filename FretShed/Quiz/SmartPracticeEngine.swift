@@ -62,8 +62,13 @@ final class SmartPracticeEngine {
     func nextSession() throws -> (session: Session, description: String) {
         let allScores = try masteryRepository.allScores()
 
-        // Evaluate advancement before planning
-        phaseManager.evaluateAdvancement(using: allScores)
+        // Only evaluate Foundation advancement here (handles nil targetString
+        // recovery). Connection/Expansion advancement happens on the results
+        // screen (QuizView.loadPhaseContext) so the user always gets at least
+        // one session in each phase before advancing further.
+        if phaseManager.currentPhase == .foundation {
+            phaseManager.evaluateAdvancement(using: allScores)
+        }
 
         let description = currentFocusDescription(using: allScores)
 
@@ -253,12 +258,15 @@ final class SmartPracticeEngine {
 
     private func buildFoundationSession(using scores: [MasteryScore]) -> Session {
         guard let targetString = phaseManager.currentTargetString else {
-            // Fallback: full fretboard natural notes
+            // currentTargetString is nil — pick the weakest free-tier string
+            let fallbackString = Self.weakestString(from: scores, strings: Self.freeStrings)
+            logger.warning("Foundation session with nil targetString — using weakest string \(fallbackString)")
             return Session(
                 focusMode: .naturalNotes,
                 gameMode: .untimed,
                 fretRangeStart: Self.freeFretStart,
                 fretRangeEnd: Self.freeFretEnd,
+                targetStrings: [fallbackString],
                 isAdaptive: true
             )
         }
@@ -492,17 +500,27 @@ final class SmartPracticeEngine {
         guard let plan = lastSessionPlan, let firstGroup = plan.groups.first else { return nil }
         let context = firstGroup.context
         let noteNames = firstGroup.targets.map { $0.note.sharpName }
+        let stringNumbers = Set(firstGroup.targets.map(\.string))
+        let stringName: String? = stringNumbers.count == 1
+            ? Self.stringName(stringNumbers.first!)
+            : stringNumbers.sorted().map { Self.stringName($0) }.joined(separator: " and ")
 
+        let frets = firstGroup.targets.map(\.fret)
         let body = PhaseInsightLibrary.musicalContextMessage(
             from: context,
             noteNames: noteNames,
-            sessionCount: sessionCount
+            sessionCount: sessionCount,
+            stringName: stringName,
+            fretStart: frets.min(),
+            fretEnd: frets.max()
         )
 
         return (headline: context.description, body: body)
     }
 
     /// Returns the phase info for display on the CTA card.
+    /// NOTE: This is read-only — does NOT call evaluateAdvancement().
+    /// Advancement is evaluated in nextSession() and QuizView.loadPhaseContext().
     func phaseDisplayInfo() throws -> (phaseName: String, phaseNumber: Int, target: String, progress: String?, proximity: String?) {
         let scores = try masteryRepository.allScores()
         let phase = phaseManager.currentPhase

@@ -152,8 +152,8 @@ final class MasteryAlgorithmTests: XCTestCase {
         XCTAssertEqual(MasteryScore.beta, 1.0)
     }
 
-    func test_masteredThreshold_is90Percent() {
-        XCTAssertEqual(MasteryScore.masteredThreshold, 0.90)
+    func test_masteredThreshold_is75Percent() {
+        XCTAssertEqual(MasteryScore.masteredThreshold, 0.75)
     }
 
     func test_masteredMinAttempts_is15() {

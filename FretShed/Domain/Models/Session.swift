@@ -57,8 +57,8 @@ public enum FocusMode: String, CaseIterable, Codable, Sendable, Hashable {
 /// 4-tier system:
 /// - `.struggling`  — mastery < 50% (cherry red)
 /// - `.learning`    — mastery 50–89% (amber)
-/// - `.proficient`  — mastery ≥ 90%, fewer than 15 attempts (green)
-/// - `.mastered`    — mastery ≥ 90% AND ≥ 15 attempts (gold)
+/// - `.proficient`  — mastery ≥ 75%, fewer than 15 attempts (green)
+/// - `.mastered`    — mastery ≥ 75% AND ≥ 15 attempts (gold)
 ///
 /// Legacy cases `.beginner` and `.developing` are kept as
 /// deprecated aliases so that any persisted Codable data still decodes.
@@ -81,10 +81,16 @@ public enum MasteryLevel: String, CaseIterable, Codable, Sendable, Comparable {
     /// Derives a `MasteryLevel` from a 0–1 mastery score.
     /// Use the overload with `isMastered` when you have access to the
     /// full `MasteryScore` to distinguish proficient from mastered.
+    ///
+    /// Thresholds account for Bayesian smoothing (α=2, β=1 → prior 0.667):
+    /// - Struggling: < 0.50 (below-chance accuracy)
+    /// - Learning: 0.50–0.74 (building accuracy)
+    /// - Proficient: 0.75+ (consistent accuracy)
+    /// - Mastered: 0.75+ AND ≥15 attempts (sustained mastery)
     public static func from(score: Double) -> MasteryLevel {
         switch score {
         case ..<0.50:  return .struggling
-        case ..<0.90:  return .learning
+        case ..<0.75:  return .learning
         default:       return .proficient
         }
     }
@@ -93,7 +99,7 @@ public enum MasteryLevel: String, CaseIterable, Codable, Sendable, Comparable {
     public static func from(score: Double, isMastered: Bool) -> MasteryLevel {
         switch score {
         case ..<0.50:  return .struggling
-        case ..<0.90:  return .learning
+        case ..<0.75:  return .learning
         default:       return isMastered ? .mastered : .proficient
         }
     }

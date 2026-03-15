@@ -70,7 +70,7 @@ struct CompactHeatmapView: View {
     private func cellColor(score: Double, isMastered: Bool) -> Color {
         switch score {
         case ..<0.50:  return DesignSystem.Colors.heatmapStruggling
-        case ..<0.90:  return DesignSystem.Colors.heatmapLearning
+        case ..<0.75:  return DesignSystem.Colors.heatmapLearning
         default:       return isMastered ? DesignSystem.Colors.heatmapMastered : DesignSystem.Colors.heatmapProficient
         }
     }

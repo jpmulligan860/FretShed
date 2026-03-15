@@ -14,6 +14,8 @@ struct InsightCard {
     let body: String?
     let isPositive: Bool
     let isMilestone: Bool
+    /// Notes to target in the Next Up session (e.g. close-to-level-up notes).
+    var targetNotes: [MusicalNote]? = nil
 }
 
 // MARK: - InsightType

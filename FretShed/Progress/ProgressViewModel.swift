@@ -150,7 +150,7 @@ public final class ProgressViewModel {
             baseOverallMastery = overallMastery
             attemptedCells = allScores.filter { $0.totalAttempts > 0 }.count
             baseAttemptedCells = attemptedCells
-            recentSessions = try sessionRepository.recentSessions(limit: 50)
+            recentSessions = try sessionRepository.allSessions()
             accuracyTrend  = Self.buildAccuracyTrend(from: recentSessions)
             baseAccuracyTrend = accuracyTrend
             responseTimeTrend = buildResponseTimeTrend(from: recentSessions)

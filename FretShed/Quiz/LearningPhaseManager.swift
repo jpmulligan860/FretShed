@@ -91,7 +91,12 @@ final class LearningPhaseManager {
         static let diagnosticMode = "learningPhase_diagnosticMode"
         static let confirmationMode = "learningPhase_confirmationMode"
         static let stuckNotes = "learningPhase_stuckNotes"
+        static let sessionsInPhase = "learningPhase_sessionsInPhase"
     }
+
+    /// Minimum sessions the user must complete in a phase before advancing.
+    /// Prevents skipping phases when prior mastery already satisfies conditions.
+    static let minimumSessionsBeforeAdvancement: Int = 3
 
     // MARK: - State
 
@@ -101,6 +106,7 @@ final class LearningPhaseManager {
     var isInDiagnosticMode: Bool
     var isInConfirmationMode: Bool
     var stuckNotes: [StuckNote]
+    var sessionsInCurrentPhase: Int
 
     // MARK: - Dependencies
 
@@ -127,6 +133,7 @@ final class LearningPhaseManager {
 
         self.isInDiagnosticMode = UserDefaults.standard.bool(forKey: Keys.diagnosticMode)
         self.isInConfirmationMode = UserDefaults.standard.bool(forKey: Keys.confirmationMode)
+        self.sessionsInCurrentPhase = UserDefaults.standard.integer(forKey: Keys.sessionsInPhase)
 
         if let stuckData = UserDefaults.standard.data(forKey: Keys.stuckNotes),
            let decoded = try? JSONDecoder().decode([StuckNote].self, from: stuckData) {
@@ -143,6 +150,7 @@ final class LearningPhaseManager {
         currentPhase = .foundation
         phaseOneCompletedStrings = []
         stuckNotes = []
+        sessionsInCurrentPhase = 0
 
         switch baseline {
         case .startingFresh:
@@ -194,12 +202,24 @@ final class LearningPhaseManager {
     /// Returns `true` if advancement occurred.
     @discardableResult
     func evaluateAdvancement(using scores: [MasteryScore]) -> Bool {
+        // Track sessions in current phase (each call = one completed session)
+        sessionsInCurrentPhase += 1
+        persist()
+
         switch currentPhase {
         case .foundation:
             return evaluateFoundationAdvancement(using: scores)
         case .connection:
+            guard sessionsInCurrentPhase >= Self.minimumSessionsBeforeAdvancement else {
+                logger.info("Connection: \(self.sessionsInCurrentPhase)/\(Self.minimumSessionsBeforeAdvancement) sessions before advancement eligible")
+                return false
+            }
             return evaluateConnectionAdvancement(using: scores)
         case .expansion:
+            guard sessionsInCurrentPhase >= Self.minimumSessionsBeforeAdvancement else {
+                logger.info("Expansion: \(self.sessionsInCurrentPhase)/\(Self.minimumSessionsBeforeAdvancement) sessions before advancement eligible")
+                return false
+            }
             return evaluateExpansionAdvancement(using: scores)
         case .fluency:
             return false // Already at max
@@ -209,6 +229,27 @@ final class LearningPhaseManager {
     // MARK: Foundation (Phase 1) Advancement
 
     private func evaluateFoundationAdvancement(using scores: [MasteryScore]) -> Bool {
+        // Auto-recover if currentTargetString is nil: scan all free-tier strings,
+        // credit any that are already mastered, then pick the next uncompleted one.
+        if currentTargetString == nil {
+            autoDetectCompletedStrings(using: scores)
+            if phaseOneCompletedStrings.count >= Self.stringsRequiredForPhase2 {
+                currentPhase = .connection
+                currentTargetString = nil
+                sessionsInCurrentPhase = 0
+                persist()
+                logger.info("Auto-advanced to Phase 2 (recovered from nil targetString)")
+                return true
+            }
+            if let next = nextUncompletedString() {
+                currentTargetString = next
+                persist()
+                logger.info("Auto-assigned target string \(next) (recovered from nil)")
+            } else {
+                return false
+            }
+        }
+
         guard let targetString = currentTargetString else { return false }
 
         // Get natural notes on the target string within free fret range
@@ -279,6 +320,7 @@ final class LearningPhaseManager {
         if phaseOneCompletedStrings.count >= Self.stringsRequiredForPhase2 {
             currentPhase = .connection
             currentTargetString = nil
+            sessionsInCurrentPhase = 0
             logger.info("Advanced to Phase 2: Connection")
         } else {
             // Move to next string
@@ -308,6 +350,7 @@ final class LearningPhaseManager {
         }
 
         currentPhase = .expansion
+        sessionsInCurrentPhase = 0
         persist()
         logger.info("Advanced to Phase 3: Expansion")
         return true
@@ -332,6 +375,7 @@ final class LearningPhaseManager {
         }
 
         currentPhase = .fluency
+        sessionsInCurrentPhase = 0
         persist()
         logger.info("Advanced to Phase 4: Fluency")
         return true
@@ -424,6 +468,28 @@ final class LearningPhaseManager {
 
     // MARK: - Helpers
 
+    /// Scans all free-tier strings and credits any that are fully mastered
+    /// (all natural notes ≥ advancementThreshold with ≥ minimumAttempts).
+    /// Called to recover when `currentTargetString` is nil.
+    private func autoDetectCompletedStrings(using scores: [MasteryScore]) {
+        for string in Self.freeStrings {
+            guard !phaseOneCompletedStrings.contains(string) else { continue }
+            let naturalCells = naturalNoteCells(onString: string)
+            let allPassed = naturalCells.allSatisfy { cell in
+                let cellScore = scores.first(where: {
+                    $0.noteRaw == cell.note.rawValue && $0.stringNumber == string
+                })
+                let attempts = cellScore?.totalAttempts ?? 0
+                let score = cellScore?.effectiveScore ?? defaultScore()
+                return attempts >= Self.minimumAttempts && score >= Self.advancementThreshold
+            }
+            if allPassed {
+                phaseOneCompletedStrings.insert(string)
+                logger.info("Auto-detected string \(string) as completed")
+            }
+        }
+    }
+
     /// Returns the natural note cells on a given string within the free fret range.
     /// Each entry is (note, fret) — representing a unique natural note position.
     func naturalNoteCells(onString string: Int) -> [(note: MusicalNote, fret: Int)] {
@@ -480,6 +546,7 @@ final class LearningPhaseManager {
 
         UserDefaults.standard.set(isInDiagnosticMode, forKey: Keys.diagnosticMode)
         UserDefaults.standard.set(isInConfirmationMode, forKey: Keys.confirmationMode)
+        UserDefaults.standard.set(sessionsInCurrentPhase, forKey: Keys.sessionsInPhase)
 
         if let stuckData = try? JSONEncoder().encode(stuckNotes) {
             UserDefaults.standard.set(stuckData, forKey: Keys.stuckNotes)
@@ -494,9 +561,11 @@ final class LearningPhaseManager {
         isInDiagnosticMode = false
         isInConfirmationMode = false
         stuckNotes = []
+        sessionsInCurrentPhase = 0
 
         for key in [Keys.currentPhase, Keys.targetString, Keys.completedStrings,
-                    Keys.diagnosticMode, Keys.confirmationMode, Keys.stuckNotes] {
+                    Keys.diagnosticMode, Keys.confirmationMode, Keys.stuckNotes,
+                    Keys.sessionsInPhase] {
             UserDefaults.standard.removeObject(forKey: key)
         }
     }

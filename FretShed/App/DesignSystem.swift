@@ -125,7 +125,7 @@ enum DesignSystem {
         static func masteryColor(for score: Double) -> Color {
             switch score {
             case ..<0.50:  return masteryStruggling  // cherry
-            case ..<0.90:  return masteryLearning    // amber
+            case ..<0.75:  return masteryLearning    // amber
             default:       return masteryProficient  // green
             }
         }
@@ -134,7 +134,7 @@ enum DesignSystem {
         static func masteryColor(for score: Double, isMastered: Bool) -> Color {
             switch score {
             case ..<0.50:  return masteryStruggling  // cherry
-            case ..<0.90:  return masteryLearning    // amber
+            case ..<0.75:  return masteryLearning    // amber
             default:       return isMastered ? masteryMastered : masteryProficient
             }
         }

@@ -13,6 +13,7 @@ struct QuizView: View {
     var onDone: (() -> Void)? = nil
     var onViewProgress: (() -> Void)? = nil
     var onRepeat: (() -> Void)? = nil
+    var onNextSession: (([MusicalNote]?) -> Void)? = nil
     var phaseBeforeQuiz: LearningPhase?
     var sessionNoteGroups: [NoteGroup]?
     @State private var showEndConfirm = false
@@ -20,6 +21,7 @@ struct QuizView: View {
     @State private var insightCard: InsightCard?
     @State private var phaseContextCard: (headline: String, body: String)?
     @State private var nextSessionRec: String?
+    @State private var nextSessionUsesTargetNotes: Bool = false
     @State private var phaseAdvancementMessage: String?
     @State private var diagnosticShareURL: URL? = nil
     @State private var showDiagnosticShare = false
@@ -107,12 +109,14 @@ struct QuizView: View {
          onDone: (() -> Void)? = nil,
          onViewProgress: (() -> Void)? = nil,
          onRepeat: (() -> Void)? = nil,
+         onNextSession: (([MusicalNote]?) -> Void)? = nil,
          phaseBeforeQuiz: LearningPhase? = nil,
          sessionNoteGroups: [NoteGroup]? = nil) {
         _vm = State(initialValue: vm)
         self.onDone = onDone
         self.onViewProgress = onViewProgress
         self.onRepeat = onRepeat
+        self.onNextSession = onNextSession
         self.phaseBeforeQuiz = phaseBeforeQuiz
         self.sessionNoteGroups = sessionNoteGroups
     }
@@ -759,7 +763,6 @@ struct QuizView: View {
                     VStack(spacing: 12) {
                         Spacer()
                         completedTrophy
-                        completedMasteryBadge
                         Spacer()
                         completedButtons
                             .padding(.bottom, 24)
@@ -771,7 +774,6 @@ struct QuizView: View {
                     ScrollView {
                         VStack(spacing: 16) {
                             completedStatsGrid
-                            completedInsightCardView
                             completedPhaseCards
                         }
                         .padding(.horizontal, 20)
@@ -792,13 +794,6 @@ struct QuizView: View {
                                 .padding(.horizontal, 20)
                                 .padding(.top, 20)
 
-                            completedMasteryBadge
-                                .padding(.top, 16)
-
-                            completedInsightCardView
-                                .padding(.horizontal, 20)
-                                .padding(.top, 12)
-
                             completedPhaseCards
                                 .padding(.horizontal, 20)
                                 .padding(.top, 8)
@@ -817,33 +812,11 @@ struct QuizView: View {
         let icon: String = completedAccuracy >= 0.9 ? "trophy.fill"
             : completedAccuracy >= 0.7 ? "star.fill"
             : "hand.thumbsup.fill"
-        let title: String = {
-            switch vm.session.gameMode {
-            case .streak:
-                if vm.bestStreak >= 20 { return "Unstoppable!" }
-                if vm.bestStreak >= 10 { return "On Fire!" }
-                if vm.bestStreak >= 5  { return "Nice Run!" }
-                return "Keep Pushing!"
-            default:
-                if completedAccuracy >= 0.9 { return "Outstanding!" }
-                if completedAccuracy >= 0.7 { return "Great Work!" }
-                if completedAccuracy >= 0.5 { return "Good Effort!" }
-                return "Keep At It!"
-            }
-        }()
-        let subtitle: String = {
-            switch vm.session.gameMode {
-            case .streak:
-                return "You answered \(vm.bestStreak) in a row without a mistake."
-            default:
-                if completedAccuracy >= 0.9 { return "You're mastering the fretboard." }
-                if completedAccuracy >= 0.7 { return "Your knowledge is growing steadily." }
-                if completedAccuracy >= 0.5 { return "Each session builds muscle memory." }
-                return "Every rep gets you closer. Stick with it."
-            }
-        }()
 
-        return VStack(spacing: 8) {
+        let headline = insightCard?.headline
+        let body = insightCard?.body
+
+        return VStack(spacing: 10) {
             ZStack {
                 Circle()
                     .fill(.white.opacity(0.15))
@@ -853,14 +826,20 @@ struct QuizView: View {
                     .foregroundStyle(.white)
                     .symbolEffect(.bounce, value: true)
             }
-            Text(title)
-                .font(DesignSystem.Typography.screenTitle)
-                .foregroundStyle(.white)
-            Text(subtitle)
-                .font(DesignSystem.Typography.accentDescription)
-                .foregroundStyle(.white.opacity(0.85))
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 24)
+            if let headline {
+                Text(headline)
+                    .font(.custom("Montserrat-ExtraBold", size: 28))
+                    .foregroundStyle(.white)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 20)
+                if let body {
+                    Text(body)
+                        .font(.custom("CrimsonPro-Italic", size: 18))
+                        .foregroundStyle(.white.opacity(0.75))
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 24)
+                }
+            }
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 24)
@@ -898,54 +877,6 @@ struct QuizView: View {
         }
     }
 
-    private var completedMasteryBadge: some View {
-        let mColor = DesignSystem.Colors.masteryColor(for: vm.session.overallMasteryAtEnd)
-        return HStack(spacing: 6) {
-            Image(systemName: "graduationcap.fill")
-            Text(vm.session.masteryLevel.localizedLabel)
-        }
-        .font(DesignSystem.Typography.bodyLabel)
-        .padding(.horizontal, 18)
-        .padding(.vertical, 8)
-        .background(mColor.opacity(0.15), in: Capsule())
-        .foregroundStyle(mColor)
-    }
-
-    @ViewBuilder
-    private var completedInsightCardView: some View {
-        if let card = insightCard {
-            VStack(alignment: .leading, spacing: 8) {
-                HStack(spacing: 6) {
-                    Image(systemName: card.isMilestone ? "trophy.fill" : "brain")
-                        .foregroundStyle(card.isMilestone ? DesignSystem.Colors.gold : DesignSystem.Colors.amber)
-                    Text(card.isMilestone ? "MILESTONE" : "INSIGHT")
-                        .font(DesignSystem.Typography.smallLabel)
-                        .foregroundStyle(card.isMilestone ? DesignSystem.Colors.gold : DesignSystem.Colors.amber)
-                        .tracking(1.0)
-                }
-
-                Text(card.headline)
-                    .font(DesignSystem.Typography.sectionHeader)
-                    .foregroundStyle(DesignSystem.Colors.text)
-
-                if let body = card.body {
-                    Text(body)
-                        .font(DesignSystem.Typography.accentDescription)
-                        .foregroundStyle(DesignSystem.Colors.text2)
-                }
-            }
-            .padding(16)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .woodshopCard()
-            .overlay(
-                card.isMilestone
-                    ? RoundedRectangle(cornerRadius: DesignSystem.Radius.md)
-                        .stroke(DesignSystem.Colors.gold.opacity(0.5), lineWidth: 2)
-                    : nil
-            )
-        }
-    }
-
     private func loadInsightCard() {
         let attempts = (try? container.attemptRepository.attempts(forSession: vm.session.id)) ?? []
         let engine = SessionInsightEngine()
@@ -964,6 +895,12 @@ struct QuizView: View {
 
     private func loadPhaseContext() {
         let phaseManager = LearningPhaseManager()
+
+        // Evaluate advancement with up-to-date mastery scores from the just-completed session
+        if let allScores = try? container.masteryRepository.allScores() {
+            phaseManager.evaluateAdvancement(using: allScores)
+        }
+
         let currentPhase = phaseManager.currentPhase
 
         // Check for phase advancement
@@ -973,24 +910,50 @@ struct QuizView: View {
                 to: currentPhase,
                 sessionCount: allSessions.count
             )
+            // Override the trophy headline to celebrate the milestone
+            // instead of showing a generic session insight that may contradict it
+            insightCard = InsightCard(
+                type: .tierTransition,
+                headline: "\(before.displayName) phase complete!",
+                body: "You've unlocked \(currentPhase.displayName).",
+                isPositive: true,
+                isMilestone: true
+            )
         }
 
         // Next session recommendation
-        let smartEngine = SmartPracticeEngine(
-            masteryRepository: container.masteryRepository,
-            sessionRepository: container.sessionRepository,
-            fretboardMap: container.fretboardMap
-        )
-        nextSessionRec = try? smartEngine.peekNextSessionDescription()
+        if let targetNotes = insightCard?.targetNotes, !targetNotes.isEmpty {
+            // Override with a focused recommendation for close-to-level-up notes
+            let format = NoteNameFormat(rawValue: noteFormatRaw) ?? .sharps
+            let noteNames = targetNotes.prefix(4).map { $0.displayName(format: format) }
+            let joined = noteNames.joined(separator: ", ")
+            nextSessionRec = "Focus on \(joined) — a few more reps to level up"
+            nextSessionUsesTargetNotes = true
+        } else {
+            let smartEngine = SmartPracticeEngine(
+                masteryRepository: container.masteryRepository,
+                sessionRepository: container.sessionRepository,
+                fretboardMap: container.fretboardMap
+            )
+            nextSessionRec = try? smartEngine.peekNextSessionDescription()
+        }
 
         // Musical context from session note groups
         if let groups = sessionNoteGroups, let firstGroup = groups.first {
             let noteNames = firstGroup.targets.map { $0.note.sharpName }
             let sessionCount = (try? container.sessionRepository.allSessions().count) ?? 0
+            let stringNumbers = Set(firstGroup.targets.map(\.string))
+            let stringName: String? = stringNumbers.count == 1
+                ? SmartPracticeEngine.stringName(stringNumbers.first!)
+                : stringNumbers.sorted().map { SmartPracticeEngine.stringName($0) }.joined(separator: " and ")
+            let frets = firstGroup.targets.map(\.fret)
             let body = PhaseInsightLibrary.musicalContextMessage(
                 from: firstGroup.context,
                 noteNames: noteNames,
-                sessionCount: sessionCount
+                sessionCount: sessionCount,
+                stringName: stringName,
+                fretStart: frets.min(),
+                fretEnd: frets.max()
             )
             phaseContextCard = (headline: firstGroup.context.description, body: body)
         }
@@ -1047,24 +1010,33 @@ struct QuizView: View {
             .woodshopCard()
         }
 
-        // Next session recommendation
+        // Next session recommendation — tappable to launch
         if let rec = nextSessionRec {
-            VStack(alignment: .leading, spacing: 8) {
-                HStack(spacing: 6) {
-                    Image(systemName: "arrow.right.circle.fill")
-                        .foregroundStyle(DesignSystem.Colors.correct)
-                    Text("NEXT UP")
-                        .font(DesignSystem.Typography.smallLabel)
-                        .foregroundStyle(DesignSystem.Colors.correct)
-                        .tracking(1.0)
+            Button {
+                onNextSession?(nextSessionUsesTargetNotes ? insightCard?.targetNotes : nil)
+            } label: {
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "arrow.right.circle.fill")
+                            .foregroundStyle(DesignSystem.Colors.correct)
+                        Text("NEXT UP")
+                            .font(DesignSystem.Typography.smallLabel)
+                            .foregroundStyle(DesignSystem.Colors.correct)
+                            .tracking(1.0)
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.caption)
+                            .foregroundStyle(DesignSystem.Colors.text2)
+                    }
+                    Text(rec)
+                        .font(DesignSystem.Typography.bodyLabel)
+                        .foregroundStyle(DesignSystem.Colors.text)
                 }
-                Text(rec)
-                    .font(DesignSystem.Typography.bodyLabel)
-                    .foregroundStyle(DesignSystem.Colors.text)
+                .padding(16)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .woodshopCard()
             }
-            .padding(16)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .woodshopCard()
+            .buttonStyle(.plain)
         }
     }
 
@@ -1625,24 +1597,28 @@ private struct CompletedStatCard: View {
     let color: Color
 
     var body: some View {
-        VStack(spacing: 6) {
+        HStack(spacing: 10) {
             ZStack {
                 Circle()
                     .fill(color.opacity(0.15))
-                    .frame(width: 36, height: 36)
+                    .frame(width: 30, height: 30)
                 Image(systemName: icon)
-                    .font(DesignSystem.Typography.bodyLabel)
+                    .font(.system(size: 13))
                     .foregroundStyle(color)
             }
-            Text(value)
-                .font(DesignSystem.Typography.dataDisplay)
-                .foregroundStyle(DesignSystem.Colors.text)
-            Text(label)
-                .font(DesignSystem.Typography.smallLabel)
-                .foregroundStyle(DesignSystem.Colors.text2)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(value)
+                    .font(DesignSystem.Typography.dataDisplay)
+                    .foregroundStyle(DesignSystem.Colors.text)
+                Text(label)
+                    .font(DesignSystem.Typography.smallLabel)
+                    .foregroundStyle(DesignSystem.Colors.text2)
+            }
+            Spacer()
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 14)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
         .woodshopCard()
     }
 }

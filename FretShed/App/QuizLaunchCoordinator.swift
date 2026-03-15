@@ -113,17 +113,8 @@ final class QuizLaunchCoordinator {
             isAdaptive: session.isAdaptive,
             sessionTimeLimitSeconds: session.sessionTimeLimitSeconds
         )
-        try? container.sessionRepository.save(newSession)
-        let settings = (try? container.settingsRepository.loadSettings()) ?? UserSettings()
-        let vm = QuizViewModel(
-            session: newSession,
-            fretboardMap: container.fretboardMap,
-            settings: settings,
-            masteryRepository: container.masteryRepository,
-            sessionRepository: container.sessionRepository,
-            attemptRepository: container.attemptRepository
-        )
-        launchQuiz(vm: vm)
+        // Route through launchSession to ensure phaseBeforeQuiz is captured
+        launchSession(newSession)
     }
 
     // MARK: - Event Handlers
@@ -173,6 +164,7 @@ final class QuizLaunchCoordinator {
         }
         lastCompletedSession = vm.session
         activeQuizVM = nil
+        phaseBeforeQuiz = nil
         needsProgressReload = true
     }
 
@@ -183,6 +175,7 @@ final class QuizLaunchCoordinator {
         }
         lastCompletedSession = vm.session
         activeQuizVM = nil
+        phaseBeforeQuiz = nil
         selectedTab = .progress
         needsProgressReload = true
     }
@@ -195,9 +188,46 @@ final class QuizLaunchCoordinator {
         let session = vm.session
         lastCompletedSession = session
         activeQuizVM = nil
+        phaseBeforeQuiz = nil
         Task { @MainActor in
             try? await Task.sleep(for: .milliseconds(350))
             await launchRepeatSession(from: session)
+        }
+    }
+
+    func handleNextSession(vm: QuizViewModel, targetNotes: [MusicalNote]? = nil) {
+        if tapModeWasForced {
+            vm.settings.tapToAnswerEnabled = false
+            tapModeWasForced = false
+        }
+        lastCompletedSession = vm.session
+        activeQuizVM = nil
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(350))
+
+            // If we have specific target notes (e.g. close-to-level-up), build a focused session
+            if let notes = targetNotes, !notes.isEmpty {
+                let session = Session(
+                    focusMode: .singleNote,
+                    gameMode: .untimed,
+                    targetNotes: notes
+                )
+                phaseBeforeQuiz = LearningPhaseManager().currentPhase
+                lastSessionGroups = nil
+                launchSession(session)
+                return
+            }
+
+            // Snapshot phase BEFORE nextSession() which may call evaluateAdvancement()
+            phaseBeforeQuiz = LearningPhaseManager().currentPhase
+            let engine = SmartPracticeEngine(
+                masteryRepository: container.masteryRepository,
+                sessionRepository: container.sessionRepository,
+                fretboardMap: container.fretboardMap
+            )
+            guard let (session, _) = try? engine.nextSession() else { return }
+            lastSessionGroups = engine.lastSessionPlan?.groups
+            launchSession(session)
         }
     }
 
@@ -259,6 +289,10 @@ final class QuizLaunchCoordinator {
 
     /// Launches a session directly from a pre-built Session object (Smart Practice, presets, timed).
     func launchSession(_ session: Session) {
+        // Capture current phase before quiz so results screen can detect advancement
+        if phaseBeforeQuiz == nil {
+            phaseBeforeQuiz = LearningPhaseManager().currentPhase
+        }
         let settings = (try? container.settingsRepository.loadSettings()) ?? UserSettings()
         try? container.sessionRepository.save(session)
         let vm = QuizViewModel(

@@ -218,7 +218,7 @@ Full analysis: `FretShed_Competitive_Analysis.md` in Claude.ai project files.
 **Phase 3:** Tasks 3.1–3.7 complete ✅
 **Phase 3.6:** Shed Redesign complete ✅ (SD.1–SD.15)
 **Pre-Phase 4 Review:** Complete (6 batches)
-**Smart Practice Redesign:** SP.1–SP.6 complete ✅
+**Smart Practice Redesign:** SP.1–SP.7 complete ✅
 **Phase 4:** Not started
 **Phase 5:** Not started
 **Test suite:** 398 tests passing (3 pre-existing session length default failures)
@@ -233,6 +233,7 @@ Full analysis: `FretShed_Competitive_Analysis.md` in Claude.ai project files.
 - **PhaseInsightLibrary**: ~70 templated messages across 5 categories per phase (musical context, performance, proximity, comeback, encouragement). Variable substitution system. Phase advancement celebrations. 20 unit tests.
 - **Phase UI**: Step indicator on Shed CTA (4-step bar), progress/proximity messages, phase context cards on quiz results (advancement celebration, musical context, next session recommendation). `QuizLaunchCoordinator` carries phase context.
 - **Heatmap focus indicator**: Cherry-bordered overlay (40% opacity) on MasteryHeatmapView cells matching current learning target. Phase-specific: Foundation = target string naturals, Connection = cross-string naturals, Expansion = all free-tier cells, Fluency = none.
+- **Phase transition fixes (SP.7)**: Foundation stuck fix (nil `currentTargetString` auto-recovery via `autoDetectCompletedStrings()`), `{string_name}`/`{fret_start}`/`{fret_end}` placeholder substitution, Shed phase display refresh after quiz, "PHASE 1" → actual phase name on CTA, contradictory insight card override on advancement, phase-skipping prevention (`sessionsInCurrentPhase` minimum 3 for Connection/Expansion), Next Up button target fix (`nextSessionUsesTargetNotes` flag), `phaseDisplayInfo()` race condition fix (made read-only).
 - Test count: 398 (20 new PhaseInsightLibraryTests), 3 pre-existing failures.
 
 **Pre-launch UI Polish (SD.15) — COMPLETE.** Settings page fully reorganized: 4 sections (Global Display, Session Settings, Guitar Rig Settings, Developer) + Licenses. Detection & Input section removed (empty after moves). Tempo game mode removed from UI (kept in enum for SwiftData backward compat via `selectableCases`). Chord Progression focus mode hidden from UI (kept for future add-on). Focus modes reordered in 2-column grid. Session length changed to GradientSlider. Slider value labels use cherry accent. Haptic Feedback toggle added to Session Settings. Shed page: streak counter + time-practiced alternating messages. Journey page: section titles/info inside cards, date axis formatting. GradientSlider drag fix. DiagnosticRunnerView in Settings Developer section.
@@ -265,7 +266,7 @@ Full analysis: `FretShed_Competitive_Analysis.md` in Claude.ai project files.
 
 **Device Test Polish (D8) — IMPLEMENTED.** MetroDrone DisclosureGroup labels styled with `sectionHeader` + `text` color.
 
-**All BUGLOG items resolved.** All feature ideas (F1–F38) complete. Smart Practice Redesign (SP.1–SP.6) complete.
+**All BUGLOG items resolved.** All feature ideas (F1–F38) complete. Smart Practice Redesign (SP.1–SP.7) complete.
 
 **Accuracy Assessment 3× Repetition (F37) — IMPLEMENTED.** Each fretboard cell is played 3 times during an accuracy assessment run. Per-cell results stored in `assessmentCellResultsStore`. Mode indicator shows cell + rep progress. Custom assessment results view with headline accuracy %, per-string accuracy bars, consistency tiles (3/3, 2/3, 1/3, 0/3), and quick stats. Portrait + landscape layouts.
 
@@ -437,7 +438,7 @@ All device-testing bugs are resolved. All feature ideas (F1–F36) are complete.
 | Date | What Changed | Target | Status |
 |---|---|---|---|
 | 2026-03-10 | Pre-Phase 4 codebase review complete (6 batches). Test count now 286. Dead code removed (DecayStabilizer, NotificationScheduler). AppContainer no longer ObservableObject. Next task: Phase 4.2+. ROADMAP_STRATEGY.md may need S6 section update per Claude.ai. | ROADMAP_STRATEGY.md, CLAUDE_STRATEGY.md | ✅ Synced |
-| 2026-03-15 | Smart Practice Redesign complete (SP.1–SP.6). 4-phase learning progression (Foundation→Connection→Expansion→Fluency), temporal decay, note grouping engine, phase-aware messaging (~70 templates), heatmap focus indicator. Session Insight Engine (INS.1–INS.5) also complete. Test count now 398. Next task: Phase 4 (Monetization). | ROADMAP_STRATEGY.md, CLAUDE_STRATEGY.md | 🔲 Pending |
+| 2026-03-15 | Smart Practice Redesign complete (SP.1–SP.7). 4-phase learning progression (Foundation→Connection→Expansion→Fluency), temporal decay, note grouping engine, phase-aware messaging (~70 templates), heatmap focus indicator. SP.7: 8 phase transition bug fixes (phase-skipping prevention, placeholder substitution, contradictory messaging, race conditions). Session Insight Engine (INS.1–INS.5) also complete. Test count now 398. Next task: Phase 4 (Monetization). | ROADMAP_STRATEGY.md, CLAUDE_STRATEGY.md | 🔲 Pending |
 
 ### Inbound (changes requested by Claude.ai)
 | Date | Change Requested | Source | Status |

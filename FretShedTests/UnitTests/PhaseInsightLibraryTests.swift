@@ -153,9 +153,11 @@ final class PhaseInsightLibraryTests: XCTestCase {
         let msg = PhaseInsightLibrary.musicalContextMessage(
             from: context,
             noteNames: ["C", "D", "E"],
-            sessionCount: 0
+            sessionCount: 0,
+            stringName: "A"
         )
         XCTAssertFalse(msg.isEmpty)
+        XCTAssertFalse(msg.contains("{string_name}"), "string_name placeholder should be substituted")
     }
 
     func test_musicalContextMessage_triad() {

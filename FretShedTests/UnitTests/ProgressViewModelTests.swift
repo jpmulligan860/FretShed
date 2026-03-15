@@ -256,13 +256,13 @@ final class ProgressViewModelTests: XCTestCase {
                              "Most recent session should come first")
     }
 
-    func test_load_recentSessions_limitedTo50() async throws {
+    func test_load_recentSessions_includesAll() async throws {
         for i in 0..<60 {
             try seedSession(secondsAgo: Double(i * 60), sessionRepo: sessionRepo)
         }
         let vm = makeVM(container: container)
         await vm.load()
-        XCTAssertLessThanOrEqual(vm.recentSessions.count, 50)
+        XCTAssertEqual(vm.recentSessions.count, 60)
     }
 
     func test_load_onlyCompletedSessionsAppear() async throws {

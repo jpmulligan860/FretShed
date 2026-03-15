@@ -102,7 +102,7 @@ final class PracticeLogTests: XCTestCase {
 
     func test_masteryLevel_learning_upperBound() {
         let session = Session(focusMode: .fullFretboard, gameMode: .untimed)
-        session.overallMasteryAtEnd = 0.80
+        session.overallMasteryAtEnd = 0.70
         XCTAssertEqual(session.masteryLevel, .learning)
     }
 

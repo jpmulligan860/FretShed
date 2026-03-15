@@ -242,7 +242,7 @@ public struct ProgressTabView: View {
                 items: [
                     ("Cells Attempted", "The number of unique note+string positions you have practiced out of \(totalCells) total cells on your \(defaultFretCount)-fret fretboard."),
                     ("Time Practiced", "The total time spent across all sessions. When a filter is active, this reflects only the filtered sessions."),
-                    ("Cells Mastered", "Cells where your accuracy is 90% or higher with at least 15 attempts. These are notes you consistently identify correctly."),
+                    ("Cells Mastered", "Cells where your accuracy is 75% or higher with at least 15 attempts. These are notes you consistently identify correctly."),
                     ("Overall Mastery", "A weighted average of your mastery across all cells. Cells with more attempts carry more weight in the calculation.")
                 ]
             )
@@ -822,16 +822,16 @@ private struct MasteryInfoSheet: View {
 
     private let levels: [(String, Color, String, String)] = [
         ("Struggling",  DesignSystem.Colors.masteryStruggling, "0 – 49%",   "This one's still new. The more you see it, the faster it'll click."),
-        ("Learning",    DesignSystem.Colors.masteryLearning,   "50 – 89%",  "Getting there! A bit more practice and this note will feel automatic."),
-        ("Proficient",  DesignSystem.Colors.masteryProficient, "90 – 100%", "You know this note well. A few more reps and it'll be locked in."),
-        ("Mastered",    DesignSystem.Colors.masteryMastered,   "90%+ · 15+ attempts", "You consistently identify this note correctly across many attempts. Great work!")
+        ("Learning",    DesignSystem.Colors.masteryLearning,   "50 – 74%",  "Getting there! A bit more practice and this note will feel automatic."),
+        ("Proficient",  DesignSystem.Colors.masteryProficient, "75 – 100%", "You know this note well. A few more reps and it'll be locked in."),
+        ("Mastered",    DesignSystem.Colors.masteryMastered,   "75%+ · 15+ attempts", "You consistently identify this note correctly across many attempts. Great work!")
     ]
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
-                    Text("Each cell on the heatmap represents a specific note on a specific string. Colors show four stages: struggling (red), learning (amber), proficient (green), and mastered (gold). A cell turns gold once you reach 90% accuracy with at least 15 attempts.")
+                    Text("Each cell on the heatmap represents a specific note on a specific string. Colors show four stages: struggling (red), learning (amber), proficient (green), and mastered (gold). A cell turns gold once you reach 75% accuracy with at least 15 attempts.")
                         .font(DesignSystem.Typography.bodyLabel)
                         .foregroundStyle(DesignSystem.Colors.text2)
 

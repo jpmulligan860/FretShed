@@ -273,10 +273,11 @@ final class LearningPhaseManagerTests: XCTestCase {
     // MARK: - Phase 2 → Phase 3 Advancement
 
     func test_connectionToExpansion_requiresAllStringsNaturals() throws {
-        // Set up at Phase 2
+        // Set up at Phase 2 with enough sessions to be eligible for advancement
         manager.currentPhase = .connection
         manager.currentTargetString = nil
         manager.phaseOneCompletedStrings = [4, 5, 6]
+        manager.sessionsInCurrentPhase = LearningPhaseManager.minimumSessionsBeforeAdvancement - 1
 
         // Seed natural notes for all 6 strings above threshold
         for string in 1...6 {

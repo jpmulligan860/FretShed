@@ -218,7 +218,7 @@ enum PhaseInsightLibrary {
     // MARK: - Musical Context from NoteGroupContext
 
     /// Generates a human-readable musical context message from a NoteGroupContext.
-    static func musicalContextMessage(from context: NoteGroupContext, noteNames: [String], sessionCount: Int) -> String {
+    static func musicalContextMessage(from context: NoteGroupContext, noteNames: [String], sessionCount: Int, stringName: String? = nil, fretStart: Int? = nil, fretEnd: Int? = nil) -> String {
         let pool: [String]
         switch context.groupType {
         case .scaleFragment: pool = foundationMusicalContext
@@ -234,6 +234,9 @@ enum PhaseInsightLibrary {
 
         if let key = context.key { variables["key"] = key }
         if let name = context.musicalName { variables["musical_name"] = name }
+        if let sn = stringName { variables["string_name"] = sn }
+        if let fs = fretStart { variables["fret_start"] = "\(fs)" }
+        if let fe = fretEnd { variables["fret_end"] = "\(fe)" }
 
         let template = phrase(from: pool, sessionCount: sessionCount)
         return substitute(template, variables: variables)

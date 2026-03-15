@@ -217,6 +217,7 @@ Estimated: 6–8 hours
 | SP.4 | Phase-Aware Session Planning — SmartPracticeEngine reads LearningPhaseManager to select phase-appropriate focus modes, note targets, and session structure | ✅ |
 | SP.5 | Messaging & UI Integration — `PhaseInsightLibrary` (~70 templates, 5 categories per phase), phase display on Shed CTA (step indicator + progress + proximity), phase context cards on quiz results (advancement celebration, musical context, next session rec), QuizLaunchCoordinator carries phase context | ✅ |
 | SP.6 | Heatmap Focus Indicator — Cherry-bordered overlay on MasteryHeatmapView cells matching current learning target (phase-specific: target string naturals → cross-string naturals → all free-tier → none) | ✅ |
+| SP.7 | Phase Transition Bug Fixes — Foundation stuck (nil targetString auto-recovery), placeholder substitution ({string_name}/{fret_start}/{fret_end}), Shed phase refresh after quiz, phase label→name on CTA, contradictory insight card override on advancement, phase-skipping prevention (sessionsInCurrentPhase min 3), Next Up button target fix, phaseDisplayInfo() race condition fix | ✅ |
 
 ---
 

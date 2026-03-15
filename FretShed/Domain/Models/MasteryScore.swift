@@ -14,7 +14,7 @@ import SwiftData
 /// where α = 2 (slight optimism prior) and β = 1.
 ///
 /// Thresholds:
-/// - "Mastered"   : mastery ≥ 0.90 AND total ≥ 15
+/// - "Mastered"   : mastery ≥ 0.75 AND total ≥ 15
 /// - "Struggling" : mastery < 0.50 AND total ≥ 5
 @Model
 public final class MasteryScore {
@@ -28,7 +28,7 @@ public final class MasteryScore {
 
     // MARK: Thresholds
 
-    public static let masteredThreshold: Double = 0.90
+    public static let masteredThreshold: Double = 0.75
     public static let masteredMinAttempts: Int = 15
     public static let strugglingThreshold: Double = 0.50
     public static let strugglingMinAttempts: Int = 5

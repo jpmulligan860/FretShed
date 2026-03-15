@@ -22,6 +22,8 @@ Building FretShed from a working prototype to an App Store-ready product taught 
 
 **Audit before you monetize.** A structured 6-pass codebase review before Phase 4 found a silent sample rate bug, a backup data loss issue, and 28 other problems. Batching fixes by dependency order (schema → crashes → thread safety → logging → tests → cleanup) made each fix independently committable. The dead code deletion alone removed 600+ lines. Systematic reviews catch what incremental development misses — schedule one before every major milestone.
 
+**If two systems advise the user, they must agree.** The insight engine and smart practice engine both analyzed mastery data independently — and gave contradictory advice. "Work on your D string" followed by a Full Fretboard quiz. The fix was simple: the message should come from the same engine that builds the session. Any time you have parallel recommendation systems, make one authoritative and the other a consumer.
+
 ---
 
 ## Session Log
@@ -172,3 +174,18 @@ Building FretShed from a working prototype to an App Store-ready product taught 
 3. **Dead code removal is underrated.** Deleting DecayStabilizer (-17 tests, -200 lines) and NotificationScheduler (-400 lines) reduced the codebase surface area measurably. Both files were "keeping for later" candidates that had been superseded months ago. If it's in git history, it doesn't need to be in the repo.
 
 4. **Write tests for your data pipeline, not just your algorithms.** The 14 BackupManager round-trip tests caught the missing sessionTimeLimitSeconds field immediately. Before these tests, a user could export, import, and silently lose all their timed session data. The bug had existed since the field was added.
+
+---
+
+### Session: Mar 2026 — Session Insight Engine
+*The "Your Two Systems Need to Talk to Each Other" Session*
+
+1. **If two systems advise the user, they must agree.** SessionInsightEngine and SmartPracticeEngine both analyzed mastery data independently. The insight card said "work on your D string" and then Smart Practice launched a Full Fretboard quiz. The fix was obvious once spotted: the Shed CTA message should come from the same engine that builds the session. Independent analysis → coherent recommendation.
+
+2. **Check if your view is actually used before wiring into it.** SessionSummaryView existed as a complete, well-built view — and nothing in the app ever instantiated it. The real session results live in QuizView's `completedContent`. I wired the insight card into the wrong view and only found out during device testing. `grep` for instantiation sites before you start editing.
+
+3. **Temporal modifiers sound good on paper, terrible in practice.** "Welcome back. Your D string needs work." reads like two unrelated sentences glued together. Context-aware prefixes add cognitive load without adding value. The insight headline should stand on its own — if it needs a preamble, the headline isn't good enough.
+
+4. **Non-scrollable layouts and dynamic content don't mix.** The session results used a fixed VStack with Spacers. Adding the insight card meant it got squeezed into whatever space was left. Switching to ScrollView with pinned buttons was the right call — always assume content will grow.
+
+5. **Side effects in "peek" methods will ruin your day.** SmartPracticeEngine.nextSession() rotated the mode on every call. Using it to generate a description for the CTA would have rotated the mode every time the Shed page appeared. A separate `peekNextSessionDescription()` with no side effects was essential.

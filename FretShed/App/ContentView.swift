@@ -221,6 +221,7 @@ struct PracticeHomeView: View {
     @State private var allProfiles: [AudioCalibrationProfile] = []
     @State private var rigPickerExpanded = false
     @State private var showTimeStat = false
+    @State private var smartSessionLine: String = ""
 
     @AppStorage(LocalUserPreferences.Key.hasCompletedCalibration)
     private var hasCompletedCalibration = false
@@ -264,6 +265,7 @@ struct PracticeHomeView: View {
                 weakSpots = (try? engine.weakSpotCount()) ?? 0
                 alternativeTiles = (try? engine.alternativeSessions()) ?? []
             }
+            updateSmartSessionLine()
         }
     }
 
@@ -462,6 +464,8 @@ struct PracticeHomeView: View {
         }
     }
 
+    // MARK: - Shed Insight Card
+
     // MARK: - Primary CTA
 
     private var primaryCTA: some View {
@@ -472,13 +476,13 @@ struct PracticeHomeView: View {
                 Text(isNewUser ? "Start Practice" : "Smart Practice")
                     .font(DesignSystem.Typography.screenTitle)
                     .foregroundStyle(.white)
-                Text((isNewUser ? "START HERE" : "BASED ON YOUR PROGRESS").uppercased())
+                Text((isNewUser ? "START HERE" : "ADAPTED TO YOUR PROGRESS").uppercased())
                     .font(DesignSystem.Typography.sectionLabel)
                     .tracking(1.5)
                     .foregroundStyle(.white)
                 Text(isNewUser
                      ? "Adaptive session based on your level"
-                     : "Suggested session: \(smartDescription) \u{2022} \(weakSpots) weak spots")
+                     : smartSessionLine)
                     .font(DesignSystem.Typography.accentDescription)
                     .foregroundStyle(.white.opacity(0.85))
             }
@@ -694,6 +698,9 @@ struct PracticeHomeView: View {
         await Task.yield()
         weakSpots = (try? engine.weakSpotCount()) ?? 0
         alternativeTiles = (try? engine.alternativeSessions()) ?? []
+
+        // Load insight card
+        updateSmartSessionLine()
     }
 
     private func loadProfiles() {
@@ -730,6 +737,19 @@ struct PracticeHomeView: View {
             smartDescription = engine.nextModeDescription()
             weakSpots = (try? engine.weakSpotCount()) ?? 0
             alternativeTiles = (try? engine.alternativeSessions()) ?? []
+        }
+    }
+
+    private func updateSmartSessionLine() {
+        guard let engine = smartEngine,
+              let description = try? engine.peekNextSessionDescription() else {
+            smartSessionLine = "\(smartDescription) \u{2022} \(weakSpots) weak spots"
+            return
+        }
+        if weakSpots > 0 {
+            smartSessionLine = "\(description) \u{2022} \(weakSpots) weak spots"
+        } else {
+            smartSessionLine = description
         }
     }
 

@@ -191,6 +191,20 @@ Estimated: 6–8 hours
 
 ---
 
+## Session Insight Engine
+
+**Pedagogically grounded insight cards on session results and Shed page.**
+
+| # | Task | Status |
+|---|---|---|
+| INS.1 | SessionInsightEngine core — tier transition detection, knowledge shape milestones, 10 insight types with rotation/salience/positivity rules, InsightPhraseLibrary, InsightCard model, 11 unit tests | ✅ |
+| INS.2 | Wire insight card to QuizView session results — portrait + landscape layouts, scrollable content | ✅ |
+| INS.3 | Wire Smart Practice CTA to SmartPracticeEngine description — `peekNextSessionDescription()` for side-effect-free preview, message matches actual session | ✅ |
+| INS.4 | Session length slider restored to Settings > Session Settings | ✅ |
+| INS.5 | Copy polish — removed temporal modifiers ("Welcome back.") from insight cards, "Based on your progress" → "Adapted to your progress" | ✅ |
+
+---
+
 ## Phase 4 — Monetization
 
 **StoreKit 2 paywall — your revenue engine.**

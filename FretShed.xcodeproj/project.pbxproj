@@ -37,6 +37,7 @@
 		83CA8031BF7C507EDA2148B6 /* SessionSummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6BFA7C97D6BCC3CC6978867E /* SessionSummaryView.swift */; };
 		8C67D2972E1BB431096B7236 /* TunerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 712A49EB16F90D326925F1C7 /* TunerView.swift */; };
 		SPE001A1B2C3D4E5F6A7B8C9 /* SmartPracticeEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = SPE002A1B2C3D4E5F6A7B8C9 /* SmartPracticeEngineTests.swift */; };
+		SIT001A1B2C3D4E5F6A7B8C9 /* SessionInsightEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = SIT002A1B2C3D4E5F6A7B8C9 /* SessionInsightEngineTests.swift */; };
 		BKT001A1B2C3D4E5F6A7B8C9 /* BackupManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BKT002A1B2C3D4E5F6A7B8C9 /* BackupManagerTests.swift */; };
 		CET001A1B2C3D4E5F6A7B8C9 /* CalibrationEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CET002A1B2C3D4E5F6A7B8C9 /* CalibrationEngineTests.swift */; };
 		GRTL01A1B2C3D4E5F6A7B8C9 /* GoertzelTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = GRTL02A1B2C3D4E5F6A7B8C9 /* GoertzelTracker.swift */; };
@@ -86,6 +87,9 @@
 		SLGL01A1B2C3D4E5F6A7B8C9 /* SubscriptionLegalText.swift in Sources */ = {isa = PBXBuildFile; fileRef = SLGL02A1B2C3D4E5F6A7B8C9 /* SubscriptionLegalText.swift */; };
 		TDS001A1B2C3D4E5F6A7B8C9 /* TestDataSeeder.swift in Sources */ = {isa = PBXBuildFile; fileRef = TDS002A1B2C3D4E5F6A7B8C9 /* TestDataSeeder.swift */; };
 DA04DCB9488A3FFD8F562761 /* SingleStringIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D6536D58B3B99C27DDF6F64 /* SingleStringIcon.swift */; };
+		INS001A1B2C3D4E5F6A7B8C9 /* InsightCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = INS002A1B2C3D4E5F6A7B8C9 /* InsightCard.swift */; };
+		IPL001A1B2C3D4E5F6A7B8C9 /* InsightPhraseLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = IPL002A1B2C3D4E5F6A7B8C9 /* InsightPhraseLibrary.swift */; };
+		SIE001A1B2C3D4E5F6A7B8C9 /* SessionInsightEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = SIE002A1B2C3D4E5F6A7B8C9 /* SessionInsightEngine.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -120,6 +124,7 @@ DA04DCB9488A3FFD8F562761 /* SingleStringIcon.swift in Sources */ = {isa = PBXBui
 		6E3FF02A66FF10C9470B4575 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		712A49EB16F90D326925F1C7 /* TunerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TunerView.swift; sourceTree = "<group>"; };
 		SPE002A1B2C3D4E5F6A7B8C9 /* SmartPracticeEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartPracticeEngineTests.swift; sourceTree = "<group>"; };
+		SIT002A1B2C3D4E5F6A7B8C9 /* SessionInsightEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionInsightEngineTests.swift; sourceTree = "<group>"; };
 		BKT002A1B2C3D4E5F6A7B8C9 /* BackupManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupManagerTests.swift; sourceTree = "<group>"; };
 		CET002A1B2C3D4E5F6A7B8C9 /* CalibrationEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalibrationEngineTests.swift; sourceTree = "<group>"; };
 		GRTL02A1B2C3D4E5F6A7B8C9 /* GoertzelTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoertzelTracker.swift; sourceTree = "<group>"; };
@@ -182,6 +187,9 @@ DA04DCB9488A3FFD8F562761 /* SingleStringIcon.swift in Sources */ = {isa = PBXBui
 		SLGL02A1B2C3D4E5F6A7B8C9 /* SubscriptionLegalText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionLegalText.swift; sourceTree = "<group>"; };
 		TDS002A1B2C3D4E5F6A7B8C9 /* TestDataSeeder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestDataSeeder.swift; sourceTree = "<group>"; };
 8D6536D58B3B99C27DDF6F64 /* SingleStringIcon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SingleStringIcon.swift; sourceTree = "<group>"; };
+		INS002A1B2C3D4E5F6A7B8C9 /* InsightCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InsightCard.swift; sourceTree = "<group>"; };
+		IPL002A1B2C3D4E5F6A7B8C9 /* InsightPhraseLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InsightPhraseLibrary.swift; sourceTree = "<group>"; };
+		SIE002A1B2C3D4E5F6A7B8C9 /* SessionInsightEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionInsightEngine.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -219,6 +227,7 @@ DA04DCB9488A3FFD8F562761 /* SingleStringIcon.swift in Sources */ = {isa = PBXBui
 				9FE5B2CFA6EF2400E6CCF60B /* SettingsTests.swift */,
 				940F20D459475ADCDF1F786C /* SignalMeasurementTests.swift */,
 				GRTL04A1B2C3D4E5F6A7B8C9 /* GoertzelTrackerTests.swift */,
+				SIT002A1B2C3D4E5F6A7B8C9 /* SessionInsightEngineTests.swift */,
 				SPE002A1B2C3D4E5F6A7B8C9 /* SmartPracticeEngineTests.swift */,
 				BKT002A1B2C3D4E5F6A7B8C9 /* BackupManagerTests.swift */,
 				CET002A1B2C3D4E5F6A7B8C9 /* CalibrationEngineTests.swift */,
@@ -286,6 +295,7 @@ DA04DCB9488A3FFD8F562761 /* SingleStringIcon.swift in Sources */ = {isa = PBXBui
 			children = (
 				FF830EB86FB19BE84235BC01 /* Attempt.swift */,
 				C97A5E570DD542CE6BE2A7DE /* FretboardMap.swift */,
+				INS002A1B2C3D4E5F6A7B8C9 /* InsightCard.swift */,
 				AFF9E8822A71F3321284E3E8 /* MasteryScore.swift */,
 				F2406449DF0972C37B03AE40 /* MetroDroneModels.swift */,
 				0E09B79F825D97199C8FD5CE /* MusicalNote.swift */,
@@ -352,8 +362,10 @@ DA04DCB9488A3FFD8F562761 /* SingleStringIcon.swift in Sources */ = {isa = PBXBui
 			isa = PBXGroup;
 			children = (
 				84E518C2706797DAD952F6DB /* FretboardView.swift */,
+				IPL002A1B2C3D4E5F6A7B8C9 /* InsightPhraseLibrary.swift */,
 				B6FDEB3EA727B49B54ACBB1C /* QuizView.swift */,
 				EE39FECC070CD929CC8445FD /* QuizViewModel.swift */,
+				SIE002A1B2C3D4E5F6A7B8C9 /* SessionInsightEngine.swift */,
 				CC51F46F493695C683DED3DB /* SessionSetupView.swift */,
 				6BFA7C97D6BCC3CC6978867E /* SessionSummaryView.swift */,
 				9000B65D24D6BF703F495088 /* SmartPracticeEngine.swift */,
@@ -560,6 +572,9 @@ DA04DCB9488A3FFD8F562761 /* SingleStringIcon.swift in Sources */ = {isa = PBXBui
 				A88252FEDB845EF461F7EE69 /* FretShedApp.swift in Sources */,
 				3679E6E6C395D4CF33C3B179 /* FretboardMap.swift in Sources */,
 				09D112BE6719523B554C46C1 /* FretboardView.swift in Sources */,
+				INS001A1B2C3D4E5F6A7B8C9 /* InsightCard.swift in Sources */,
+				IPL001A1B2C3D4E5F6A7B8C9 /* InsightPhraseLibrary.swift in Sources */,
+				SIE001A1B2C3D4E5F6A7B8C9 /* SessionInsightEngine.swift in Sources */,
 				3F84D2B9568EE2A97A7CE465 /* MasteryHeatmapView.swift in Sources */,
 				225F3385FA2C0E8621F17393 /* MasteryScore.swift in Sources */,
 				F61A5DBE60A36491CFCB4D61 /* MetroDroneEngine.swift in Sources */,
@@ -613,6 +628,7 @@ DA04DCB9488A3FFD8F562761 /* SingleStringIcon.swift in Sources */ = {isa = PBXBui
 				F3201BA22FA3FAFF4F0AF8DB /* SettingsTests.swift in Sources */,
 				3BA1749981D64C8E7900D5BF /* SignalMeasurementTests.swift in Sources */,
 				GRTL03A1B2C3D4E5F6A7B8C9 /* GoertzelTrackerTests.swift in Sources */,
+				SIT001A1B2C3D4E5F6A7B8C9 /* SessionInsightEngineTests.swift in Sources */,
 				SPE001A1B2C3D4E5F6A7B8C9 /* SmartPracticeEngineTests.swift in Sources */,
 				BKT001A1B2C3D4E5F6A7B8C9 /* BackupManagerTests.swift in Sources */,
 				CET001A1B2C3D4E5F6A7B8C9 /* CalibrationEngineTests.swift in Sources */,

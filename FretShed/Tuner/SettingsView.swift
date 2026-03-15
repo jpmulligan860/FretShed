@@ -435,6 +435,24 @@ public struct SettingsView: View {
                     get: { settings.correctSoundEnabled },
                     set: { settings.correctSoundEnabled = $0; settings.incorrectSoundEnabled = $0; save(settings) }
                 ))
+
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack {
+                        Text("Session Length")
+                        Spacer()
+                        Text("\(settings.defaultSessionLength) questions")
+                            .foregroundStyle(DesignSystem.Colors.cherry)
+                            .monospacedDigit()
+                    }
+                    GradientSlider(
+                        value: Binding(
+                            get: { Double(settings.defaultSessionLength) },
+                            set: { settings.defaultSessionLength = Int($0); save(settings) }
+                        ),
+                        range: 5...100,
+                        step: 5
+                    )
+                }
             } label: {
                 HStack {
                     DesignSystem.Typography.capsLabel("Session Settings")

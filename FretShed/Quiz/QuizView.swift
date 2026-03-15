@@ -15,6 +15,7 @@ public struct QuizView: View {
     var onRepeat: (() -> Void)? = nil
     @State private var showEndConfirm = false
     @State private var showFretHint = false
+    @State private var insightCard: InsightCard?
     @State private var diagnosticShareURL: URL? = nil
     @State private var showDiagnosticShare = false
     @State private var storedCorrectMessage: String = "Nice!"
@@ -298,6 +299,7 @@ public struct QuizView: View {
                 hintTask?.cancel()
                 MetroDroneEngine.shared.stopMetronome()
                 Task { await detector.stop() }
+                loadInsightCard()
             }
         }
     }
@@ -757,30 +759,38 @@ public struct QuizView: View {
 
                     Divider().padding(.vertical, 20)
 
-                    VStack(spacing: 16) {
-                        Spacer()
-                        completedStatsGrid
-                        Spacer()
+                    ScrollView {
+                        VStack(spacing: 16) {
+                            completedStatsGrid
+                            completedInsightCardView
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 20)
                     }
-                    .padding(.horizontal, 20)
                     .frame(maxWidth: .infinity)
                 }
             } else {
-                // Portrait: all stacked vertically
+                // Portrait: scrollable content above, buttons pinned at bottom
                 VStack(spacing: 0) {
-                    Spacer()
+                    ScrollView {
+                        VStack(spacing: 0) {
+                            completedTrophy
+                                .padding(.horizontal, 20)
+                                .padding(.top, 20)
 
-                    completedTrophy
-                        .padding(.horizontal, 20)
+                            completedStatsGrid
+                                .padding(.horizontal, 20)
+                                .padding(.top, 20)
 
-                    completedStatsGrid
-                        .padding(.horizontal, 20)
-                        .padding(.top, 20)
+                            completedMasteryBadge
+                                .padding(.top, 16)
 
-                    completedMasteryBadge
-                        .padding(.top, 16)
-
-                    Spacer()
+                            completedInsightCardView
+                                .padding(.horizontal, 20)
+                                .padding(.top, 12)
+                        }
+                        .padding(.bottom, 16)
+                    }
 
                     completedButtons
                         .padding(.bottom, 32)
@@ -885,6 +895,56 @@ public struct QuizView: View {
         .padding(.vertical, 8)
         .background(mColor.opacity(0.15), in: Capsule())
         .foregroundStyle(mColor)
+    }
+
+    @ViewBuilder
+    private var completedInsightCardView: some View {
+        if let card = insightCard {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 6) {
+                    Image(systemName: card.isMilestone ? "trophy.fill" : "brain")
+                        .foregroundStyle(card.isMilestone ? DesignSystem.Colors.gold : DesignSystem.Colors.amber)
+                    Text(card.isMilestone ? "MILESTONE" : "INSIGHT")
+                        .font(DesignSystem.Typography.smallLabel)
+                        .foregroundStyle(card.isMilestone ? DesignSystem.Colors.gold : DesignSystem.Colors.amber)
+                        .tracking(1.0)
+                }
+
+                Text(card.headline)
+                    .font(DesignSystem.Typography.sectionHeader)
+                    .foregroundStyle(DesignSystem.Colors.text)
+
+                if let body = card.body {
+                    Text(body)
+                        .font(DesignSystem.Typography.accentDescription)
+                        .foregroundStyle(DesignSystem.Colors.text2)
+                }
+            }
+            .padding(16)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .woodshopCard()
+            .overlay(
+                card.isMilestone
+                    ? RoundedRectangle(cornerRadius: DesignSystem.Radius.md)
+                        .stroke(DesignSystem.Colors.gold.opacity(0.5), lineWidth: 2)
+                    : nil
+            )
+        }
+    }
+
+    private func loadInsightCard() {
+        let attempts = (try? container.attemptRepository.attempts(forSession: vm.session.id)) ?? []
+        let engine = SessionInsightEngine()
+        let allSessions = (try? container.sessionRepository.allSessions()) ?? []
+        let masteryScores = (try? container.masteryRepository.allScores()) ?? []
+        let baselineLevel = BaselineLevel.load() ?? .startingFresh
+        insightCard = engine.insightForSummary(
+            session: vm.session,
+            sessionAttempts: attempts,
+            allSessions: allSessions,
+            masteryScores: masteryScores,
+            baselineLevel: baselineLevel
+        )
     }
 
     private var completedButtons: some View {

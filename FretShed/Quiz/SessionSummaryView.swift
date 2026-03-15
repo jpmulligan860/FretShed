@@ -18,6 +18,7 @@ public struct SessionSummaryView: View {
     @Environment(\.verticalSizeClass) private var vSizeClass
     @Environment(\.appContainer) private var container
     @State private var attempts: [Attempt] = []
+    @State private var insightCard: InsightCard?
 
     // All three actions are direct closures — no NotificationCenter dispatch.
     // ContentView passes these when embedding the view in QuizSessionView.
@@ -64,7 +65,7 @@ public struct SessionSummaryView: View {
                             if !attempts.isEmpty {
                                 SessionHeatmapView(attempts: attempts, fretboardMap: container.fretboardMap)
                             }
-                            smartPracticeCard
+                            insightCardView
                         }
                         .padding(.horizontal, 20)
                         .padding(.vertical, 20)
@@ -99,7 +100,7 @@ public struct SessionSummaryView: View {
                                     .padding(.top, 8)
                             }
 
-                            smartPracticeCard
+                            insightCardView
                                 .padding(.horizontal, 20)
                                 .padding(.top, 12)
                         }
@@ -115,6 +116,18 @@ public struct SessionSummaryView: View {
         .background(DesignSystem.Colors.background.ignoresSafeArea())
         .task {
             attempts = (try? container.attemptRepository.attempts(forSession: vm.session.id)) ?? []
+            // Generate insight card
+            let engine = SessionInsightEngine()
+            let allSessions = (try? container.sessionRepository.allSessions()) ?? []
+            let masteryScores = (try? container.masteryRepository.allScores()) ?? []
+            let baselineLevel = BaselineLevel.load() ?? .startingFresh
+            insightCard = engine.insightForSummary(
+                session: vm.session,
+                sessionAttempts: attempts,
+                allSessions: allSessions,
+                masteryScores: masteryScores,
+                baselineLevel: baselineLevel
+            )
         }
     }
 
@@ -240,51 +253,41 @@ public struct SessionSummaryView: View {
         .padding(.trailing, 20)
     }
 
-    // MARK: - Smart Practice
+    // MARK: - Insight Card
 
     @ViewBuilder
-    private var smartPracticeCard: some View {
-        if vm.session.isAdaptive {
+    private var insightCardView: some View {
+        if let card = insightCard {
             VStack(alignment: .leading, spacing: 8) {
                 HStack(spacing: 6) {
-                    Image(systemName: "brain")
-                        .foregroundStyle(DesignSystem.Colors.amber)
-                    Text("SMART PRACTICE")
+                    Image(systemName: card.isMilestone ? "trophy.fill" : "brain")
+                        .foregroundStyle(card.isMilestone ? DesignSystem.Colors.gold : DesignSystem.Colors.amber)
+                    Text(card.isMilestone ? "MILESTONE" : "INSIGHT")
                         .font(DesignSystem.Typography.smallLabel)
-                        .foregroundStyle(DesignSystem.Colors.amber)
+                        .foregroundStyle(card.isMilestone ? DesignSystem.Colors.gold : DesignSystem.Colors.amber)
                         .tracking(1.0)
                 }
 
-                Text(smartPracticeSummary)
-                    .font(.caption)
-                    .foregroundStyle(DesignSystem.Colors.text2)
+                Text(card.headline)
+                    .font(DesignSystem.Typography.sectionHeader)
+                    .foregroundStyle(DesignSystem.Colors.text)
+
+                if let body = card.body {
+                    Text(body)
+                        .font(DesignSystem.Typography.accentDescription)
+                        .foregroundStyle(DesignSystem.Colors.text2)
+                }
             }
             .padding(16)
             .frame(maxWidth: .infinity, alignment: .leading)
             .woodshopCard()
+            .overlay(
+                card.isMilestone
+                    ? RoundedRectangle(cornerRadius: DesignSystem.Radius.md)
+                        .stroke(DesignSystem.Colors.gold.opacity(0.5), lineWidth: 2)
+                    : nil
+            )
         }
-    }
-
-    private var smartPracticeSummary: String {
-        if !vm.hasBaselineMastery {
-            return "Still learning your strengths — keep playing and the smart targeting will kick in."
-        }
-
-        var lines: [String] = []
-
-        if vm.weakSpotQuestionCount > 0 {
-            lines.append("\(vm.weakSpotQuestionCount) of \(vm.attemptCount) questions targeted your weakest positions.")
-        } else {
-            lines.append("No weak spots found — you're solid across the board.")
-        }
-
-        let sorted = vm.weakSpotsTargetedStrings.sorted { $0.value > $1.value }
-        if let top = sorted.first, top.value >= 2 {
-            let stringNames = sorted.prefix(2).map { "string \($0.key)" }
-            lines.append("Focused extra practice on \(stringNames.joined(separator: " and ")).")
-        }
-
-        return lines.joined(separator: " ")
     }
 
     // MARK: - Computed

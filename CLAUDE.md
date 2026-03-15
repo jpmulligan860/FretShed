@@ -220,7 +220,9 @@ Full analysis: `FretShed_Competitive_Analysis.md` in Claude.ai project files.
 **Pre-Phase 4 Review:** Complete (6 batches)
 **Phase 4:** Not started
 **Phase 5:** Not started
-**Test suite:** 286 tests passing (3 pre-existing session length default failures)
+**Test suite:** 297 tests passing (3 pre-existing session length default failures)
+
+**Session Insight Engine (INS.1–INS.5) — COMPLETE.** SessionInsightEngine: pure algorithmic service generating pedagogically grounded insight cards. 10 insight types (weakString, strongString, hardestNote, tierTransition, consistencyTrend, closeToLevelUp, coldSpot, coverage, sessionDelta, knowledgeShapeMilestone). InsightPhraseLibrary with deterministic phrase cycling. Tier transition detection via pre-session score reverse-computation. Knowledge shape milestones per BaselineLevel (fire-once). Rotation rule (no same type twice), positivity threshold (force positive after 4 negatives), insight fatigue (shed card hidden every 4th session). Insight card wired to QuizView session results (portrait + landscape). Smart Practice CTA on Shed page uses SmartPracticeEngine.peekNextSessionDescription() — message matches actual session. Session length slider restored to Settings > Session Settings. 11 unit tests.
 
 **Pre-launch UI Polish (SD.15) — COMPLETE.** Settings page fully reorganized: 4 sections (Global Display, Session Settings, Guitar Rig Settings, Developer) + Licenses. Detection & Input section removed (empty after moves). Tempo game mode removed from UI (kept in enum for SwiftData backward compat via `selectableCases`). Chord Progression focus mode hidden from UI (kept for future add-on). Focus modes reordered in 2-column grid. Session length changed to GradientSlider. Slider value labels use cherry accent. Haptic Feedback toggle added to Session Settings. Shed page: streak counter + time-practiced alternating messages. Journey page: section titles/info inside cards, date axis formatting. GradientSlider drag fix. DiagnosticRunnerView in Settings Developer section.
 

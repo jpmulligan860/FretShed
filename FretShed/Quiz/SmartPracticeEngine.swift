@@ -101,6 +101,24 @@ final class SmartPracticeEngine {
         }
     }
 
+    /// Returns a detailed description of the next session without side effects (no mode rotation).
+    func peekNextSessionDescription() throws -> String {
+        let lastMode = Self.loadLastMode()
+        let nextMode = Self.rotateMode(from: lastMode)
+        let allScores = try masteryRepository.allScores()
+
+        switch nextMode {
+        case .fullFretboard:
+            return "Full Fretboard — adaptive"
+        case .singleString:
+            let weakest = Self.weakestString(from: allScores, strings: Self.freeStrings)
+            return "Single String — \(Self.stringName(weakest)) string"
+        case .sameNote:
+            let weakest = Self.weakestNote(from: allScores, fretboardMap: fretboardMap, strings: Self.freeStrings, fretEnd: Self.freeFretEnd)
+            return "Same Note — \(weakest.sharpName)"
+        }
+    }
+
     /// Count of fretboard cells with mastery score below 0.50 (within free area).
     func weakSpotCount() throws -> Int {
         let allScores = try masteryRepository.allScores()

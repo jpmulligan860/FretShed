@@ -55,6 +55,7 @@ public struct TunerView: View {
     @State private var settings: UserSettings? = nil
     @State private var displayEngine = TunerDisplayEngine()
     @State private var showLatencyWarning = false
+    @State private var showMicAlert = false
     @State private var tuningState: TuningState = .noSignal
     @State private var showLevelBar = true
     @Environment(\.verticalSizeClass) private var vSizeClass
@@ -215,10 +216,7 @@ public struct TunerView: View {
                 }
             }
             .alert("Microphone Access Required",
-                   isPresented: Binding(
-                    get: { detector.error != nil },
-                    set: { _ in }
-                   )) {
+                   isPresented: $showMicAlert) {
                 Button("Open Settings") {
                     if let url = URL(string: UIApplication.openSettingsURLString) {
                         UIApplication.shared.open(url)
@@ -227,6 +225,9 @@ public struct TunerView: View {
                 Button("Cancel", role: .cancel) {}
             } message: {
                 Text(detector.error?.localizedDescription ?? "")
+            }
+            .onChange(of: detector.error != nil) { _, hasError in
+                if hasError { showMicAlert = true }
             }
             .animation(.easeInOut(duration: 0.5), value: tuningState)
         }

@@ -174,8 +174,11 @@ final class SmartPracticeEngine {
         )
         alternatives.append((fullSession, "Full Fretboard", "Cover all positions", "rectangle.grid.3x2.fill"))
 
-        // Offer weakest string as alternative
-        let weakest = Self.weakestString(from: allScores, strings: Self.freeStrings)
+        // Offer weakest string as alternative — use all 6 strings in Phase 2+
+        let stringsForWeakest = phaseManager.currentPhase.rawValue >= LearningPhase.expansion.rawValue
+            ? LearningPhaseManager.allStrings
+            : Self.freeStrings
+        let weakest = Self.weakestString(from: allScores, strings: stringsForWeakest, fretboardMap: fretboardMap)
         let name = Self.stringName(weakest)
         let stringSession = Session(
             focusMode: .singleString,
@@ -303,7 +306,7 @@ final class SmartPracticeEngine {
         guard let targetString = phaseManager.currentTargetString else {
             // currentTargetString is nil — pick the weakest string
             let allStrings = LearningPhaseManager.allStrings
-            let fallbackString = Self.weakestString(from: scores, strings: allStrings)
+            let fallbackString = Self.weakestString(from: scores, strings: allStrings, fretboardMap: fretboardMap)
             logger.warning("Foundation session with nil targetString — using weakest string \(fallbackString)")
             return Session(
                 focusMode: .naturalNotes,
@@ -360,7 +363,7 @@ final class SmartPracticeEngine {
 
         // Phase 2: Single-string sharps & flats — target the Phase 2 target string
         let targetString = phaseManager.currentPhaseTwoTargetString
-            ?? Self.weakestString(from: scores, strings: LearningPhaseManager.allStrings)
+            ?? Self.weakestString(from: scores, strings: LearningPhaseManager.allStrings, fretboardMap: fretboardMap)
 
         // Use chromatic fragment groups for musically meaningful practice
         let groups = groupingEngine.chromaticFragments(
@@ -641,7 +644,7 @@ final class SmartPracticeEngine {
         case .expansion:
             return "Reviewing natural notes before adding sharps and flats"
         case .connection:
-            let weakest = Self.weakestString(from: scores, strings: LearningPhaseManager.allStrings)
+            let weakest = Self.weakestString(from: scores, strings: LearningPhaseManager.allStrings, fretboardMap: fretboardMap)
             return "Shoring up the \(Self.stringName(weakest)) string before cross-string work"
         case .fluency:
             return "Warming up with focused drills"
@@ -650,14 +653,34 @@ final class SmartPracticeEngine {
 
     // MARK: - Static Helpers
 
-    static func weakestString(from scores: [MasteryScore], strings: [Int]) -> Int {
+    /// Returns the weakest string by averaging attempted cell scores AND treating
+    /// untried cells as the Bayesian prior (0.667). This prevents strings with few
+    /// attempts from appearing "strong" when most of their cells are uncharted.
+    static func weakestString(from scores: [MasteryScore], strings: [Int], fretboardMap: FretboardMap? = nil) -> Int {
+        let fretEnd = LearningPhaseManager.phaseRequiredFretEnd
         var stringAvgs: [(string: Int, avg: Double)] = []
         for s in strings {
-            let relevant = scores.filter { $0.stringNumber == s }
-            if relevant.isEmpty {
+            let attempted = scores.filter { $0.stringNumber == s }
+            if attempted.isEmpty {
                 stringAvgs.append((s, 0.50))
             } else {
-                let avg = relevant.map(\.score).reduce(0, +) / Double(relevant.count)
+                // Count total positions on this string (frets 0-12, deduplicated by note)
+                var totalPositions = 12 // reasonable default
+                if let map = fretboardMap {
+                    var seen: Set<Int> = []
+                    for fret in 0...fretEnd {
+                        if let note = map.note(string: s, fret: fret), !seen.contains(note.rawValue) {
+                            seen.insert(note.rawValue)
+                        }
+                    }
+                    totalPositions = max(seen.count, 1)
+                }
+                // Average attempted cells, treating untried as prior (0.667)
+                let prior = MasteryScore.alpha / (MasteryScore.alpha + MasteryScore.beta)
+                let attemptedSum = attempted.map(\.score).reduce(0, +)
+                let untriedCount = max(totalPositions - attempted.count, 0)
+                let totalSum = attemptedSum + Double(untriedCount) * prior
+                let avg = totalSum / Double(totalPositions)
                 stringAvgs.append((s, avg))
             }
         }

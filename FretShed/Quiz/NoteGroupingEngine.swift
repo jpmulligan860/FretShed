@@ -164,10 +164,10 @@ struct NoteGroupingEngine: Sendable {
         }
     }
 
-    // MARK: - Phase 2: Chromatic Fragments (Expansion)
+    // MARK: - Phase 2: Accidental Fragments (Expansion)
 
-    /// Generates 3-4 note chromatic fragment groups on a single string.
-    /// Includes sharps and flats — for Phase 2 (Expansion) sessions.
+    /// Generates groups of 2-3 accidental (sharp/flat) notes on a single string.
+    /// Only includes non-natural notes — matches the `.sharpsAndFlats` focus mode.
     func chromaticFragments(
         onString string: Int,
         fretStart: Int = 0,
@@ -175,14 +175,16 @@ struct NoteGroupingEngine: Sendable {
         scores: [MasteryScore] = [],
         groupCount: Int = 2
     ) -> [NoteGroup] {
-        // Get all chromatic notes on the string, sorted by fret
-        let allCells = chromaticNotesOnString(string, fretStart: fretStart, fretEnd: fretEnd)
-        guard allCells.count >= 3 else { return [] }
+        // Get only accidental notes on the string, sorted by fret
+        let accidentals = chromaticNotesOnString(string, fretStart: fretStart, fretEnd: fretEnd)
+            .filter { !$0.note.isNatural }
+        guard accidentals.count >= 2 else { return [] }
 
-        // Build all possible 3-note windows
+        // Build all possible 2-3 note windows from accidentals only
+        let windowSize = accidentals.count >= 3 ? 3 : 2
         var windows: [(targets: [NoteTarget], weaknessScore: Double)] = []
-        for i in 0...(allCells.count - 3) {
-            let group = Array(allCells[i..<(i + 3)])
+        for i in 0...(accidentals.count - windowSize) {
+            let group = Array(accidentals[i..<(i + windowSize)])
             let span = group.last!.fret - group.first!.fret
             guard span <= Self.maxFretSpan else { continue }
 
@@ -230,7 +232,7 @@ struct NoteGroupingEngine: Sendable {
                     groupType: .chromaticFragment,
                     description: "\(noteNames.joined(separator: "-")) on the \(stringName) string — sharps & flats",
                     key: nil,
-                    musicalName: "chromatic fragment",
+                    musicalName: "accidental fragment",
                     intervalNames: nil
                 )
             )

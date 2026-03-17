@@ -102,6 +102,7 @@ final class PhaseInsightLibraryTests: XCTestCase {
             PhaseInsightLibrary.fluencyPerformance,
             PhaseInsightLibrary.fluencyEncouragement,
             PhaseInsightLibrary.stringCompletionMessages,
+            PhaseInsightLibrary.expansionStringCompletionMessages,
             PhaseInsightLibrary.reviewSessionMessages,
         ]
 
@@ -121,7 +122,7 @@ final class PhaseInsightLibraryTests: XCTestCase {
     func test_advancementMessage_connection() {
         let msg = PhaseInsightLibrary.advancementMessage(to: .connection, sessionCount: 0)
         XCTAssertNotNil(msg)
-        XCTAssertTrue(msg!.contains("Phase") || msg!.contains("Foundation") || msg!.contains("cross-string"))
+        XCTAssertTrue(msg!.contains("Sharps") || msg!.contains("chromatic") || msg!.contains("cross-string") || msg!.contains("connect"))
     }
 
     func test_advancementMessage_expansion() {

@@ -136,7 +136,11 @@ struct ContentView: View {
             onDone: { quiz.handleQuizDone(vm: vm) },
             onViewProgress: { quiz.handleViewProgress(vm: vm) },
             onRepeat: { quiz.handleQuizRepeat(vm: vm) },
-            onNextSession: { notes in quiz.handleNextSession(vm: vm, targetNotes: notes) },
+            onNextSession: { notes, prebuiltSession, prebuiltGroups in
+                quiz.nextSessionPrebuilt = prebuiltSession
+                quiz.nextSessionGroups = prebuiltGroups
+                quiz.handleNextSession(vm: vm, targetNotes: notes)
+            },
             phaseBeforeQuiz: quiz.phaseBeforeQuiz,
             sessionNoteGroups: quiz.lastSessionGroups
         )

@@ -632,9 +632,15 @@ public final class QuizViewModel: Identifiable {
             if targetStrings.isEmpty { return candidates }
             return candidates.filter { targetStrings.contains($0.string) }
         case .naturalNotes:
-            return candidates.filter { $0.note.isNatural }
+            let targetStrings = session.targetStrings
+            let naturals = candidates.filter { $0.note.isNatural }
+            if targetStrings.isEmpty { return naturals }
+            return naturals.filter { targetStrings.contains($0.string) }
         case .sharpsAndFlats:
-            return candidates.filter { !$0.note.isNatural }
+            let sharpsFlatsTargetStrings = session.targetStrings
+            let accidentals = candidates.filter { !$0.note.isNatural }
+            if sharpsFlatsTargetStrings.isEmpty { return accidentals }
+            return accidentals.filter { sharpsFlatsTargetStrings.contains($0.string) }
         case .circleOfFourths, .circleOfFifths:
             // Handled in selectCircleQuestion; fall through to all candidates.
             return candidates

@@ -52,9 +52,8 @@ final class SmartPracticeEngineTests: XCTestCase {
     func test_foundationSession_startingFresh_targetsHighE() throws {
         phaseManager.initializeForBaseline(.startingFresh)
         let (session, description) = try engine.nextSession()
-        // Foundation targets natural notes on the starting string
         XCTAssertEqual(session.focusMode, .naturalNotes)
-        XCTAssertTrue(session.targetStrings.contains(1)) // high E for starting fresh
+        XCTAssertTrue(session.targetStrings.contains(1))
         XCTAssertFalse(description.isEmpty)
     }
 
@@ -62,43 +61,46 @@ final class SmartPracticeEngineTests: XCTestCase {
         phaseManager.initializeForBaseline(.chordPlayer)
         let (session, _) = try engine.nextSession()
         XCTAssertEqual(session.focusMode, .naturalNotes)
-        XCTAssertTrue(session.targetStrings.contains(5)) // A string for chord player
+        XCTAssertTrue(session.targetStrings.contains(5))
     }
 
-    func test_foundationSession_usesFreeTierConstraints() throws {
+    func test_foundationSession_usesFrets0to12() throws {
         phaseManager.initializeForBaseline(.startingFresh)
         let (session, _) = try engine.nextSession()
         XCTAssertEqual(session.fretRangeStart, 0)
-        XCTAssertEqual(session.fretRangeEnd, 7)
+        XCTAssertEqual(session.fretRangeEnd, 12)
         XCTAssertTrue(session.isAdaptive)
         XCTAssertEqual(session.gameMode, .untimed)
     }
 
-    // MARK: - Phase 2 Session Generation
-
-    func test_connectionSession_usesNaturalNotes() throws {
-        phaseManager.currentPhase = .connection
-        phaseManager.phaseOneCompletedStrings = [4, 5, 6]
-        let (session, _) = try engine.nextSession()
-        XCTAssertEqual(session.focusMode, .naturalNotes)
-    }
-
-    func test_connectionSession_targetsCompletedStrings() throws {
-        phaseManager.currentPhase = .connection
-        phaseManager.phaseOneCompletedStrings = [4, 5, 6]
-        let (session, _) = try engine.nextSession()
-        // Should target the completed strings
-        for string in session.targetStrings {
-            XCTAssertTrue([4, 5, 6].contains(string))
-        }
-    }
-
-    // MARK: - Phase 3 Session Generation
+    // MARK: - Phase 2 (Expansion) Session Generation
 
     func test_expansionSession_usesSharpsAndFlats() throws {
         phaseManager.currentPhase = .expansion
+        phaseManager.phaseOneCompletedStrings = Set(1...6)
+        phaseManager.currentPhaseTwoTargetString = 6
         let (session, _) = try engine.nextSession()
         XCTAssertEqual(session.focusMode, .sharpsAndFlats)
+        XCTAssertTrue(session.targetStrings.contains(6))
+    }
+
+    func test_expansionSession_usesFrets0to12() throws {
+        phaseManager.currentPhase = .expansion
+        phaseManager.phaseOneCompletedStrings = Set(1...6)
+        phaseManager.currentPhaseTwoTargetString = 4
+        let (session, _) = try engine.nextSession()
+        XCTAssertEqual(session.fretRangeEnd, 12)
+    }
+
+    // MARK: - Phase 3 (Connection) Session Generation
+
+    func test_connectionSession_usesFullFretboard() throws {
+        phaseManager.currentPhase = .connection
+        phaseManager.phaseOneCompletedStrings = Set(1...6)
+        phaseManager.phaseTwoCompletedStrings = Set(1...6)
+        let (session, _) = try engine.nextSession()
+        XCTAssertEqual(session.focusMode, .fullFretboard)
+        XCTAssertEqual(session.fretRangeEnd, 12)
     }
 
     // MARK: - Phase 4 Session Generation
@@ -107,31 +109,34 @@ final class SmartPracticeEngineTests: XCTestCase {
         phaseManager.currentPhase = .fluency
         let (session, _) = try engine.nextSession()
         XCTAssertEqual(session.focusMode, .fullFretboard)
+        XCTAssertEqual(session.fretRangeEnd, 12)
     }
 
     // MARK: - Current Focus Description
 
     func test_currentFocusDescription_foundation() throws {
-        phaseManager.initializeForBaseline(.startingFresh) // string 1
+        phaseManager.initializeForBaseline(.startingFresh)
         let scores = try masteryRepo.allScores()
         let desc = engine.currentFocusDescription(using: scores)
         XCTAssertTrue(desc.contains("high E"), "Description should mention target string: \(desc)")
         XCTAssertTrue(desc.contains("Natural Notes"), "Description should mention natural notes: \(desc)")
     }
 
-    func test_currentFocusDescription_connection() throws {
-        phaseManager.currentPhase = .connection
-        phaseManager.phaseOneCompletedStrings = [4, 5]
-        let scores = try masteryRepo.allScores()
-        let desc = engine.currentFocusDescription(using: scores)
-        XCTAssertTrue(desc.contains("Cross-String"), "Description: \(desc)")
-    }
-
     func test_currentFocusDescription_expansion() throws {
         phaseManager.currentPhase = .expansion
+        phaseManager.currentPhaseTwoTargetString = 5
         let scores = try masteryRepo.allScores()
         let desc = engine.currentFocusDescription(using: scores)
         XCTAssertTrue(desc.contains("Sharps & Flats"), "Description: \(desc)")
+        XCTAssertTrue(desc.contains("A"), "Should mention target string: \(desc)")
+    }
+
+    func test_currentFocusDescription_connection() throws {
+        phaseManager.currentPhase = .connection
+        let scores = try masteryRepo.allScores()
+        let desc = engine.currentFocusDescription(using: scores)
+        XCTAssertTrue(desc.contains("Cross-String"), "Description: \(desc)")
+        XCTAssertTrue(desc.contains("all notes"), "Should mention all notes: \(desc)")
     }
 
     func test_currentFocusDescription_fluency() throws {
@@ -188,7 +193,7 @@ final class SmartPracticeEngineTests: XCTestCase {
         if let note = fretboardMap.map[4]?[0] {
             let score = MasteryScore(note: note, stringNumber: 4)
             score.totalAttempts = 17
-            score.correctAttempts = 8  // score = 10/20 = 0.50
+            score.correctAttempts = 8
             try masteryRepo.save(score)
         }
         let count = try engine.weakSpotCount()
@@ -227,18 +232,16 @@ final class SmartPracticeEngineTests: XCTestCase {
         engine.recordSessionPerformance(accuracy: 40.0)
         engine.recordSessionPerformance(accuracy: 45.0)
         XCTAssertFalse(engine.isStruggling)
-        engine.recordSessionPerformance(accuracy: 50.0) // 3rd poor session
+        engine.recordSessionPerformance(accuracy: 50.0)
         XCTAssertTrue(engine.isStruggling)
     }
 
     func test_struggling_recoversAfterGoodSessions() {
-        // Trigger struggling
         for _ in 0..<3 {
             engine.recordSessionPerformance(accuracy: 40.0)
         }
         XCTAssertTrue(engine.isStruggling)
 
-        // Recover with good sessions
         engine.recordSessionPerformance(accuracy: 80.0)
         engine.recordSessionPerformance(accuracy: 80.0)
         engine.recordSessionPerformance(accuracy: 80.0)
@@ -248,17 +251,14 @@ final class SmartPracticeEngineTests: XCTestCase {
     func test_struggling_goodSessionResetsCount() {
         engine.recordSessionPerformance(accuracy: 40.0)
         engine.recordSessionPerformance(accuracy: 40.0)
-        // Good session resets consecutive count
         engine.recordSessionPerformance(accuracy: 80.0)
         XCTAssertFalse(engine.isStruggling)
-        // Need 3 more poor sessions to trigger
         engine.recordSessionPerformance(accuracy: 40.0)
         XCTAssertFalse(engine.isStruggling)
     }
 
     func test_struggling_descriptionMentionsShoringUp() throws {
         phaseManager.initializeForBaseline(.startingFresh)
-        // Trigger struggling
         for _ in 0..<3 {
             engine.recordSessionPerformance(accuracy: 40.0)
         }
@@ -273,6 +273,13 @@ final class SmartPracticeEngineTests: XCTestCase {
         phaseManager.initializeForBaseline(.startingFresh)
         let desc = engine.nextModeDescription()
         XCTAssertTrue(desc.contains("high E"), "Should mention target string: \(desc)")
+    }
+
+    func test_nextModeDescription_expansion() {
+        phaseManager.currentPhase = .expansion
+        phaseManager.currentPhaseTwoTargetString = 5
+        let desc = engine.nextModeDescription()
+        XCTAssertTrue(desc.contains("Sharps & Flats"), "Should mention sharps & flats: \(desc)")
     }
 
     func test_nextModeDescription_connection() {

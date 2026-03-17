@@ -218,6 +218,7 @@ Estimated: 6–8 hours
 | SP.5 | Messaging & UI Integration — `PhaseInsightLibrary` (~70 templates, 5 categories per phase), phase display on Shed CTA (step indicator + progress + proximity), phase context cards on quiz results (advancement celebration, musical context, next session rec), QuizLaunchCoordinator carries phase context | ✅ |
 | SP.6 | Heatmap Focus Indicator — Cherry-bordered overlay on MasteryHeatmapView cells matching current learning target (phase-specific: target string naturals → cross-string naturals → all free-tier → none) | ✅ |
 | SP.7 | Phase Transition Bug Fixes — Foundation stuck (nil targetString auto-recovery), placeholder substitution ({string_name}/{fret_start}/{fret_end}), Shed phase refresh after quiz, phase label→name on CTA, contradictory insight card override on advancement, phase-skipping prevention (sessionsInCurrentPhase min 3), Next Up button target fix, phaseDisplayInfo() race condition fix | ✅ |
+| SP.8 | Phase Resequencing & Insight Accuracy — Phase 2↔3 swap (Expansion before Connection), fret range 0→12, all 6 strings required for Phase 1, Phase 2 per-string tracking, diagnostic/confirmation session builders, targetStrings enforcement in QuizViewModel, insight factual accuracy fixes (6 false-claim bugs), Next Up session consistency, dev button visibility fix. 420 tests (22 new). | ✅ |
 
 ---
 

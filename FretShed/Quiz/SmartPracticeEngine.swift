@@ -62,6 +62,36 @@ final class SmartPracticeEngine {
     func nextSession() throws -> (session: Session, description: String) {
         let allScores = try masteryRepository.allScores()
 
+        // Diagnostic mode: run a full-fretboard natural notes session to map knowledge,
+        // then completeDiagnostic() will place the user on the weakest string.
+        if phaseManager.isInDiagnosticMode {
+            let description = currentFocusDescription(using: allScores)
+            let session = Session(
+                focusMode: .naturalNotes,
+                gameMode: .untimed,
+                fretRangeStart: Self.freeFretStart,
+                fretRangeEnd: LearningPhaseManager.phaseRequiredFretEnd,
+                isAdaptive: true
+            )
+            // Complete diagnostic after building — next session will be phase-appropriate
+            phaseManager.completeDiagnostic(using: allScores)
+            return (session, description)
+        }
+
+        // Confirmation mode: run a session on the confirmation target string
+        if phaseManager.isInConfirmationMode, let target = phaseManager.currentTargetString {
+            let description = currentFocusDescription(using: allScores)
+            let session = Session(
+                focusMode: .naturalNotes,
+                gameMode: .untimed,
+                fretRangeStart: Self.freeFretStart,
+                fretRangeEnd: LearningPhaseManager.phaseRequiredFretEnd,
+                targetStrings: [target],
+                isAdaptive: true
+            )
+            return (session, description)
+        }
+
         // Only evaluate Foundation advancement here (handles nil targetString
         // recovery). Connection/Expansion advancement happens on the results
         // screen (QuizView.loadPhaseContext) so the user always gets at least
@@ -92,8 +122,12 @@ final class SmartPracticeEngine {
                 return "\(Self.stringName(target)) String"
             }
             return "Foundation"
+        case .expansion:
+            if let target = phaseManager.currentPhaseTwoTargetString {
+                return "\(Self.stringName(target)) Sharps & Flats"
+            }
+            return "Sharps & Flats"
         case .connection: return "Cross-String"
-        case .expansion:  return "Sharps & Flats"
         case .fluency:    return "Full Fretboard"
         }
     }
@@ -190,12 +224,19 @@ final class SmartPracticeEngine {
             }
             return "\(stringName) String Natural Notes"
 
-        case .connection:
-            let completed = phaseManager.phaseOneCompletedStrings.count
-            return "Cross-String Patterns — \(completed) of 6 strings ready"
-
         case .expansion:
-            return "Sharps & Flats — expanding your vocabulary"
+            guard let target = phaseManager.currentPhaseTwoTargetString else {
+                return "Sharps & Flats — expanding your vocabulary"
+            }
+            let progress = phaseManager.currentPhaseTwoStringProgress(using: scores)
+            let stringName = Self.stringName(target)
+            if let p = progress {
+                return "\(stringName) String Sharps & Flats — \(p.mastered) of \(p.total) mastered"
+            }
+            return "\(stringName) String Sharps & Flats"
+
+        case .connection:
+            return "Cross-String Patterns — all notes, any key"
 
         case .fluency:
             return "Full Fretboard Fluency — all notes, all strings"
@@ -245,11 +286,11 @@ final class SmartPracticeEngine {
         case .foundation:
             return buildFoundationSession(using: scores)
 
-        case .connection:
-            return buildConnectionSession(using: scores)
-
         case .expansion:
             return buildExpansionSession(using: scores)
+
+        case .connection:
+            return buildConnectionSession(using: scores)
 
         case .fluency:
             return buildFluencySession(using: scores)
@@ -257,15 +298,18 @@ final class SmartPracticeEngine {
     }
 
     private func buildFoundationSession(using scores: [MasteryScore]) -> Session {
+        let fretEnd = LearningPhaseManager.phaseRequiredFretEnd
+
         guard let targetString = phaseManager.currentTargetString else {
-            // currentTargetString is nil — pick the weakest free-tier string
-            let fallbackString = Self.weakestString(from: scores, strings: Self.freeStrings)
+            // currentTargetString is nil — pick the weakest string
+            let allStrings = LearningPhaseManager.allStrings
+            let fallbackString = Self.weakestString(from: scores, strings: allStrings)
             logger.warning("Foundation session with nil targetString — using weakest string \(fallbackString)")
             return Session(
                 focusMode: .naturalNotes,
                 gameMode: .untimed,
                 fretRangeStart: Self.freeFretStart,
-                fretRangeEnd: Self.freeFretEnd,
+                fretRangeEnd: fretEnd,
                 targetStrings: [fallbackString],
                 isAdaptive: true
             )
@@ -275,7 +319,7 @@ final class SmartPracticeEngine {
         let groups = groupingEngine.scaleFragments(
             onString: targetString,
             fretStart: Self.freeFretStart,
-            fretEnd: Self.freeFretEnd,
+            fretEnd: fretEnd,
             scores: scores,
             groupCount: 2
         )
@@ -283,8 +327,7 @@ final class SmartPracticeEngine {
         // Build review targets from stuck notes
         let reviewTargets = phaseManager.stuckNotes.prefix(2).compactMap { stuck -> NoteTarget? in
             guard let note = MusicalNote(rawValue: stuck.noteRaw) else { return nil }
-            // Find fret position for this note on its string
-            for fret in Self.freeFretStart...Self.freeFretEnd {
+            for fret in Self.freeFretStart...fretEnd {
                 if fretboardMap.note(string: stuck.stringNumber, fret: fret) == note {
                     return NoteTarget(note: note, string: stuck.stringNumber, fret: fret)
                 }
@@ -292,7 +335,6 @@ final class SmartPracticeEngine {
             return nil
         }
 
-        // If struggling, mix in prior-phase drills (same string but easier)
         let plan = groupingEngine.buildSessionPlan(
             groups: groups,
             sessionLength: 10,
@@ -300,32 +342,32 @@ final class SmartPracticeEngine {
             reviewTargets: reviewTargets
         )
 
-        // Create session targeting this specific string with natural notes
         let session = Session(
             focusMode: .naturalNotes,
             gameMode: .untimed,
             fretRangeStart: Self.freeFretStart,
-            fretRangeEnd: Self.freeFretEnd,
+            fretRangeEnd: fretEnd,
             targetStrings: [targetString],
             isAdaptive: true
         )
 
-        // Store the session plan for use by QuizViewModel (via the session plan)
         lastSessionPlan = plan
-
         return session
     }
 
-    private func buildConnectionSession(using scores: [MasteryScore]) -> Session {
-        let completedStrings = Array(phaseManager.phaseOneCompletedStrings)
-        let targetStrings = completedStrings.isEmpty ? Self.freeStrings : completedStrings
+    private func buildExpansionSession(using scores: [MasteryScore]) -> Session {
+        let fretEnd = LearningPhaseManager.phaseRequiredFretEnd
 
-        // Generate triad groups across mastered strings
-        let groups = groupingEngine.triadGroups(
-            strings: targetStrings,
-            scores: scores,
+        // Phase 2: Single-string sharps & flats — target the Phase 2 target string
+        let targetString = phaseManager.currentPhaseTwoTargetString
+            ?? Self.weakestString(from: scores, strings: LearningPhaseManager.allStrings)
+
+        // Use chromatic fragment groups for musically meaningful practice
+        let groups = groupingEngine.chromaticFragments(
+            onString: targetString,
             fretStart: Self.freeFretStart,
-            fretEnd: Self.freeFretEnd,
+            fretEnd: fretEnd,
+            scores: scores,
             groupCount: 2
         )
 
@@ -338,39 +380,26 @@ final class SmartPracticeEngine {
         lastSessionPlan = plan
 
         return Session(
-            focusMode: .naturalNotes,
-            gameMode: .untimed,
-            fretRangeStart: Self.freeFretStart,
-            fretRangeEnd: Self.freeFretEnd,
-            targetStrings: targetStrings,
-            isAdaptive: true
-        )
-    }
-
-    private func buildExpansionSession(using scores: [MasteryScore]) -> Session {
-        // Sharps & flats on the weakest string
-        let weakest = Self.weakestString(from: scores, strings: Self.freeStrings)
-
-        return Session(
             focusMode: .sharpsAndFlats,
             gameMode: .untimed,
             fretRangeStart: Self.freeFretStart,
-            fretRangeEnd: Self.freeFretEnd,
-            targetStrings: [weakest],
+            fretRangeEnd: fretEnd,
+            targetStrings: [targetString],
             isAdaptive: true
         )
     }
 
-    private func buildFluencySession(using scores: [MasteryScore]) -> Session {
-        // Full fretboard with chord-tone patterns
-        let progression: [(root: MusicalNote, quality: TriadQuality)] = [
-            (.c, .major), (.f, .major), (.g, .major)
-        ]
-        let groups = groupingEngine.chordToneGroups(
-            progression: progression,
-            strings: Array(1...6),
+    private func buildConnectionSession(using scores: [MasteryScore]) -> Session {
+        let fretEnd = LearningPhaseManager.phaseRequiredFretEnd
+
+        // Phase 3: Cross-string, all notes, any key — use all-root triads
+        let groups = groupingEngine.triadGroups(
+            strings: LearningPhaseManager.allStrings,
+            scores: scores,
             fretStart: Self.freeFretStart,
-            fretEnd: Self.freeFretEnd
+            fretEnd: fretEnd,
+            groupCount: 2,
+            useAllRoots: true
         )
 
         let plan = groupingEngine.buildSessionPlan(
@@ -385,7 +414,38 @@ final class SmartPracticeEngine {
             focusMode: .fullFretboard,
             gameMode: .untimed,
             fretRangeStart: Self.freeFretStart,
-            fretRangeEnd: Self.freeFretEnd,
+            fretRangeEnd: fretEnd,
+            isAdaptive: true
+        )
+    }
+
+    private func buildFluencySession(using scores: [MasteryScore]) -> Session {
+        let fretEnd = LearningPhaseManager.phaseRequiredFretEnd
+
+        // Full fretboard with chord-tone patterns
+        let progression: [(root: MusicalNote, quality: TriadQuality)] = [
+            (.c, .major), (.f, .major), (.g, .major)
+        ]
+        let groups = groupingEngine.chordToneGroups(
+            progression: progression,
+            strings: Array(1...6),
+            fretStart: Self.freeFretStart,
+            fretEnd: fretEnd
+        )
+
+        let plan = groupingEngine.buildSessionPlan(
+            groups: groups,
+            sessionLength: 10,
+            scores: scores
+        )
+
+        lastSessionPlan = plan
+
+        return Session(
+            focusMode: .fullFretboard,
+            gameMode: .untimed,
+            fretRangeStart: Self.freeFretStart,
+            fretRangeEnd: fretEnd,
             isAdaptive: true
         )
     }
@@ -394,19 +454,18 @@ final class SmartPracticeEngine {
 
     /// Check if the user needs a review session (e.g. returning after absence).
     private func needsReviewSession(using scores: [MasteryScore]) -> Bool {
-        guard phaseManager.currentPhase.rawValue >= LearningPhase.connection.rawValue else {
+        guard phaseManager.currentPhase.rawValue >= LearningPhase.expansion.rawValue else {
             return false
         }
 
         // Check if any completed Phase 1 strings have decayed below threshold
         for string in phaseManager.phaseOneCompletedStrings {
-            let naturalCells = phaseManager.naturalNoteCells(onString: string)
+            let naturalCells = phaseManager.naturalNoteCells(onString: string, fretEnd: LearningPhaseManager.phaseRequiredFretEnd)
             for (note, _) in naturalCells {
                 let cellScore = scores.first(where: {
                     $0.noteRaw == note.rawValue && $0.stringNumber == string
                 })
                 if let score = cellScore, score.score < LearningPhaseManager.advancementThreshold {
-                    // Check if it's been a while since last practice
                     if let lastDate = score.lastAttemptDate,
                        Date().timeIntervalSince(lastDate) > 3 * 24 * 3600 { // 3+ days
                         return true
@@ -419,11 +478,13 @@ final class SmartPracticeEngine {
 
     /// Build a review session targeting decayed cells.
     private func buildReviewSession(using scores: [MasteryScore]) -> Session {
+        let fretEnd = LearningPhaseManager.phaseRequiredFretEnd
+
         // Find the most decayed string
-        var weakestString = Self.freeStrings.first ?? 6
+        var weakestString = 6
         var lowestAvg = Double.infinity
         for string in phaseManager.phaseOneCompletedStrings {
-            let naturalCells = phaseManager.naturalNoteCells(onString: string)
+            let naturalCells = phaseManager.naturalNoteCells(onString: string, fretEnd: fretEnd)
             let cellScores = naturalCells.compactMap { cell in
                 scores.first(where: { $0.noteRaw == cell.note.rawValue && $0.stringNumber == string })?.score
             }
@@ -438,7 +499,7 @@ final class SmartPracticeEngine {
             focusMode: .naturalNotes,
             gameMode: .untimed,
             fretRangeStart: Self.freeFretStart,
-            fretRangeEnd: Self.freeFretEnd,
+            fretRangeEnd: fretEnd,
             targetStrings: [weakestString],
             isAdaptive: true
         )
@@ -455,6 +516,7 @@ final class SmartPracticeEngine {
     func phaseProximityMessage() throws -> String? {
         let scores = try masteryRepository.allScores()
         let phase = phaseManager.currentPhase
+        let totalStrings = LearningPhaseManager.allStrings.count
 
         switch phase {
         case .foundation:
@@ -464,8 +526,7 @@ final class SmartPracticeEngine {
             let remaining = p.total - p.mastered
             if remaining <= 2 && remaining > 0 {
                 let stringsCompleted = phaseManager.phaseOneCompletedStrings.count
-                let stringsNeeded = LearningPhaseManager.stringsRequiredForPhase2
-                if stringsCompleted == stringsNeeded - 1 {
+                if stringsCompleted == totalStrings - 1 {
                     return "\(remaining) more note\(remaining == 1 ? "" : "s") and you unlock Phase 2!"
                 }
                 let stringName = Self.stringName(target)
@@ -473,24 +534,22 @@ final class SmartPracticeEngine {
             }
             return nil
 
-        case .connection:
-            // Count strings with all natural notes mastered
-            var fullyMastered = 0
-            for string in 1...6 {
-                let cells = phaseManager.naturalNoteCells(onString: string)
-                let allPassed = cells.allSatisfy { cell in
-                    let s = scores.first(where: { $0.noteRaw == cell.note.rawValue && $0.stringNumber == string })
-                    return (s?.totalAttempts ?? 0) >= 3 && (s?.effectiveScore ?? 0) >= 0.75
-                }
-                if allPassed { fullyMastered += 1 }
-            }
-            let remaining = 6 - fullyMastered
+        case .expansion:
+            guard let target = phaseManager.currentPhaseTwoTargetString else { return nil }
+            let progress = phaseManager.currentPhaseTwoStringProgress(using: scores)
+            guard let p = progress else { return nil }
+            let remaining = p.total - p.mastered
             if remaining <= 2 && remaining > 0 {
-                return "\(remaining) more string\(remaining == 1 ? "" : "s") to Phase 3!"
+                let stringsCompleted = phaseManager.phaseTwoCompletedStrings.count
+                if stringsCompleted == totalStrings - 1 {
+                    return "\(remaining) more note\(remaining == 1 ? "" : "s") and you unlock Phase 3!"
+                }
+                let stringName = Self.stringName(target)
+                return "\(remaining) more note\(remaining == 1 ? "" : "s") on the \(stringName) string!"
             }
             return nil
 
-        case .expansion, .fluency:
+        case .connection, .fluency:
             return nil
         }
     }
@@ -544,13 +603,22 @@ final class SmartPracticeEngine {
                 target = "Natural Notes"
                 progress = nil
             }
+        case .expansion:
+            if let ts = phaseManager.currentPhaseTwoTargetString {
+                let stringName = Self.stringName(ts)
+                target = "\(stringName) String Sharps & Flats"
+                if let p = phaseManager.currentPhaseTwoStringProgress(using: scores) {
+                    progress = "\(p.mastered) of \(p.total) mastered"
+                } else {
+                    progress = nil
+                }
+            } else {
+                target = "Sharps & Flats"
+                progress = nil
+            }
         case .connection:
             target = "Cross-String Patterns"
-            let completed = phaseManager.phaseOneCompletedStrings.count
-            progress = "\(completed) of 6 strings ready"
-        case .expansion:
-            target = "Sharps & Flats"
-            progress = nil
+            progress = "All notes, any key"
         case .fluency:
             target = "Full Fretboard"
             progress = nil
@@ -570,11 +638,11 @@ final class SmartPracticeEngine {
                 return "Shoring up the \(Self.stringName(target)) string"
             }
             return "Reinforcing your foundation"
-        case .connection:
-            let weakest = Self.weakestString(from: scores, strings: Self.freeStrings)
-            return "Shoring up the \(Self.stringName(weakest)) string before cross-string work"
         case .expansion:
             return "Reviewing natural notes before adding sharps and flats"
+        case .connection:
+            let weakest = Self.weakestString(from: scores, strings: LearningPhaseManager.allStrings)
+            return "Shoring up the \(Self.stringName(weakest)) string before cross-string work"
         case .fluency:
             return "Warming up with focused drills"
         }

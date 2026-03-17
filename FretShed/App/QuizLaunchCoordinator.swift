@@ -72,6 +72,11 @@ final class QuizLaunchCoordinator {
     /// Next session recommendation text, set after quiz completes.
     var nextSessionRecommendation: String?
 
+    /// Pre-built next session, so the "Next Up" button launches exactly what was described.
+    /// Set at the same time as nextSessionRecommendation in loadPhaseContext().
+    var nextSessionPrebuilt: Session?
+    var nextSessionGroups: [NoteGroup]?
+
     // MARK: Internal
 
     var pendingQuizVM: QuizViewModel?
@@ -165,6 +170,8 @@ final class QuizLaunchCoordinator {
         lastCompletedSession = vm.session
         activeQuizVM = nil
         phaseBeforeQuiz = nil
+        nextSessionPrebuilt = nil
+        nextSessionGroups = nil
         needsProgressReload = true
     }
 
@@ -176,6 +183,8 @@ final class QuizLaunchCoordinator {
         lastCompletedSession = vm.session
         activeQuizVM = nil
         phaseBeforeQuiz = nil
+        nextSessionPrebuilt = nil
+        nextSessionGroups = nil
         selectedTab = .progress
         needsProgressReload = true
     }
@@ -189,6 +198,8 @@ final class QuizLaunchCoordinator {
         lastCompletedSession = session
         activeQuizVM = nil
         phaseBeforeQuiz = nil
+        nextSessionPrebuilt = nil
+        nextSessionGroups = nil
         Task { @MainActor in
             try? await Task.sleep(for: .milliseconds(350))
             await launchRepeatSession(from: session)
@@ -218,7 +229,18 @@ final class QuizLaunchCoordinator {
                 return
             }
 
-            // Snapshot phase BEFORE nextSession() which may call evaluateAdvancement()
+            // Use the pre-built session from loadPhaseContext() so the launched session
+            // matches exactly what was described in the "Next Up" recommendation.
+            if let prebuilt = nextSessionPrebuilt {
+                phaseBeforeQuiz = LearningPhaseManager().currentPhase
+                lastSessionGroups = nextSessionGroups
+                nextSessionPrebuilt = nil
+                nextSessionGroups = nil
+                launchSession(prebuilt)
+                return
+            }
+
+            // Fallback: build a fresh session (should rarely happen)
             phaseBeforeQuiz = LearningPhaseManager().currentPhase
             let engine = SmartPracticeEngine(
                 masteryRepository: container.masteryRepository,

@@ -53,25 +53,21 @@ struct MasteryHeatmapView: View {
             let naturals = phaseManager.naturalNoteCells(onString: target)
             return Set(naturals.map { CellPosition(string: target, fret: $0.fret) })
 
-        case .connection:
-            // Highlight natural note positions on all completed + in-progress strings
+        case .expansion:
+            // Highlight all chromatic positions on the Phase 2 target string
+            guard let target = phaseManager.currentPhaseTwoTargetString else { return [] }
             var cells: Set<CellPosition> = []
-            let targetStrings = phaseManager.phaseOneCompletedStrings.isEmpty
-                ? Set(LearningPhaseManager.freeStrings)
-                : phaseManager.phaseOneCompletedStrings
-            for string in targetStrings {
-                let naturals = phaseManager.naturalNoteCells(onString: string)
-                for cell in naturals {
-                    cells.insert(CellPosition(string: string, fret: cell.fret))
-                }
+            let chromaticPositions = phaseManager.chromaticCells(onString: target, fretEnd: LearningPhaseManager.phaseRequiredFretEnd)
+            for cell in chromaticPositions {
+                cells.insert(CellPosition(string: target, fret: cell.fret))
             }
             return cells
 
-        case .expansion:
-            // All positions on free-tier strings
+        case .connection:
+            // Highlight all positions across all strings (cross-string, all notes)
             var cells: Set<CellPosition> = []
-            for string in LearningPhaseManager.freeStrings {
-                for fret in LearningPhaseManager.freeFretStart...LearningPhaseManager.freeFretEnd {
+            for string in LearningPhaseManager.allStrings {
+                for fret in LearningPhaseManager.freeFretStart...LearningPhaseManager.phaseRequiredFretEnd {
                     cells.insert(CellPosition(string: string, fret: fret))
                 }
             }

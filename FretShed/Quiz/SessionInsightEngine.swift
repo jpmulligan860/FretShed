@@ -446,12 +446,17 @@ final class SessionInsightEngine {
             .replacingOccurrences(of: "[ACCURACY]", with: "\(Int(session.accuracyPercent))")
             .replacingOccurrences(of: "[PREV]", with: "\(Int(prevSession.accuracyPercent))")
 
-        // Best in N sessions
+        // Best in N sessions — exclude the current session when comparing
         if isPositive {
-            let recentAccuracies = allSessions.suffix(7).map(\.accuracyPercent)
-            if session.accuracyPercent >= (recentAccuracies.max() ?? 0) {
-                headline = headline.replacingOccurrences(of: "[N]", with: "\(min(allSessions.count, 7))")
+            let priorSessions = allSessions.dropLast() // everything except the current session
+            let recentPrior = priorSessions.suffix(6) // last 6 prior sessions (+ current = 7 window)
+            let priorMax = recentPrior.map(\.accuracyPercent).max() ?? 0
+            if session.accuracyPercent > priorMax && !recentPrior.isEmpty {
+                // Strictly better than all prior sessions in the window
+                headline = headline.replacingOccurrences(of: "[N]", with: "\(recentPrior.count + 1)")
             } else {
+                // Not actually the best — remove the "best in N" claim
+                headline = headline.replacingOccurrences(of: "Best accuracy in [N] sessions. ", with: "")
                 headline = headline.replacingOccurrences(of: "[N]", with: "\(allSessions.count)")
             }
         }
@@ -480,7 +485,7 @@ final class SessionInsightEngine {
         headline = headline
             .replacingOccurrences(of: "[STRING]", with: stringDisplayName(weakest.key))
             .replacingOccurrences(of: "[ACCURACY]", with: "\(Int(weakest.value))")
-            .replacingOccurrences(of: "[RANGE]", with: "0–7")
+            .replacingOccurrences(of: "[RANGE]", with: "0–\(LearningPhaseManager.phaseRequiredFretEnd)")
 
         let salience = abs(50.0 - weakest.value)
         let card = InsightCard(
@@ -656,12 +661,49 @@ final class SessionInsightEngine {
 
         guard !newCells.isEmpty else { return nil }
 
+        // Phase-aware coverage: determine what kind of notes the user is working on
+        let phase = LearningPhaseManager().currentPhase
+        let noteTypeLabel: String
+        let expectedCountPerString: Int
+        switch phase {
+        case .foundation:
+            noteTypeLabel = "natural note"
+            expectedCountPerString = 7 // ~7 unique naturals on frets 0-12
+        case .expansion:
+            noteTypeLabel = "accidental"
+            expectedCountPerString = 5 // ~5 sharps/flats on frets 0-12
+        case .connection, .fluency:
+            noteTypeLabel = "note"
+            expectedCountPerString = 12 // all 12 chromatic notes
+        }
+
+        // Filter out the "every [NOTE_TYPE]" phrase unless we can verify full coverage
+        // for the relevant note type on at least one string
+        var phrasePool = InsightPhraseLibrary.coveragePhrases
+        if let everyPhrase = phrasePool.first, everyPhrase.contains("[NOTE_TYPE]") {
+            let stringCounts = Dictionary(grouping: newCells, by: \.string)
+            let hasFullCoverage = stringCounts.contains { (string, _) in
+                let relevantAttempted = scores.filter {
+                    $0.stringNumber == string && accessibleStrings.contains(string) && $0.totalAttempts > 0
+                    && (phase == .foundation ? (MusicalNote(rawValue: $0.noteRaw)?.isNatural ?? false)
+                        : phase == .expansion ? !(MusicalNote(rawValue: $0.noteRaw)?.isNatural ?? true)
+                        : true)
+                }.count
+                return relevantAttempted >= expectedCountPerString
+            }
+            if !hasFullCoverage {
+                phrasePool = Array(phrasePool.dropFirst())
+                if phrasePool.isEmpty { phrasePool = InsightPhraseLibrary.coveragePhrases }
+            }
+        }
+
         var headline = InsightPhraseLibrary.phrase(
-            from: InsightPhraseLibrary.coveragePhrases,
+            from: phrasePool,
             sessionCount: sessionCount
         )
         headline = headline
             .replacingOccurrences(of: "[COUNT]", with: "\(newCells.count)")
+            .replacingOccurrences(of: "[NOTE_TYPE]", with: noteTypeLabel)
 
         if let first = newCells.first {
             headline = headline
@@ -689,16 +731,21 @@ final class SessionInsightEngine {
         let isImproving = last3[1] > last3[0] && last3[2] > last3[1]
         let isFlat = abs(last3[2] - last3[0]) < 5
 
+        // Don't call consistently high accuracy a "plateau" — that's sustained
+        // strong performance, not stagnation. Only flag flat when accuracy is
+        // genuinely stuck below a strong threshold.
+        let allHigh = last3.allSatisfy { $0 >= 80 }
+
         let phrases: [String]
         let isPositive: Bool
         if isImproving {
             phrases = InsightPhraseLibrary.consistencyTrendPositivePhrases
             isPositive = true
-        } else if isFlat {
+        } else if isFlat && !allHigh {
             phrases = InsightPhraseLibrary.consistencyTrendFlatPhrases
             isPositive = false
         } else {
-            return nil // Declining — let session delta handle it
+            return nil // High + flat = good, or declining — let session delta handle it
         }
 
         let headline = InsightPhraseLibrary.phrase(from: phrases, sessionCount: sessionCount)

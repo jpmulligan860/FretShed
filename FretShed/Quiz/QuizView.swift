@@ -13,7 +13,7 @@ struct QuizView: View {
     var onDone: (() -> Void)? = nil
     var onViewProgress: (() -> Void)? = nil
     var onRepeat: (() -> Void)? = nil
-    var onNextSession: (([MusicalNote]?) -> Void)? = nil
+    var onNextSession: (([MusicalNote]?, Session?, [NoteGroup]?) -> Void)? = nil
     var phaseBeforeQuiz: LearningPhase?
     var sessionNoteGroups: [NoteGroup]?
     @State private var showEndConfirm = false
@@ -22,6 +22,8 @@ struct QuizView: View {
     @State private var phaseContextCard: (headline: String, body: String)?
     @State private var nextSessionRec: String?
     @State private var nextSessionUsesTargetNotes: Bool = false
+    @State private var nextSessionPrebuilt: Session?
+    @State private var nextSessionGroups: [NoteGroup]?
     @State private var phaseAdvancementMessage: String?
     @State private var diagnosticShareURL: URL? = nil
     @State private var showDiagnosticShare = false
@@ -109,7 +111,7 @@ struct QuizView: View {
          onDone: (() -> Void)? = nil,
          onViewProgress: (() -> Void)? = nil,
          onRepeat: (() -> Void)? = nil,
-         onNextSession: (([MusicalNote]?) -> Void)? = nil,
+         onNextSession: (([MusicalNote]?, Session?, [NoteGroup]?) -> Void)? = nil,
          phaseBeforeQuiz: LearningPhase? = nil,
          sessionNoteGroups: [NoteGroup]? = nil) {
         _vm = State(initialValue: vm)
@@ -921,7 +923,8 @@ struct QuizView: View {
             )
         }
 
-        // Next session recommendation
+        // Next session recommendation — build the actual session so the button
+        // launches exactly what's described (no double-evaluation drift).
         if let targetNotes = insightCard?.targetNotes, !targetNotes.isEmpty {
             // Override with a focused recommendation for close-to-level-up notes
             let format = NoteNameFormat(rawValue: noteFormatRaw) ?? .sharps
@@ -935,7 +938,11 @@ struct QuizView: View {
                 sessionRepository: container.sessionRepository,
                 fretboardMap: container.fretboardMap
             )
-            nextSessionRec = try? smartEngine.peekNextSessionDescription()
+            if let (session, description) = try? smartEngine.nextSession() {
+                nextSessionRec = description
+                nextSessionPrebuilt = session
+                nextSessionGroups = smartEngine.lastSessionPlan?.groups
+            }
         }
 
         // Musical context from session note groups
@@ -1013,7 +1020,7 @@ struct QuizView: View {
         // Next session recommendation — tappable to launch
         if let rec = nextSessionRec {
             Button {
-                onNextSession?(nextSessionUsesTargetNotes ? insightCard?.targetNotes : nil)
+                onNextSession?(nextSessionUsesTargetNotes ? insightCard?.targetNotes : nil, nextSessionPrebuilt, nextSessionGroups)
             } label: {
                 VStack(alignment: .leading, spacing: 8) {
                     HStack(spacing: 6) {
@@ -1190,9 +1197,6 @@ struct QuizView: View {
                             in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
             }
 
-            #if DEBUG
-            devButtons
-            #endif
         }
     }
 

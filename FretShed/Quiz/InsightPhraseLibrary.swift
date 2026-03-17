@@ -31,8 +31,8 @@ enum InsightPhraseLibrary {
     static let strongStringPhrases: [String] = [
         "Your [STRING] string is looking solid at [ACCURACY]%.",
         "[STRING] string is your strongest — [ACCURACY]% and climbing.",
-        "The [STRING] string is dialled in. Nice work.",
-        "FretShed barely needs to test your [STRING] string anymore. [ACCURACY]%.",
+        "The [STRING] string led the way this session. Nice work.",
+        "[STRING] string at [ACCURACY]% — that's your best string right now.",
     ]
 
     // MARK: - hardestNote
@@ -92,7 +92,7 @@ enum InsightPhraseLibrary {
     // MARK: - coverage
 
     static let coveragePhrases: [String] = [
-        "You've now attempted every note on the [STRING] string at least once.",
+        "You've now attempted every [NOTE_TYPE] on the [STRING] string at least once.",
         "[COUNT] new positions mapped this session. The picture is filling in.",
         "First contact with [NOTE] on the [STRING] string today. FretShed has it logged.",
         "[COUNT] positions tried for the first time. The fretboard is opening up.",
@@ -204,14 +204,17 @@ enum InsightPhraseLibrary {
                 return TemporalModifier(prefix: "New territory:", isStandalone: false)
             }
         }
-        // Best accuracy in last 7 days
+        // Best accuracy in last 7 days — must be strictly better than all prior sessions
         if allSessions.count >= 2 {
             let weekAgo = Calendar.current.date(byAdding: .day, value: -7, to: Date()) ?? Date()
             let recentSessions = allSessions.filter { ($0.endTime ?? $0.startTime) >= weekAgo }
-            if let current = allSessions.last,
-               recentSessions.count >= 2,
-               current.accuracyPercent >= recentSessions.map(\.accuracyPercent).max() ?? 0 {
-                return TemporalModifier(prefix: "Your best session this week —", isStandalone: false)
+            if let current = allSessions.last {
+                // Exclude the current session when comparing
+                let priorRecent = recentSessions.filter { $0.id != current.id }
+                let priorMax = priorRecent.map(\.accuracyPercent).max() ?? 0
+                if !priorRecent.isEmpty && current.accuracyPercent > priorMax {
+                    return TemporalModifier(prefix: "Your best session this week —", isStandalone: false)
+                }
             }
         }
         return nil

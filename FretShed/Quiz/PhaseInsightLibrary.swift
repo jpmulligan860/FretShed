@@ -39,10 +39,10 @@ enum PhaseInsightLibrary {
     ]
 
     static let foundationProximity: [String] = [
-        "{n_remaining} more notes and you unlock Phase 2: Connection!",
-        "You're {n_remaining} notes away from cross-string practice.",
+        "{n_remaining} more notes and you unlock Phase 2: Expansion!",
+        "You're {n_remaining} notes away from sharps and flats.",
         "Almost there — {n_remaining} more on the {string_name} string.",
-        "Finish the {string_name} string and you'll start finding notes across strings.",
+        "Finish the {string_name} string and you'll start adding sharps and flats.",
         "One more string after this and Phase 2 opens up.",
     ]
 
@@ -67,23 +67,22 @@ enum PhaseInsightLibrary {
         "{notes} — that's a {musical_name} shape across strings.",
         "You just played a {musical_name}: {notes}. That shape appears everywhere.",
         "Those three notes form a {musical_name}. Knowing where they live across strings is the key.",
-        "{notes} on the {string_name} strings — a {musical_name} in open position.",
+        "{notes} on the {string_name} strings — a {musical_name} using all notes.",
         "The {musical_name} pattern connects the {string_name} strings through {notes}.",
     ]
 
     static let connectionPerformance: [String] = [
-        "{n_mastered} of 6 strings have solid natural note coverage.",
         "Cross-string accuracy is at {accuracy}%. The connections are forming.",
         "You found {note} on two different strings this session. That's the point.",
         "The same note on different strings — your brain is mapping the fretboard in 2D now.",
-        "Triads across strings: that's how chords are built. You're learning the architecture.",
+        "Triads across strings in any key: that's how chords are built.",
+        "Sharps, flats, naturals — you're connecting them all across strings now.",
     ]
 
     static let connectionProximity: [String] = [
-        "All 6 strings with solid natural notes unlocks Phase 3.",
-        "Natural notes on {n_remaining} more strings and sharps & flats open up.",
-        "You're building the foundation for the entire fretboard.",
-        "Once all natural notes are solid, adding sharps and flats is straightforward.",
+        "Full chromatic cross-string mastery unlocks Phase 4.",
+        "You're building connections across all notes on the fretboard.",
+        "Once cross-string patterns are solid, full fretboard fluency is next.",
     ]
 
     static let connectionComeback: [String] = [
@@ -119,9 +118,10 @@ enum PhaseInsightLibrary {
     ]
 
     static let expansionProximity: [String] = [
-        "Complete chromatic coverage unlocks Phase 4: Full Fretboard Fluency.",
+        "Complete chromatic coverage unlocks Phase 3: Connection.",
         "Every sharp and flat you master brings you closer to knowing every note.",
         "Chromatic mastery on {n_remaining} more positions to go.",
+        "{n_remaining} more notes on the {string_name} string and you're one step closer.",
     ]
 
     static let expansionComeback: [String] = [
@@ -163,20 +163,20 @@ enum PhaseInsightLibrary {
     // MARK: - Phase Advancement Celebrations
 
     static let phaseAdvancementMessages: [LearningPhase: [String]] = [
-        .connection: [
-            "Phase 1 Complete! You've built a solid foundation. Time to connect the dots across strings.",
-            "Foundation locked in. Phase 2 opens up cross-string patterns — this is where it gets fun.",
-            "Natural notes are solid. Now let's see how they connect across the fretboard.",
-        ],
         .expansion: [
-            "Phase 2 Complete! Cross-string connections are solid. Time to add sharps and flats.",
-            "You can find natural notes everywhere. Phase 3 fills in the gaps between them.",
-            "Connection phase done. Now let's complete the chromatic picture.",
+            "Foundation complete! Natural notes are locked in on all 6 strings. Now let's add sharps and flats.",
+            "Phase 1 done — you know every natural note. Phase 2 fills in the gaps between them.",
+            "Natural notes are solid on every string. Time to complete the chromatic picture.",
+        ],
+        .connection: [
+            "Sharps and flats mastered! Time to connect notes across strings in any key.",
+            "Phase 2 done — every note on every string. Now let's see how they connect across the fretboard.",
+            "Full chromatic vocabulary unlocked. Phase 3 ties it together with cross-string patterns.",
         ],
         .fluency: [
-            "Phase 3 Complete! The full chromatic fretboard is mapped. Time for total fluency.",
-            "Every note is in your vocabulary. Phase 4 ties it all together with chord-tone patterns.",
-            "Chromatic mastery achieved. Welcome to the final phase — full fretboard fluency.",
+            "Phase 3 Complete! Cross-string connections are solid. Time for total fretboard fluency.",
+            "Every note connects across strings. Phase 4 ties it all together with chord-tone patterns.",
+            "Cross-string mastery achieved. Welcome to the final phase — full fretboard fluency.",
         ],
     ]
 
@@ -193,6 +193,15 @@ enum PhaseInsightLibrary {
         "{string_name} string complete — {n_strings_done} of {n_strings_needed} strings done.",
         "That's the {string_name} string mastered. {n_remaining_strings} more to Phase 2.",
         "Solid work on the {string_name} string. Next up: {next_string}.",
+    ]
+
+    // MARK: - Expansion String Completion (Phase 2 milestone)
+
+    static let expansionStringCompletionMessages: [String] = [
+        "Sharps & flats on the {string_name} string: mastered! Moving to the {next_string} string.",
+        "{string_name} string chromatic complete — {n_strings_done} of {n_strings_needed} strings done.",
+        "Every note on the {string_name} string is yours. {n_remaining_strings} more to Phase 3.",
+        "Full chromatic coverage on the {string_name} string. Next up: {next_string}.",
     ]
 
     // MARK: - Review Session Framing

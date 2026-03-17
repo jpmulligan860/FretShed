@@ -163,7 +163,80 @@ struct NoteGroupingEngine: Sendable {
         }
     }
 
-    // MARK: - Phase 2: Triad Groupings
+    // MARK: - Phase 2: Chromatic Fragments (Expansion)
+
+    /// Generates 3-4 note chromatic fragment groups on a single string.
+    /// Includes sharps and flats — for Phase 2 (Expansion) sessions.
+    func chromaticFragments(
+        onString string: Int,
+        fretStart: Int = 0,
+        fretEnd: Int = 12,
+        scores: [MasteryScore] = [],
+        groupCount: Int = 2
+    ) -> [NoteGroup] {
+        // Get all chromatic notes on the string, sorted by fret
+        let allCells = chromaticNotesOnString(string, fretStart: fretStart, fretEnd: fretEnd)
+        guard allCells.count >= 3 else { return [] }
+
+        // Build all possible 3-note windows
+        var windows: [(targets: [NoteTarget], weaknessScore: Double)] = []
+        for i in 0...(allCells.count - 3) {
+            let group = Array(allCells[i..<(i + 3)])
+            let span = group.last!.fret - group.first!.fret
+            guard span <= Self.maxFretSpan else { continue }
+
+            let weakness = group.reduce(0.0) { sum, target in
+                let cellScore = scores.first(where: {
+                    $0.noteRaw == target.note.rawValue && $0.stringNumber == target.string
+                })?.score ?? 0.5
+                return sum + (1.0 - cellScore)
+            }
+            windows.append((group, weakness))
+        }
+
+        let sorted = windows.sorted { $0.weaknessScore > $1.weaknessScore }
+
+        var selected: [[NoteTarget]] = []
+        var usedFrets: Set<Int> = []
+
+        for window in sorted {
+            guard selected.count < groupCount else { break }
+            let frets = Set(window.targets.map(\.fret))
+            if usedFrets.isDisjoint(with: frets) || selected.count < groupCount && selected.isEmpty == false {
+                if usedFrets.isDisjoint(with: frets) || selected.count < groupCount {
+                    selected.append(window.targets)
+                    usedFrets.formUnion(frets)
+                }
+            }
+        }
+
+        if selected.count < groupCount {
+            for window in sorted {
+                guard selected.count < groupCount else { break }
+                if !selected.contains(where: { $0 == window.targets }) {
+                    selected.append(window.targets)
+                }
+            }
+        }
+
+        return selected.map { targets in
+            let noteNames = targets.map { $0.note.sharpName }
+            let stringName = Self.stringName(string)
+
+            return NoteGroup(
+                targets: targets,
+                context: NoteGroupContext(
+                    groupType: .scaleFragment,
+                    description: "\(noteNames.joined(separator: "-")) on the \(stringName) string — chromatic",
+                    key: nil,
+                    musicalName: "chromatic fragment",
+                    intervalNames: nil
+                )
+            )
+        }
+    }
+
+    // MARK: - Phase 3: Triad Groupings (Connection)
 
     /// Generates triad note groups across multiple strings.
     /// - Parameters:
@@ -221,21 +294,29 @@ struct NoteGroupingEngine: Sendable {
     }
 
     /// Generates multiple triad groups targeting weak areas.
+    /// - Parameter useAllRoots: When true, generates triads from all 12 chromatic roots
+    ///   (for Phase 3 Connection, which has full chromatic vocabulary).
     func triadGroups(
         strings: [Int],
         scores: [MasteryScore] = [],
         fretStart: Int = 0,
         fretEnd: Int = 7,
-        groupCount: Int = 2
+        groupCount: Int = 2,
+        useAllRoots: Bool = false
     ) -> [NoteGroup] {
-        // Try common triads based on natural notes, ordered by weakness
-        let commonRoots: [MusicalNote] = [.c, .g, .d, .a, .e, .f]
+        let roots: [MusicalNote]
+        if useAllRoots {
+            roots = [.c, .g, .d, .a, .e, .f, .cSharp, .dSharp, .fSharp, .gSharp, .aSharp, .b]
+        } else {
+            roots = [.c, .g, .d, .a, .e, .f]
+        }
+
         var groups: [NoteGroup] = []
 
-        for root in commonRoots {
+        for root in roots {
             guard groups.count < groupCount else { break }
-            if let group = triadGroup(root: root, quality: .major, strings: strings, fretStart: fretStart, fretEnd: fretEnd) {
-                // Check this group doesn't fully duplicate an existing one
+            let quality: TriadQuality = useAllRoots && [MusicalNote.d, .e, .a, .b].contains(root) ? .minor : .major
+            if let group = triadGroup(root: root, quality: quality, strings: strings, fretStart: fretStart, fretEnd: fretEnd) {
                 let newNotes = Set(group.targets.map { "\($0.string)-\($0.fret)" })
                 let isDuplicate = groups.contains { existing in
                     let existingNotes = Set(existing.targets.map { "\($0.string)-\($0.fret)" })
@@ -336,6 +417,19 @@ struct NoteGroupingEngine: Sendable {
     }
 
     // MARK: - Private Helpers
+
+    /// Returns all chromatic notes on a string sorted by fret position (deduped by note).
+    private func chromaticNotesOnString(_ string: Int, fretStart: Int, fretEnd: Int) -> [NoteTarget] {
+        var targets: [NoteTarget] = []
+        var seenNotes: Set<Int> = []
+        for fret in fretStart...fretEnd {
+            guard let note = fretboardMap.note(string: string, fret: fret),
+                  !seenNotes.contains(note.rawValue) else { continue }
+            seenNotes.insert(note.rawValue)
+            targets.append(NoteTarget(note: note, string: string, fret: fret))
+        }
+        return targets
+    }
 
     /// Returns natural notes on a string sorted by fret position.
     private func naturalNotesOnString(_ string: Int, fretStart: Int, fretEnd: Int) -> [NoteTarget] {

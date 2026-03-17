@@ -14,6 +14,8 @@ Building FretShed from a working prototype to an App Store-ready product taught 
 
 **AI is a force multiplier, not a replacement for judgment.** Claude.ai is spectacular at drafting plans, analyzing code, and catching patterns I'd miss. But it needs direction. The best sessions were the ones where I came in with a clear question or a specific problem. The worst were "just make it better." The split between Claude.ai (strategy, analysis, expert review) and Claude Code (implementation, testing, debugging) worked brilliantly once I stopped trying to use one tool for everything.
 
+**Every user-facing message is a factual claim.** "Best accuracy in 7 sessions" was comparing a session against itself. "Plateau" fired at 90%. "Every note mastered" fired after 3 of 8. Building a contradiction-detection test helper that validates every insight claim against session data caught 7 false-claim bugs in one pass. If your app makes a statement to the user, you need a test that proves it's true. Wrong claims destroy trust in "smart" features faster than anything else.
+
 **Feature flags saved my sanity.** The `sustainMode` pattern — where tuner enhancements are gated behind a boolean that quiz mode never sets — meant I could experiment aggressively with the tuner without ever worrying about breaking the quiz. Every time I was tempted to "just change it globally," I reminded myself of the time a threshold tweak silently broke low-string detection in quizzes.
 
 **Polish is not optional.** The gap between "it works" and "it ships" is enormous. Phase 3.6 was supposed to be 8 tasks. It became 14. Every one of those extra tasks made the app feel intentional instead of cobbled together. Budget 30% more time than you think you need for the last mile.
@@ -22,11 +24,11 @@ Building FretShed from a working prototype to an App Store-ready product taught 
 
 **Audit before you monetize.** A structured 6-pass codebase review before Phase 4 found a silent sample rate bug, a backup data loss issue, and 28 other problems. Batching fixes by dependency order (schema → crashes → thread safety → logging → tests → cleanup) made each fix independently committable. The dead code deletion alone removed 600+ lines. Systematic reviews catch what incremental development misses — schedule one before every major milestone.
 
-**If two systems advise the user, they must agree.** The insight engine and smart practice engine both analyzed mastery data independently — and gave contradictory advice. "Work on your D string" followed by a Full Fretboard quiz. The fix was simple: the message should come from the same engine that builds the session. Any time you have parallel recommendation systems, make one authoritative and the other a consumer.
+**Cached objects with internal state will betray you.** The Shed page cached a SmartPracticeEngine in @State. After a quiz advanced the phase from Foundation to Expansion, the cached engine still thought it was Foundation. The Shed showed "high E Natural Notes" while the heatmap correctly showed Expansion. Any cached object that reads state at init time must be invalidated when the world changes underneath it.
 
 **Layer your learning systems like your signal chain.** The Smart Practice Redesign stacked five independent systems (phase manager, temporal decay, note grouping, session planning, messaging) that each do one thing well. When they needed to communicate — like passing phase context from the Shed page through a quiz to the results screen — explicit data flow (coordinator properties) beat implicit coordination (both systems reading the same state independently) every time.
 
-**Display functions must not mutate state.** A "peek" method that quietly advanced the learning phase before the pre-quiz snapshot was taken suppressed the celebration card entirely. The fix was obvious in hindsight: if a method's name suggests it reads state, it must not write state. Side effects in read paths create timing bugs that are invisible until a real user hits them — and they always do.
+**If the data is wrong, every consumer is wrong.** `chromaticFragments()` built note groups from all chromatic notes but the quiz only drilled accidentals. The musical context called C and D "accidentals." Fixing the group builder to filter to sharps/flats fixed the headline, the description, and every phrase downstream. Bad data in → bad messages out, no matter how good your templates are.
 
 ---
 
@@ -223,3 +225,18 @@ Building FretShed from a working prototype to an App Store-ready product taught 
 4. **When two UI elements recommend actions, they must agree.** The "Next Up" button showed one session description but launched a different session because `insightCard.targetNotes` was always passed regardless of which recommendation was displayed. Adding a tracking flag (`nextSessionUsesTargetNotes`) that matches the label to the action was a 3-line fix for a deeply confusing UX bug.
 
 5. **Contradictions destroy trust.** A trophy card saying "Steady but flat" appearing above a "PHASE COMPLETE!" celebration makes the user doubt both messages. When two independent systems (insight engine + phase advancement) generate results screen content, the more significant event must override the less significant one. Phase advancement > session insight, always.
+
+---
+
+### Session: Mar 2026 — Phase Resequencing & Insight Accuracy (SP.8)
+*The "Every Claim Is a Promise" Session*
+
+1. **Every user-facing message is a factual claim — test it like one.** "Best accuracy in 7 sessions" was comparing a session against itself (>= with self-inclusion). "Plateau" fired when the user was at 90%+. "Every note on the A string" fired after 3 of 8 positions. Building `assertNoContradictions()` — a test helper that validates insight claims against session data — caught these and will catch future ones. If your app makes a statement, you need a test that proves it's true.
+
+2. **Scenario tests beat unit tests for user-facing features.** Testing individual insight builders in isolation missed the "decline then recovery" scenario where the consistency trend claimed "climbing" on a non-uptrend. Five scenario tests (rapid progression, plateau-then-breakthrough, consistently high, decline-recovery, first sessions) running real session histories through the full insight pipeline caught bugs that targeted unit tests couldn't.
+
+3. **Cached engines drift from reality.** The Shed page cached a `SmartPracticeEngine` in `@State` and reused it after quiz completion. Its internal `LearningPhaseManager` still had the pre-quiz phase in memory. The user advanced to Phase 2 but the Shed still said "Foundation." Recreating the engine on quiz completion was a one-line fix for a deeply confusing UX bug. Cached objects with internal state must be invalidated when the world changes.
+
+4. **Don't hardcode business gates before the business logic exists.** Free-tier restrictions (strings 4-6, frets 0-7) were scattered across 3 files as constants, limiting the app before EntitlementManager even existed. Removing them eliminated false "weakest string" calculations, wrong fret ranges in sessions, and insights that ignored 3 of 6 strings. Ship unrestricted, then restrict when you have the gating infrastructure.
+
+5. **If the data flow doesn't match the note type, everything downstream is wrong.** `chromaticFragments()` built groups from all chromatic notes but the quiz only drilled accidentals. The musical context then called C and D "accidentals." Fixing the group builder to filter to `!note.isNatural` fixed the headline, the description, and the phrase — because the data was right, everything that consumed it was right too. Bad data in → bad messages out, no matter how good your templates are.

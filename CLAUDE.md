@@ -221,7 +221,7 @@ Full analysis: `FretShed_Competitive_Analysis.md` in Claude.ai project files.
 **Smart Practice Redesign:** SP.1–SP.8 complete ✅
 **Phase 4:** Not started
 **Phase 5:** Not started
-**Test suite:** 420 tests passing (3 pre-existing session length default failures)
+**Test suite:** 425 tests passing (3 pre-existing session length default failures)
 
 **Session Insight Engine (INS.1–INS.5) — COMPLETE.** SessionInsightEngine: pure algorithmic service generating pedagogically grounded insight cards. 10 insight types (weakString, strongString, hardestNote, tierTransition, consistencyTrend, closeToLevelUp, coldSpot, coverage, sessionDelta, knowledgeShapeMilestone). InsightPhraseLibrary with deterministic phrase cycling. Tier transition detection via pre-session score reverse-computation. Knowledge shape milestones per BaselineLevel (fire-once). Rotation rule (no same type twice), positivity threshold (force positive after 4 negatives), insight fatigue (shed card hidden every 4th session). Insight card wired to QuizView session results (portrait + landscape). Smart Practice CTA on Shed page uses SmartPracticeEngine.peekNextSessionDescription() — message matches actual session. Session length slider restored to Settings > Session Settings. 11 unit tests.
 
@@ -440,6 +440,7 @@ All device-testing bugs are resolved. All feature ideas (F1–F36) are complete.
 |---|---|---|---|
 | 2026-03-10 | Pre-Phase 4 codebase review complete (6 batches). Test count now 286. Dead code removed (DecayStabilizer, NotificationScheduler). AppContainer no longer ObservableObject. Next task: Phase 4.2+. ROADMAP_STRATEGY.md may need S6 section update per Claude.ai. | ROADMAP_STRATEGY.md, CLAUDE_STRATEGY.md | ✅ Synced |
 | 2026-03-15 | Smart Practice Redesign complete (SP.1–SP.7). 4-phase learning progression (Foundation→Connection→Expansion→Fluency), temporal decay, note grouping engine, phase-aware messaging (~70 templates), heatmap focus indicator. SP.7: 8 phase transition bug fixes (phase-skipping prevention, placeholder substitution, contradictory messaging, race conditions). Session Insight Engine (INS.1–INS.5) also complete. Test count now 398. Next task: Phase 4 (Monetization). | ROADMAP_STRATEGY.md, CLAUDE_STRATEGY.md | 🔲 Pending |
+| 2026-03-16 | SP.8 Phase Resequencing + Insight Accuracy (expert review findings). Phases resequenced: Foundation→Expansion→Connection→Fluency. Fret range 0-12, all 6 strings required. All free-tier restrictions removed (unrestricted until Phase 4). 7 insight false-claim bugs fixed + contradiction detection test infra (5 scenario tests). Musical context now phase-aware (chromaticFragment GroupType). Stale Shed phase refresh, weakest-string untried-cell counting, Next Up session consistency, quiz UI cleanup (merged level bar), TunerView cross-tab alert fix. Test count 425. Next task: Phase 4. | ROADMAP_STRATEGY.md, CLAUDE_STRATEGY.md | 🔲 Pending |
 
 ### Inbound (changes requested by Claude.ai)
 | Date | Change Requested | Source | Status |

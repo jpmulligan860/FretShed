@@ -272,13 +272,18 @@ struct PracticeHomeView: View {
             if !showing { refreshData() }
         }
         .onChange(of: coordinator.lastCompletedSession?.id) {
-            // Quiz just finished — refresh smart practice data
-            if let engine = smartEngine {
-                smartDescription = engine.nextModeDescription()
-                weakSpots = (try? engine.weakSpotCount()) ?? 0
-                alternativeTiles = (try? engine.alternativeSessions()) ?? []
-                updatePhaseDisplay(engine: engine)
-            }
+            // Quiz just finished — recreate engine so it picks up phase changes
+            // from evaluateAdvancement() that ran during the quiz.
+            let engine = SmartPracticeEngine(
+                masteryRepository: container.masteryRepository,
+                sessionRepository: container.sessionRepository,
+                fretboardMap: container.fretboardMap
+            )
+            smartEngine = engine
+            smartDescription = engine.nextModeDescription()
+            weakSpots = (try? engine.weakSpotCount()) ?? 0
+            alternativeTiles = (try? engine.alternativeSessions()) ?? []
+            updatePhaseDisplay(engine: engine)
             updateSmartSessionLine()
         }
     }

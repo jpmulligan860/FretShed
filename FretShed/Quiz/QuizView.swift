@@ -905,7 +905,7 @@ struct QuizView: View {
             insightCard = InsightCard(
                 type: .tierTransition,
                 headline: "\(before.displayName) phase complete!",
-                body: "You've unlocked \(currentPhase.displayName).",
+                body: "You've unlocked the \(currentPhase.displayName) phase.",
                 isPositive: true,
                 isMilestone: true
             )

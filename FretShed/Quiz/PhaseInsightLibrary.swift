@@ -103,11 +103,11 @@ enum PhaseInsightLibrary {
     // MARK: - Phase 3: Expansion
 
     static let expansionMusicalContext: [String] = [
-        "{note} is the sharp/flat between {natural_low} and {natural_high}.",
-        "Every fret you skipped before has a note — {note} fills in the gap.",
-        "{notes}: sharps and flats that complete the chromatic picture.",
-        "Adding {note} means the {string_name} string has no blind spots left.",
-        "{note} shows up in keys like {key}. It's not an edge case — it's essential.",
+        "{notes} — the sharps and flats between frets {fret_start} and {fret_end} on the {string_name} string.",
+        "{notes}: accidentals that fill in the gaps between natural notes.",
+        "You just drilled {notes} — sharps and flats on the {string_name} string.",
+        "Those notes — {notes} — are the accidentals most players never learn.",
+        "{notes} on the {string_name} string. Every one of these fills a gap in your fretboard map.",
     ]
 
     static let expansionPerformance: [String] = [
@@ -230,10 +230,11 @@ enum PhaseInsightLibrary {
     static func musicalContextMessage(from context: NoteGroupContext, noteNames: [String], sessionCount: Int, stringName: String? = nil, fretStart: Int? = nil, fretEnd: Int? = nil) -> String {
         let pool: [String]
         switch context.groupType {
-        case .scaleFragment: pool = foundationMusicalContext
-        case .triad:         pool = connectionMusicalContext
-        case .chordTones:    pool = fluencyMusicalContext
-        case .octavePair:    pool = connectionMusicalContext
+        case .scaleFragment:    pool = foundationMusicalContext
+        case .chromaticFragment: pool = expansionMusicalContext
+        case .triad:            pool = connectionMusicalContext
+        case .chordTones:       pool = fluencyMusicalContext
+        case .octavePair:       pool = connectionMusicalContext
         }
 
         let notesJoined = noteNames.joined(separator: ", ")

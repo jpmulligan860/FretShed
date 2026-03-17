@@ -12,10 +12,11 @@ import Foundation
 
 /// The type of musical grouping used for a note group.
 enum GroupType: String, Codable, Sendable {
-    case scaleFragment   // Phase 1: adjacent natural notes on one string
-    case triad           // Phase 2: major/minor triad across strings
-    case chordTones      // Phase 4: chord-tone patterns from progressions
-    case octavePair      // Cross-string octave patterns
+    case scaleFragment      // Phase 1: adjacent natural notes on one string
+    case chromaticFragment  // Phase 2: adjacent chromatic notes (including accidentals)
+    case triad              // Phase 3: major/minor triad across strings
+    case chordTones         // Phase 4: chord-tone patterns from progressions
+    case octavePair         // Cross-string octave patterns
 }
 
 // MARK: - NoteGroupContext
@@ -226,8 +227,8 @@ struct NoteGroupingEngine: Sendable {
             return NoteGroup(
                 targets: targets,
                 context: NoteGroupContext(
-                    groupType: .scaleFragment,
-                    description: "\(noteNames.joined(separator: "-")) on the \(stringName) string — chromatic",
+                    groupType: .chromaticFragment,
+                    description: "\(noteNames.joined(separator: "-")) on the \(stringName) string — sharps & flats",
                     key: nil,
                     musicalName: "chromatic fragment",
                     intervalNames: nil

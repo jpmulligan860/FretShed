@@ -236,24 +236,22 @@ final class SessionInsightEngineTests: XCTestCase {
         score.totalAttempts = 5
         score.correctAttempts = 3
 
-        let sessions = (0..<3).map { _ in
-            let s = Session(focusMode: .fullFretboard, gameMode: .untimed, isAdaptive: true)
-            s.attemptCount = 5
-            s.correctCount = 3
-            s.isCompleted = true
-            return s
-        }
+        // 3 sessions, newest-first (all identical accuracy so order doesn't matter)
+        let sessions = makeSessionHistory([
+            (5, 3), (5, 3), (5, 3),
+        ])
+        let current = sessions.first!
 
         let attempts = [
             Attempt(targetNote: .e, targetString: 6, targetFret: 0,
                     playedNote: .e, playedString: 6, responseTimeMs: 400,
-                    wasCorrect: true, sessionID: sessions.last!.id, gameMode: .untimed,
+                    wasCorrect: true, sessionID: current.id, gameMode: .untimed,
                     acceptedAnyString: false),
         ]
 
         // First call at session 3 — should include recalibration
         let card1 = engine.insightForSummary(
-            session: sessions.last!,
+            session: current,
             sessionAttempts: attempts,
             allSessions: sessions,
             masteryScores: [score],
@@ -264,7 +262,7 @@ final class SessionInsightEngineTests: XCTestCase {
 
         // Second call — recalibration should NOT appear again
         let card2 = engine.insightForSummary(
-            session: sessions.last!,
+            session: current,
             sessionAttempts: attempts,
             allSessions: sessions,
             masteryScores: [score],
@@ -314,6 +312,8 @@ final class SessionInsightEngineTests: XCTestCase {
     // MARK: - Session Delta Factual Accuracy
 
     /// Helper: creates a session with specific accuracy.
+    /// Note: insightForSummary expects allSessions in NEWEST-FIRST order
+    /// (matching the repository's default sort). The engine reverses internally.
     private func makeSession(attemptCount: Int, correctCount: Int) -> Session {
         let s = Session(focusMode: .fullFretboard, gameMode: .untimed, isAdaptive: true)
         s.attemptCount = attemptCount
@@ -322,19 +322,25 @@ final class SessionInsightEngineTests: XCTestCase {
         return s
     }
 
+    /// Builds a session array in newest-first order (as the repository returns).
+    /// Pass accuracies in chronological order; this reverses them.
+    private func makeSessionHistory(_ accuracies: [(attempts: Int, correct: Int)]) -> [Session] {
+        accuracies.map { makeSession(attemptCount: $0.attempts, correctCount: $0.correct) }.reversed()
+    }
+
     func test_sessionDelta_bestInN_notClaimedWhenTied() {
-        // History: sessions with 100%, 80%, 100%, 80%, 100%, 80%, 100% (current)
+        // History (chronological): 100%, 80%, 100%, 80%, 100%, 80%, 100% (current)
         // The current session ties prior 100% sessions — should NOT claim "best in N"
-        let sessions = [
-            makeSession(attemptCount: 10, correctCount: 10),  // 100%
-            makeSession(attemptCount: 10, correctCount: 8),   // 80%
-            makeSession(attemptCount: 10, correctCount: 10),  // 100%
-            makeSession(attemptCount: 10, correctCount: 8),   // 80%
-            makeSession(attemptCount: 10, correctCount: 10),  // 100%
-            makeSession(attemptCount: 10, correctCount: 8),   // 80%  (prev)
-            makeSession(attemptCount: 10, correctCount: 10),  // 100% (current)
-        ]
-        let current = sessions.last!
+        let sessions = makeSessionHistory([
+            (10, 10),  // 100%
+            (10, 8),   // 80%
+            (10, 10),  // 100%
+            (10, 8),   // 80%
+            (10, 10),  // 100%
+            (10, 8),   // 80%  (prev)
+            (10, 10),  // 100% (current)
+        ])
+        let current = sessions.first!  // newest-first
 
         let attempts = [
             Attempt(targetNote: .e, targetString: 6, targetFret: 0,
@@ -358,17 +364,16 @@ final class SessionInsightEngineTests: XCTestCase {
     }
 
     func test_sessionDelta_bestInN_claimedWhenGenuinelyBest() {
-        // History: 70%, 75%, 80%, 72% (prev), 90% (current)
-        // Current 90% is strictly better than all prior — claim is valid
-        let sessions = [
-            makeSession(attemptCount: 10, correctCount: 7),   // 70%
-            makeSession(attemptCount: 10, correctCount: 7),   // 70% (different instance)
-            makeSession(attemptCount: 20, correctCount: 15),  // 75%
-            makeSession(attemptCount: 10, correctCount: 8),   // 80%
-            makeSession(attemptCount: 25, correctCount: 18),  // 72% (prev)
-            makeSession(attemptCount: 10, correctCount: 9),   // 90% (current)
-        ]
-        let current = sessions.last!
+        // History (chronological): 70%, 70%, 75%, 80%, 72% (prev), 90% (current)
+        let sessions = makeSessionHistory([
+            (10, 7),   // 70%
+            (10, 7),   // 70%
+            (20, 15),  // 75%
+            (10, 8),   // 80%
+            (25, 18),  // 72% (prev)
+            (10, 9),   // 90% (current)
+        ])
+        let current = sessions.first!  // newest-first
 
         let attempts = [
             Attempt(targetNote: .e, targetString: 6, targetFret: 0,
@@ -423,11 +428,11 @@ final class SessionInsightEngineTests: XCTestCase {
 
     func test_sessionDelta_noDeltaWhenImprovedByLessThan3() {
         // 78% → 80% = only 2% improvement, below the 3% threshold
-        let sessions = [
-            makeSession(attemptCount: 50, correctCount: 39),  // 78%
-            makeSession(attemptCount: 10, correctCount: 8),   // 80% (current)
-        ]
-        let current = sessions.last!
+        let sessions = makeSessionHistory([
+            (50, 39),  // 78%
+            (10, 8),   // 80% (current)
+        ])
+        let current = sessions.first!  // newest-first
 
         let attempts = [
             Attempt(targetNote: .a, targetString: 5, targetFret: 0,
@@ -554,12 +559,10 @@ final class SessionInsightEngineTests: XCTestCase {
     // MARK: - Consistency Trend Accuracy
 
     func test_consistencyTrend_improving_requiresThreeSessionUptrend() {
-        // Sessions: 60%, 70%, 80% — genuine 3-session uptrend
-        let sessions = [
-            makeSession(attemptCount: 10, correctCount: 6),
-            makeSession(attemptCount: 10, correctCount: 7),
-            makeSession(attemptCount: 10, correctCount: 8),
-        ]
+        // Sessions (chronological): 60%, 70%, 80% — genuine 3-session uptrend
+        let sessions = makeSessionHistory([
+            (10, 6), (10, 7), (10, 8),
+        ])
 
         let attempts = [
             Attempt(targetNote: .e, targetString: 6, targetFret: 0,
@@ -583,22 +586,21 @@ final class SessionInsightEngineTests: XCTestCase {
     }
 
     func test_consistencyTrend_flat_notClaimedAsImproving() {
-        // Sessions: 65%, 63%, 64% — flat AND below 80%, genuine plateau
-        let sessions = [
-            makeSession(attemptCount: 20, correctCount: 13),
-            makeSession(attemptCount: 19, correctCount: 12),
-            makeSession(attemptCount: 25, correctCount: 16),
-        ]
+        // Sessions (chronological): 65%, ~63%, 64% — flat AND below 80%
+        let sessions = makeSessionHistory([
+            (20, 13), (19, 12), (25, 16),
+        ])
 
+        let current = sessions.first!
         let attempts = [
             Attempt(targetNote: .a, targetString: 5, targetFret: 0,
                     playedNote: .a, playedString: 5, responseTimeMs: 400,
-                    wasCorrect: true, sessionID: sessions.last!.id, gameMode: .untimed,
+                    wasCorrect: true, sessionID: current.id, gameMode: .untimed,
                     acceptedAnyString: false),
         ]
 
         let card = engine.insightForSummary(
-            session: sessions.last!,
+            session: current,
             sessionAttempts: attempts,
             allSessions: sessions,
             masteryScores: [],
@@ -613,23 +615,21 @@ final class SessionInsightEngineTests: XCTestCase {
     }
 
     func test_consistencyTrend_highAndFlat_notCalledPlateau() {
-        // Sessions: 90%, 88%, 91% — flat spread but all above 80%
-        // This is sustained strong performance, NOT a plateau
-        let sessions = [
-            makeSession(attemptCount: 10, correctCount: 9),
-            makeSession(attemptCount: 25, correctCount: 22),
-            makeSession(attemptCount: 22, correctCount: 20),
-        ]
+        // Sessions (chronological): 90%, 88%, ~91% — all above 80%
+        let sessions = makeSessionHistory([
+            (10, 9), (25, 22), (22, 20),
+        ])
 
+        let current = sessions.first!
         let attempts = [
             Attempt(targetNote: .a, targetString: 5, targetFret: 0,
                     playedNote: .a, playedString: 5, responseTimeMs: 400,
-                    wasCorrect: true, sessionID: sessions.last!.id, gameMode: .untimed,
+                    wasCorrect: true, sessionID: current.id, gameMode: .untimed,
                     acceptedAnyString: false),
         ]
 
         let card = engine.insightForSummary(
-            session: sessions.last!,
+            session: current,
             sessionAttempts: attempts,
             allSessions: sessions,
             masteryScores: [],
@@ -647,6 +647,7 @@ final class SessionInsightEngineTests: XCTestCase {
 
     func test_temporalModifier_bestThisWeek_notClaimedOnTie() {
         // Two sessions this week, both 80% — should not claim "best this week"
+        // temporalModifier expects chronological order (oldest-first)
         let sessions = [
             makeSession(attemptCount: 10, correctCount: 8),
             makeSession(attemptCount: 10, correctCount: 8),
@@ -667,7 +668,8 @@ final class SessionInsightEngineTests: XCTestCase {
     }
 
     func test_temporalModifier_bestThisWeek_claimedWhenGenuinelyBest() {
-        // Two sessions this week: 70% then 90% — 90% is genuinely best
+        // Two sessions this week (chronological): 70% then 90% — 90% is genuinely best
+        // temporalModifier expects chronological order (oldest-first)
         let sessions = [
             makeSession(attemptCount: 10, correctCount: 7),
             makeSession(attemptCount: 10, correctCount: 9),
@@ -729,5 +731,258 @@ final class SessionInsightEngineTests: XCTestCase {
 
         let stage = engine.computeMasteryStage(scores: scores)
         XCTAssertEqual(stage, .refining)
+    }
+
+    // MARK: - Insight Contradiction Detection
+
+    /// Validates that an InsightCard's headline contains no unreplaced placeholders
+    /// and no claims that contradict the session data.
+    private func assertNoContradictions(
+        card: InsightCard,
+        currentSession: Session,
+        allSessions: [Session],
+        scores: [MasteryScore],
+        file: StaticString = #file,
+        line: UInt = #line
+    ) {
+        let headline = card.headline
+        let body = card.body ?? ""
+        let combined = headline + " " + body
+
+        // 1. No unreplaced placeholders
+        let placeholders = ["[STRING]", "[NOTE]", "[ACCURACY]", "[DELTA]", "[N]",
+                            "[COUNT]", "[TIER]", "[ATTEMPTS]", "[PREV]", "[RANGE]", "[NOTE_TYPE]"]
+        for p in placeholders {
+            XCTAssertFalse(combined.contains(p),
+                           "Unreplaced placeholder \(p) in: \(combined)", file: file, line: line)
+        }
+
+        // 2. "Best in N" — verify the claim is true
+        if let range = headline.range(of: "Best accuracy in ") {
+            let afterBest = headline[range.upperBound...]
+            if let nEnd = afterBest.firstIndex(of: " "),
+               let n = Int(afterBest[..<nEnd]) {
+                let priorSessions = allSessions.dropLast()
+                let windowPrior = priorSessions.suffix(n - 1)
+                let priorMax = windowPrior.map(\.accuracyPercent).max() ?? 0
+                XCTAssertGreaterThan(currentSession.accuracyPercent, priorMax,
+                                     "\"Best in \(n)\" claim is false: current \(currentSession.accuracyPercent)% <= prior max \(priorMax)%",
+                                     file: file, line: line)
+            }
+        }
+
+        // 3. "[ACCURACY]%" values must match actual data
+        // Session delta: "[ACCURACY]% today" should match currentSession
+        if headline.contains("% today") {
+            let accuracyStr = "\(Int(currentSession.accuracyPercent))"
+            XCTAssertTrue(headline.contains(accuracyStr + "% today") || headline.contains(accuracyStr + "%"),
+                          "Accuracy \(accuracyStr)% not found in: \(headline)", file: file, line: line)
+        }
+
+        // 4. "plateau" / "flat" not valid when accuracy is high and rising
+        if combined.lowercased().contains("plateau") || combined.contains("Flat accuracy") {
+            let last3 = allSessions.suffix(3).map(\.accuracyPercent)
+            if last3.count >= 3 {
+                let allHigh = last3.allSatisfy { $0 >= 80 }
+                XCTAssertFalse(allHigh,
+                               "Plateau/flat claimed but all 3 sessions are 80%+: \(last3)",
+                               file: file, line: line)
+                let isRising = last3.last! > last3.first!
+                XCTAssertFalse(isRising && (last3.last! - last3.first!) >= 5,
+                               "Plateau claimed but accuracy rose \(Int(last3.last! - last3.first!))%",
+                               file: file, line: line)
+            }
+        }
+
+        // 5. Consistency trend "climbing" / "improvement" requires actual uptrend
+        if card.type == .consistencyTrend &&
+           (combined.contains("climbing") || combined.contains("improvement") || combined.contains("Steady progress")) {
+            let last3 = allSessions.suffix(3).map(\.accuracyPercent)
+            if last3.count >= 3 {
+                let isImproving = last3[1] > last3[0] && last3[2] > last3[1]
+                XCTAssertTrue(isImproving,
+                              "Consistency trend claims improvement but sessions aren't trending up: \(last3). Card: type=\(card.type), headline=\(headline)",
+                              file: file, line: line)
+            }
+        }
+
+        // 6. Positive/negative alignment
+        if card.type == .sessionDelta {
+            if headline.contains("Up ") || headline.contains("Best accuracy") {
+                XCTAssertTrue(card.isPositive,
+                              "Positive delta headline but card marked negative", file: file, line: line)
+            }
+            if headline.contains("Down ") || headline.contains("dipped") {
+                XCTAssertFalse(card.isPositive,
+                               "Negative delta headline but card marked positive", file: file, line: line)
+            }
+        }
+    }
+
+    // MARK: - Scenario: Rapid Phase 1 Progression
+
+    func test_scenario_rapidPhase1_noFalseClaims() {
+        // Simulates a user rapidly progressing through Phase 1:
+        // 7 sessions, accuracy rising from 70% to 95%
+        let accuracies: [(attempts: Int, correct: Int)] = [
+            (10, 7),   // 70%
+            (10, 7),   // 70%
+            (10, 8),   // 80%
+            (10, 8),   // 80%
+            (10, 9),   // 90%
+            (10, 9),   // 90%
+            (20, 19),  // 95%
+        ]
+
+        let sessions = makeSessionHistory(accuracies)
+        let current = sessions.first!  // newest-first: first element is the current session
+        let attempts = [
+            Attempt(targetNote: .a, targetString: 5, targetFret: 0,
+                    playedNote: .a, playedString: 5, responseTimeMs: 400,
+                    wasCorrect: true, sessionID: current.id, gameMode: .untimed,
+                    acceptedAnyString: false),
+        ]
+
+        let card = engine.insightForSummary(
+            session: current,
+            sessionAttempts: attempts,
+            allSessions: sessions,
+            masteryScores: [],
+            baselineLevel: .startingFresh
+        )
+
+        assertNoContradictions(card: card, currentSession: current,
+                               allSessions: sessions, scores: [])
+    }
+
+    // MARK: - Scenario: Plateau then Breakthrough
+
+    func test_scenario_plateauThenBreakthrough_noFalseClaims() {
+        // 5 sessions at 65%, then a breakthrough to 85%
+        let accuracies: [(attempts: Int, correct: Int)] = [
+            (20, 13),  // 65%
+            (20, 13),  // 65%
+            (20, 13),  // 65%
+            (20, 13),  // 65%
+            (20, 13),  // 65%
+            (20, 17),  // 85% — breakthrough
+        ]
+
+        let sessions = makeSessionHistory(accuracies)
+        let current = sessions.first!  // newest-first: first element is the current session
+        let attempts = [
+            Attempt(targetNote: .d, targetString: 4, targetFret: 0,
+                    playedNote: .d, playedString: 4, responseTimeMs: 400,
+                    wasCorrect: true, sessionID: current.id, gameMode: .untimed,
+                    acceptedAnyString: false),
+        ]
+
+        let card = engine.insightForSummary(
+            session: current,
+            sessionAttempts: attempts,
+            allSessions: sessions,
+            masteryScores: [],
+            baselineLevel: .startingFresh
+        )
+
+        assertNoContradictions(card: card, currentSession: current,
+                               allSessions: sessions, scores: [])
+        // A 20% jump should be positive
+        if card.type == .sessionDelta {
+            XCTAssertTrue(card.isPositive, "20% improvement should be positive")
+        }
+    }
+
+    // MARK: - Scenario: Consistently High
+
+    func test_scenario_consistentlyHigh_noPlateauClaim() {
+        // User is doing great: 88%, 92%, 90%, 91%, 89%
+        let accuracies: [(attempts: Int, correct: Int)] = [
+            (25, 22),  // 88%
+            (25, 23),  // 92%
+            (10, 9),   // 90%
+            (22, 20),  // ~91%
+            (19, 17),  // ~89%
+        ]
+
+        let sessions = makeSessionHistory(accuracies)
+        let current = sessions.first!  // newest-first: first element is the current session
+        let attempts = [
+            Attempt(targetNote: .e, targetString: 6, targetFret: 0,
+                    playedNote: .e, playedString: 6, responseTimeMs: 400,
+                    wasCorrect: true, sessionID: current.id, gameMode: .untimed,
+                    acceptedAnyString: false),
+        ]
+
+        let card = engine.insightForSummary(
+            session: current,
+            sessionAttempts: attempts,
+            allSessions: sessions,
+            masteryScores: [],
+            baselineLevel: .chordPlayer
+        )
+
+        assertNoContradictions(card: card, currentSession: current,
+                               allSessions: sessions, scores: [])
+    }
+
+    // MARK: - Scenario: Declining then Recovery
+
+    func test_scenario_declineThenRecovery_noFalseClaims() {
+        // 90% → 75% → 70% → 82% — recovery after a dip
+        let accuracies: [(attempts: Int, correct: Int)] = [
+            (10, 9),   // 90%
+            (20, 15),  // 75%
+            (10, 7),   // 70%
+            (50, 41),  // 82%
+        ]
+
+        let sessions = makeSessionHistory(accuracies)
+        let current = sessions.first!  // newest-first: first element is the current session
+        let attempts = [
+            Attempt(targetNote: .a, targetString: 5, targetFret: 0,
+                    playedNote: .a, playedString: 5, responseTimeMs: 400,
+                    wasCorrect: true, sessionID: current.id, gameMode: .untimed,
+                    acceptedAnyString: false),
+        ]
+
+        let card = engine.insightForSummary(
+            session: current,
+            sessionAttempts: attempts,
+            allSessions: sessions,
+            masteryScores: [],
+            baselineLevel: .startingFresh
+        )
+
+        assertNoContradictions(card: card, currentSession: current,
+                               allSessions: sessions, scores: [])
+    }
+
+    // MARK: - Scenario: First Few Sessions
+
+    func test_scenario_firstThreeSessions_noFalseClaims() {
+        // Brand new user: sessions 1, 2, 3
+        for sessionIndex in 1...3 {
+            let accuracies = (0..<sessionIndex).map { i in (attempts: 10, correct: 5 + i) }
+            let sessions = makeSessionHistory(accuracies)
+            let current = sessions.first!  // newest-first
+            let attempts = [
+                Attempt(targetNote: .e, targetString: 6, targetFret: 0,
+                        playedNote: .e, playedString: 6, responseTimeMs: 400,
+                        wasCorrect: true, sessionID: current.id, gameMode: .untimed,
+                        acceptedAnyString: false),
+            ]
+
+            let card = engine.insightForSummary(
+                session: current,
+                sessionAttempts: attempts,
+                allSessions: sessions,
+                masteryScores: [],
+                baselineLevel: .startingFresh
+            )
+
+            assertNoContradictions(card: card, currentSession: current,
+                                   allSessions: sessions, scores: [])
+        }
     }
 }

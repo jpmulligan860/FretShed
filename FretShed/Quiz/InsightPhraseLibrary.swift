@@ -30,7 +30,7 @@ enum InsightPhraseLibrary {
 
     static let strongStringPhrases: [String] = [
         "Your [STRING] string is looking solid at [ACCURACY]%.",
-        "[STRING] string is your strongest — [ACCURACY]% and climbing.",
+        "[STRING] string is your strongest right now — [ACCURACY]%.",
         "The [STRING] string led the way this session. Nice work.",
         "[STRING] string at [ACCURACY]% — that's your best string right now.",
     ]

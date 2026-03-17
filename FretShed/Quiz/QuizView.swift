@@ -156,12 +156,6 @@ struct QuizView: View {
                                 actionSection
                                     .padding(.horizontal, 12)
                                     .frame(maxWidth: 320)
-
-                                if !vm.settings.tapModeEnabled && !vm.settings.tapToAnswerEnabled {
-                                    InputLevelBar(level: detector.inputLevel)
-                                        .frame(width: 60)
-                                        .padding(.trailing, 8)
-                                }
                             }
                             .padding(.vertical, 4)
 
@@ -178,12 +172,6 @@ struct QuizView: View {
                         scaledFretboard
                             .padding(.horizontal, 8)
                             .padding(.top, 10)
-
-                        if !vm.settings.tapModeEnabled && !vm.settings.tapToAnswerEnabled {
-                            InputLevelBar(level: detector.inputLevel)
-                                .padding(.top, 4)
-                                .padding(.horizontal, 8)
-                        }
 
                         playedNoteCard
                             .padding(.top, 8)
@@ -1168,6 +1156,7 @@ struct QuizView: View {
     }
 
     /// Live mic indicator shown while the quiz is listening.
+    /// Combines status text with input level bar in a single compact row.
     private var micListeningView: some View {
         VStack(spacing: 10) {
             if let error = detector.error {
@@ -1177,7 +1166,7 @@ struct QuizView: View {
                     audioFailureBanner
                 }
             } else {
-                HStack(spacing: 8) {
+                HStack(spacing: 10) {
                     Image(systemName: detector.isRunning ? "mic.fill" : "mic.slash.fill")
                         .foregroundStyle(detector.isRunning ? DesignSystem.Colors.correct : .secondary)
                     if let note = detector.detectedNote {
@@ -1190,9 +1179,13 @@ struct QuizView: View {
                             .font(DesignSystem.Typography.bodyLabel)
                             .foregroundStyle(DesignSystem.Colors.text2)
                     }
+                    Spacer()
+                    InputLevelBar(level: detector.inputLevel)
+                        .frame(width: 60, height: 8)
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 12)
+                .padding(.horizontal, 14)
                 .background(DesignSystem.Colors.surface,
                             in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
             }

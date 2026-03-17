@@ -172,8 +172,8 @@ final class SmartPracticeEngineTests: XCTestCase {
 
     func test_weakSpotCount_allUnseen_returnsFullCount() throws {
         let count = try engine.weakSpotCount()
-        // 3 strings (4,5,6) × 8 frets (0-7) = 24 cells
-        XCTAssertEqual(count, 24)
+        // 6 strings × 13 frets (0-12) = 78 positions
+        XCTAssertEqual(count, 78)
     }
 
     func test_weakSpotCount_withStrongScores_decreases() throws {
@@ -185,7 +185,7 @@ final class SmartPracticeEngineTests: XCTestCase {
             try masteryRepo.save(score)
         }
         let count = try engine.weakSpotCount()
-        XCTAssertEqual(count, 23)
+        XCTAssertEqual(count, 76) // note appears at both fret 0 and fret 12
     }
 
     func test_weakSpotCount_borderline_scoreAt50_isNotWeak() throws {
@@ -197,7 +197,7 @@ final class SmartPracticeEngineTests: XCTestCase {
             try masteryRepo.save(score)
         }
         let count = try engine.weakSpotCount()
-        XCTAssertEqual(count, 23)
+        XCTAssertEqual(count, 76) // note appears at both fret 0 and fret 12
     }
 
     // MARK: - Alternative Sessions
@@ -214,7 +214,7 @@ final class SmartPracticeEngineTests: XCTestCase {
             XCTAssertFalse(alt.subtitle.isEmpty)
             XCTAssertFalse(alt.icon.isEmpty)
             XCTAssertEqual(alt.session.fretRangeStart, 0)
-            XCTAssertEqual(alt.session.fretRangeEnd, 7)
+            XCTAssertEqual(alt.session.fretRangeEnd, 12)
             XCTAssertTrue(alt.session.isAdaptive)
         }
     }

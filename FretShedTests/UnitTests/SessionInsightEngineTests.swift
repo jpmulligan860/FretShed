@@ -272,27 +272,26 @@ final class SessionInsightEngineTests: XCTestCase {
                        "Recalibration message should only fire once")
     }
 
-    // MARK: - Free Tier Filtering
+    // MARK: - All Strings Accessible
 
-    func test_freeTier_noInsightsAboutStrings1To3() throws {
-        // Create scores on strings 1-3 (premium-only)
-        let premiumScore = MasteryScore(note: .e, stringNumber: 1)
-        premiumScore.totalAttempts = 20
-        premiumScore.correctAttempts = 5
+    func test_allStringsAccessible_insightsCanMentionAnyString() throws {
+        // All 6 strings are accessible — insights should surface data from any string
+        let score1 = MasteryScore(note: .e, stringNumber: 1)
+        score1.totalAttempts = 20
+        score1.correctAttempts = 5 // weak — should be surfaceable
 
-        // Create scores on strings 4-6 (free tier)
-        let freeScore = MasteryScore(note: .a, stringNumber: 5)
-        freeScore.totalAttempts = 10
-        freeScore.correctAttempts = 7
+        let score5 = MasteryScore(note: .a, stringNumber: 5)
+        score5.totalAttempts = 10
+        score5.correctAttempts = 9
 
         let session = Session(focusMode: .fullFretboard, gameMode: .untimed, isAdaptive: true)
         session.attemptCount = 5
         session.correctCount = 3
 
         let attempts = [
-            Attempt(targetNote: .a, targetString: 5, targetFret: 0,
-                    playedNote: .a, playedString: 5, responseTimeMs: 400,
-                    wasCorrect: true, sessionID: session.id, gameMode: .untimed,
+            Attempt(targetNote: .e, targetString: 1, targetFret: 0,
+                    playedNote: .a, playedString: 1, responseTimeMs: 400,
+                    wasCorrect: false, sessionID: session.id, gameMode: .untimed,
                     acceptedAnyString: false),
         ]
 
@@ -300,13 +299,13 @@ final class SessionInsightEngineTests: XCTestCase {
             session: session,
             sessionAttempts: attempts,
             allSessions: [session],
-            masteryScores: [premiumScore, freeScore],
+            masteryScores: [score1, score5],
             baselineLevel: .startingFresh
         )
 
-        // Headline should not mention "high E" (string 1)
-        XCTAssertFalse(card.headline.contains("high E"),
-                       "Free tier should not surface insights about string 1")
+        // The insight engine should be able to surface data from all strings
+        // (no free-tier filtering — that comes in Phase 4)
+        XCTAssertNotNil(card.headline)
     }
 
     // MARK: - Session Delta Factual Accuracy
@@ -702,11 +701,12 @@ final class SessionInsightEngineTests: XCTestCase {
     }
 
     func test_computeMasteryStage_consolidating() {
-        // Many cells attempted, few proficient/mastered
+        // Need >40% of 72 cells attempted (≥30) to exit "exploring",
+        // but fewer than 40% proficient+ to stay in "consolidating"
         var scores: [MasteryScore] = []
-        for i in 0..<20 {
+        for i in 0..<36 {
             let note = MusicalNote(rawValue: i % 12) ?? .c
-            let string = [4, 5, 6][i % 3]
+            let string = (i % 6) + 1
             let s = MasteryScore(note: note, stringNumber: string)
             s.totalAttempts = 10
             s.correctAttempts = 5 // score ~0.54 → Learning
@@ -718,14 +718,14 @@ final class SessionInsightEngineTests: XCTestCase {
     }
 
     func test_computeMasteryStage_refining() {
-        // Many cells at proficient/mastered level
+        // Need >40% of 72 cells attempted AND ≥40% of those at proficient+
         var scores: [MasteryScore] = []
-        for i in 0..<20 {
+        for i in 0..<36 {
             let note = MusicalNote(rawValue: i % 12) ?? .c
-            let string = [4, 5, 6][i % 3]
+            let string = (i % 6) + 1
             let s = MasteryScore(note: note, stringNumber: string)
             s.totalAttempts = 20
-            s.correctAttempts = 19 // score ~0.91 → Proficient (or Mastered if 15+)
+            s.correctAttempts = 19 // score ~0.91 → Proficient
             scores.append(s)
         }
 

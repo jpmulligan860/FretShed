@@ -31,10 +31,11 @@ final class SmartPracticeEngine {
     private let phaseManager: LearningPhaseManager
     private let groupingEngine: NoteGroupingEngine
 
-    // Free-tier constraints (hardcoded until Phase 4 EntitlementManager)
-    static let freeStrings: [Int] = [4, 5, 6]
-    static let freeFretStart = 0
-    static let freeFretEnd = 7
+    // Session constraints — currently unrestricted (all strings, frets 0-12).
+    // Phase 4 (EntitlementManager) will gate free-tier to strings 4-6, frets 0-7.
+    static let sessionStrings: [Int] = LearningPhaseManager.allStrings
+    static let sessionFretStart = 0
+    static let sessionFretEnd = LearningPhaseManager.phaseRequiredFretEnd
 
     // Struggling user detection
     private static let strugglingSessionThreshold = 3
@@ -69,7 +70,7 @@ final class SmartPracticeEngine {
             let session = Session(
                 focusMode: .naturalNotes,
                 gameMode: .untimed,
-                fretRangeStart: Self.freeFretStart,
+                fretRangeStart: Self.sessionFretStart,
                 fretRangeEnd: LearningPhaseManager.phaseRequiredFretEnd,
                 isAdaptive: true
             )
@@ -84,7 +85,7 @@ final class SmartPracticeEngine {
             let session = Session(
                 focusMode: .naturalNotes,
                 gameMode: .untimed,
-                fretRangeStart: Self.freeFretStart,
+                fretRangeStart: Self.sessionFretStart,
                 fretRangeEnd: LearningPhaseManager.phaseRequiredFretEnd,
                 targetStrings: [target],
                 isAdaptive: true
@@ -142,9 +143,9 @@ final class SmartPracticeEngine {
     func weakSpotCount() throws -> Int {
         let allScores = try masteryRepository.allScores()
         var count = 0
-        for string in Self.freeStrings {
+        for string in Self.sessionStrings {
             guard let fretMap = fretboardMap.map[string] else { continue }
-            for fret in Self.freeFretStart...Self.freeFretEnd {
+            for fret in Self.sessionFretStart...Self.sessionFretEnd {
                 guard let note = fretMap[fret] else { continue }
                 let cellScore = allScores.first(where: {
                     $0.noteRaw == note.rawValue && $0.stringNumber == string
@@ -168,23 +169,20 @@ final class SmartPracticeEngine {
         let fullSession = Session(
             focusMode: .fullFretboard,
             gameMode: .untimed,
-            fretRangeStart: Self.freeFretStart,
-            fretRangeEnd: Self.freeFretEnd,
+            fretRangeStart: Self.sessionFretStart,
+            fretRangeEnd: Self.sessionFretEnd,
             isAdaptive: true
         )
         alternatives.append((fullSession, "Full Fretboard", "Cover all positions", "rectangle.grid.3x2.fill"))
 
-        // Offer weakest string as alternative — use all 6 strings in Phase 2+
-        let stringsForWeakest = phaseManager.currentPhase.rawValue >= LearningPhase.expansion.rawValue
-            ? LearningPhaseManager.allStrings
-            : Self.freeStrings
-        let weakest = Self.weakestString(from: allScores, strings: stringsForWeakest, fretboardMap: fretboardMap)
+        // Offer weakest string as alternative
+        let weakest = Self.weakestString(from: allScores, strings: Self.sessionStrings, fretboardMap: fretboardMap)
         let name = Self.stringName(weakest)
         let stringSession = Session(
             focusMode: .singleString,
             gameMode: .untimed,
-            fretRangeStart: Self.freeFretStart,
-            fretRangeEnd: Self.freeFretEnd,
+            fretRangeStart: Self.sessionFretStart,
+            fretRangeEnd: Self.sessionFretEnd,
             targetStrings: [weakest],
             isAdaptive: true
         )
@@ -311,7 +309,7 @@ final class SmartPracticeEngine {
             return Session(
                 focusMode: .naturalNotes,
                 gameMode: .untimed,
-                fretRangeStart: Self.freeFretStart,
+                fretRangeStart: Self.sessionFretStart,
                 fretRangeEnd: fretEnd,
                 targetStrings: [fallbackString],
                 isAdaptive: true
@@ -321,7 +319,7 @@ final class SmartPracticeEngine {
         // Use NoteGroupingEngine for musically meaningful groups
         let groups = groupingEngine.scaleFragments(
             onString: targetString,
-            fretStart: Self.freeFretStart,
+            fretStart: Self.sessionFretStart,
             fretEnd: fretEnd,
             scores: scores,
             groupCount: 2
@@ -330,7 +328,7 @@ final class SmartPracticeEngine {
         // Build review targets from stuck notes
         let reviewTargets = phaseManager.stuckNotes.prefix(2).compactMap { stuck -> NoteTarget? in
             guard let note = MusicalNote(rawValue: stuck.noteRaw) else { return nil }
-            for fret in Self.freeFretStart...fretEnd {
+            for fret in Self.sessionFretStart...fretEnd {
                 if fretboardMap.note(string: stuck.stringNumber, fret: fret) == note {
                     return NoteTarget(note: note, string: stuck.stringNumber, fret: fret)
                 }
@@ -348,7 +346,7 @@ final class SmartPracticeEngine {
         let session = Session(
             focusMode: .naturalNotes,
             gameMode: .untimed,
-            fretRangeStart: Self.freeFretStart,
+            fretRangeStart: Self.sessionFretStart,
             fretRangeEnd: fretEnd,
             targetStrings: [targetString],
             isAdaptive: true
@@ -368,7 +366,7 @@ final class SmartPracticeEngine {
         // Use chromatic fragment groups for musically meaningful practice
         let groups = groupingEngine.chromaticFragments(
             onString: targetString,
-            fretStart: Self.freeFretStart,
+            fretStart: Self.sessionFretStart,
             fretEnd: fretEnd,
             scores: scores,
             groupCount: 2
@@ -385,7 +383,7 @@ final class SmartPracticeEngine {
         return Session(
             focusMode: .sharpsAndFlats,
             gameMode: .untimed,
-            fretRangeStart: Self.freeFretStart,
+            fretRangeStart: Self.sessionFretStart,
             fretRangeEnd: fretEnd,
             targetStrings: [targetString],
             isAdaptive: true
@@ -399,7 +397,7 @@ final class SmartPracticeEngine {
         let groups = groupingEngine.triadGroups(
             strings: LearningPhaseManager.allStrings,
             scores: scores,
-            fretStart: Self.freeFretStart,
+            fretStart: Self.sessionFretStart,
             fretEnd: fretEnd,
             groupCount: 2,
             useAllRoots: true
@@ -416,7 +414,7 @@ final class SmartPracticeEngine {
         return Session(
             focusMode: .fullFretboard,
             gameMode: .untimed,
-            fretRangeStart: Self.freeFretStart,
+            fretRangeStart: Self.sessionFretStart,
             fretRangeEnd: fretEnd,
             isAdaptive: true
         )
@@ -432,7 +430,7 @@ final class SmartPracticeEngine {
         let groups = groupingEngine.chordToneGroups(
             progression: progression,
             strings: Array(1...6),
-            fretStart: Self.freeFretStart,
+            fretStart: Self.sessionFretStart,
             fretEnd: fretEnd
         )
 
@@ -447,7 +445,7 @@ final class SmartPracticeEngine {
         return Session(
             focusMode: .fullFretboard,
             gameMode: .untimed,
-            fretRangeStart: Self.freeFretStart,
+            fretRangeStart: Self.sessionFretStart,
             fretRangeEnd: fretEnd,
             isAdaptive: true
         )
@@ -501,7 +499,7 @@ final class SmartPracticeEngine {
         return Session(
             focusMode: .naturalNotes,
             gameMode: .untimed,
-            fretRangeStart: Self.freeFretStart,
+            fretRangeStart: Self.sessionFretStart,
             fretRangeEnd: fretEnd,
             targetStrings: [weakestString],
             isAdaptive: true

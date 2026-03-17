@@ -30,17 +30,15 @@ final class SessionInsightEngine {
         note.displayName(format: noteFormat)
     }
 
-    private static let freeStrings: Set<Int> = [4, 5, 6]
-    private static let freeFretEnd = 7
-    private static let freeCellCount = 24   // 3 strings × 8 frets
-    private static let premiumCellCount = 72 // 6 strings × 12 unique notes
+    // All strings and positions accessible — Phase 4 (EntitlementManager) will gate free tier.
+    private static let allCellCount = 72 // 6 strings × 12 unique chromatic notes
 
     private var accessibleCellCount: Int {
-        isPremium ? Self.premiumCellCount : Self.freeCellCount
+        Self.allCellCount
     }
 
     private var accessibleStrings: Set<Int> {
-        isPremium ? Set(1...6) : Self.freeStrings
+        Set(1...6)
     }
 
     // MARK: - UserDefaults Keys

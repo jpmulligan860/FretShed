@@ -67,7 +67,7 @@ struct MasteryHeatmapView: View {
             // Highlight all positions across all strings (cross-string, all notes)
             var cells: Set<CellPosition> = []
             for string in LearningPhaseManager.allStrings {
-                for fret in LearningPhaseManager.freeFretStart...LearningPhaseManager.phaseRequiredFretEnd {
+                for fret in LearningPhaseManager.fretStart...LearningPhaseManager.phaseRequiredFretEnd {
                     cells.insert(CellPosition(string: string, fret: fret))
                 }
             }

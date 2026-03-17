@@ -76,17 +76,13 @@ final class LearningPhaseManager {
     /// Minimum attempts for a cell to be considered (cells with 0 attempts don't count).
     static let minimumAttempts: Int = 3
 
-    /// All 6 strings required for Phase 1 advancement (v2: was 3 free-tier strings).
+    /// All 6 strings.
     static let allStrings: [Int] = [1, 2, 3, 4, 5, 6]
 
-    /// Learning gate: fret range used in advancement checks (0-12).
-    /// Separate from the business gate (freeFretEnd = 7) which restricts free-tier sessions.
+    /// Fret range for advancement checks and session building (0-12).
+    /// Phase 4 (EntitlementManager) will gate free-tier to frets 0-7.
     static let phaseRequiredFretEnd = 12
-
-    /// Free-tier constraints (matching SmartPracticeEngine).
-    static let freeStrings: [Int] = [4, 5, 6]
-    static let freeFretStart = 0
-    static let freeFretEnd = 7
+    static let fretStart = 0
 
     // MARK: - UserDefaults Keys
 
@@ -644,7 +640,7 @@ final class LearningPhaseManager {
         var cells: [(note: MusicalNote, fret: Int)] = []
         var seenNotes: Set<Int> = []  // Deduplicate by note rawValue
 
-        for fret in Self.freeFretStart...fretEnd {
+        for fret in Self.fretStart...fretEnd {
             guard let note = fretboardMap.note(string: string, fret: fret),
                   note.isNatural,
                   !seenNotes.contains(note.rawValue) else { continue }
@@ -660,7 +656,7 @@ final class LearningPhaseManager {
         var cells: [(note: MusicalNote, fret: Int)] = []
         var seenNotes: Set<Int> = []
 
-        for fret in Self.freeFretStart...fretEnd {
+        for fret in Self.fretStart...fretEnd {
             guard let note = fretboardMap.note(string: string, fret: fret),
                   !seenNotes.contains(note.rawValue) else { continue }
             seenNotes.insert(note.rawValue)

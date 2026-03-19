@@ -321,9 +321,9 @@ public final class PitchDetector {
             // Adaptive EMA for tracking mode: heavy smoothing suppresses YIN
             // flat-ward drift during decay (~1.5¢ over 200 frames vs ~30¢ raw).
             // Large changes (peg turns) switch to fast alpha for ~250ms response.
-            let trackingAlphaFast: Double = 0.3    // for changes > threshold
-            let trackingAlphaSlow: Double = 0.05   // for steady state / drift
-            let trackingJumpThreshold: Double = 2.0 // cents to trigger fast mode
+            // Phase-based tracking constants — reserved for future use if
+            // phase-based Goertzel tracking is re-enabled (see T.P2.5 notes).
+            _ = (0.3, 0.05, 2.0) // (alphaFast, alphaSlow, jumpThreshold)
 
             for await result in pitchStream {
                 guard let self else { break }
@@ -422,7 +422,7 @@ public final class PitchDetector {
 
                     // --- Tuner tracking mode (sustain) ---
                     if sustainEnabled, case .tracking(let trackedNote) = trackingState {
-                        let (note, cents) = pitchDetectorNoteAndCents(frequency: freq, referenceA: self.referenceA)
+                        let (note, _) = pitchDetectorNoteAndCents(frequency: freq, referenceA: self.referenceA)
 
                         // Exit tracking if note changes for 2+ consecutive frames
                         if note != trackedNote {

@@ -32,6 +32,7 @@ final class SmartPracticeEngineTests: XCTestCase {
         UserDefaults.standard.removeObject(forKey: "lastSmartPracticeMode")
         UserDefaults.standard.removeObject(forKey: "smartPractice_consecutivePoorSessions")
         UserDefaults.standard.removeObject(forKey: "smartPractice_isStruggling")
+        UserDefaults.standard.removeObject(forKey: "smartPractice_fluencyRotationIndex")
     }
 
     override func tearDown() async throws {
@@ -105,11 +106,26 @@ final class SmartPracticeEngineTests: XCTestCase {
 
     // MARK: - Phase 4 Session Generation
 
-    func test_fluencySession_usesFullFretboard() throws {
+    func test_fluencySession_rotatesFocusModes() throws {
         phaseManager.currentPhase = .fluency
-        let (session, _) = try engine.nextSession()
-        XCTAssertEqual(session.focusMode, .fullFretboard)
-        XCTAssertEqual(session.fretRangeEnd, 12)
+
+        // Rotation: fullFretboard → stringFocus → noteFocus → positionFocus
+        let (session1, _) = try engine.nextSession()
+        XCTAssertEqual(session1.focusMode, .fullFretboard)
+        XCTAssertEqual(session1.fretRangeEnd, 12)
+
+        let (session2, _) = try engine.nextSession()
+        XCTAssertEqual(session2.focusMode, .singleString, "Second session should be string focus")
+
+        let (session3, _) = try engine.nextSession()
+        XCTAssertEqual(session3.focusMode, .singleNote, "Third session should be note focus")
+
+        let (session4, _) = try engine.nextSession()
+        XCTAssertEqual(session4.focusMode, .fretboardPosition, "Fourth session should be position focus")
+
+        // Rotation wraps
+        let (session5, _) = try engine.nextSession()
+        XCTAssertEqual(session5.focusMode, .fullFretboard, "Fifth session wraps to full fretboard")
     }
 
     // MARK: - Current Focus Description
@@ -139,11 +155,13 @@ final class SmartPracticeEngineTests: XCTestCase {
         XCTAssertTrue(desc.contains("all notes"), "Should mention all notes: \(desc)")
     }
 
-    func test_currentFocusDescription_fluency() throws {
+    func test_currentFocusDescription_fluency_rotates() throws {
         phaseManager.currentPhase = .fluency
         let scores = try masteryRepo.allScores()
-        let desc = engine.currentFocusDescription(using: scores)
-        XCTAssertTrue(desc.contains("Full Fretboard"), "Description: \(desc)")
+
+        // Index 0: Full Fretboard
+        let desc1 = engine.currentFocusDescription(using: scores)
+        XCTAssertTrue(desc1.contains("Full Fretboard"), "First description should be Full Fretboard: \(desc1)")
     }
 
     func test_currentFocusDescription_diagnostic() throws {
@@ -291,6 +309,7 @@ final class SmartPracticeEngineTests: XCTestCase {
     func test_nextModeDescription_fluency() {
         phaseManager.currentPhase = .fluency
         let desc = engine.nextModeDescription()
+        // Rotation index 0 = Full Fretboard
         XCTAssertEqual(desc, "Full Fretboard")
     }
 }

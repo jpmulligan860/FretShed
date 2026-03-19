@@ -57,6 +57,19 @@ enum AnalyticsEvent {
     /// User skipped onboarding.
     static let onboardingSkipped = "onboarding.skipped"
 
+    // MARK: - Spacing Gate & Warmup
+
+    /// A note advanced a spacing checkpoint (1, 2, or 3).
+    /// Parameter: checkpoint number.
+    static let masteryCheckpointReached = "mastery.checkpointReached"
+
+    /// A note's spacing checkpoints were reset due to an incorrect answer.
+    static let masteryCheckpointReset = "mastery.checkpointReset"
+
+    /// A warmup review block was shown at the start of a session.
+    /// Parameter: number of warmup notes.
+    static let warmupBlockShown = "warmup.blockShown"
+
     // MARK: - Backup/Restore
 
     /// User exported a data backup.

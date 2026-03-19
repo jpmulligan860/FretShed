@@ -37,6 +37,17 @@ final class SmartPracticeEngine {
     static let sessionFretStart = 0
     static let sessionFretEnd = LearningPhaseManager.phaseRequiredFretEnd
 
+    // Fluency rotation
+    private static let fluencyRotationKey = "smartPractice_fluencyRotationIndex"
+
+    /// The 4 focus mode styles rotated through in Fluency phase.
+    enum FluencyMode: Int, CaseIterable {
+        case fullFretboard = 0
+        case stringFocus   = 1
+        case noteFocus     = 2
+        case positionFocus = 3
+    }
+
     // Struggling user detection
     private static let strugglingSessionThreshold = 3
     private static let strugglingAccuracyThreshold: Double = 60.0 // percent
@@ -129,7 +140,14 @@ final class SmartPracticeEngine {
             }
             return "Sharps & Flats"
         case .connection: return "Cross-String"
-        case .fluency:    return "Full Fretboard"
+        case .fluency:
+            let index = UserDefaults.standard.integer(forKey: Self.fluencyRotationKey)
+            switch FluencyMode(rawValue: index % FluencyMode.allCases.count) ?? .fullFretboard {
+            case .fullFretboard:  return "Full Fretboard"
+            case .stringFocus:    return "String Deep Dive"
+            case .noteFocus:      return "Note Hunt"
+            case .positionFocus:  return "Position Focus"
+            }
         }
     }
 
@@ -240,7 +258,20 @@ final class SmartPracticeEngine {
             return "Cross-String Patterns — all notes, any key"
 
         case .fluency:
-            return "Full Fretboard Fluency — all notes, all strings"
+            let index = UserDefaults.standard.integer(forKey: Self.fluencyRotationKey)
+            switch FluencyMode(rawValue: index % FluencyMode.allCases.count) ?? .fullFretboard {
+            case .fullFretboard:
+                return "Full Fretboard — all notes, all strings"
+            case .stringFocus:
+                let target = Self.weakestString(from: scores, strings: LearningPhaseManager.allStrings, fretboardMap: fretboardMap)
+                return "\(Self.stringName(target)) String Deep Dive"
+            case .noteFocus:
+                let target = Self.weakestNote(from: scores, fretboardMap: fretboardMap, strings: LearningPhaseManager.allStrings, fretEnd: LearningPhaseManager.phaseRequiredFretEnd)
+                return "Find Every \(target.displayName(format: .sharps)) — Note Hunt"
+            case .positionFocus:
+                let (start, end) = weakestFretRange(from: scores, fretEnd: LearningPhaseManager.phaseRequiredFretEnd)
+                return "Frets \(start)–\(end) — Position Focus"
+            }
         }
     }
 
@@ -422,33 +453,88 @@ final class SmartPracticeEngine {
 
     private func buildFluencySession(using scores: [MasteryScore]) -> Session {
         let fretEnd = LearningPhaseManager.phaseRequiredFretEnd
+        let mode = nextFluencyMode()
 
-        // Full fretboard with chord-tone patterns
-        let progression: [(root: MusicalNote, quality: TriadQuality)] = [
-            (.c, .major), (.f, .major), (.g, .major)
-        ]
-        let groups = groupingEngine.chordToneGroups(
-            progression: progression,
-            strings: Array(1...6),
-            fretStart: Self.sessionFretStart,
-            fretEnd: fretEnd
-        )
+        switch mode {
+        case .fullFretboard:
+            return Session(
+                focusMode: .fullFretboard,
+                gameMode: .untimed,
+                fretRangeStart: Self.sessionFretStart,
+                fretRangeEnd: fretEnd,
+                isAdaptive: true
+            )
 
-        let plan = groupingEngine.buildSessionPlan(
-            groups: groups,
-            sessionLength: 10,
-            scores: scores
-        )
+        case .stringFocus:
+            let target = Self.weakestString(from: scores, strings: LearningPhaseManager.allStrings, fretboardMap: fretboardMap)
+            return Session(
+                focusMode: .singleString,
+                gameMode: .untimed,
+                fretRangeStart: Self.sessionFretStart,
+                fretRangeEnd: fretEnd,
+                targetStrings: [target],
+                isAdaptive: true
+            )
 
-        lastSessionPlan = plan
+        case .noteFocus:
+            let target = Self.weakestNote(from: scores, fretboardMap: fretboardMap, strings: LearningPhaseManager.allStrings, fretEnd: fretEnd)
+            return Session(
+                focusMode: .singleNote,
+                gameMode: .untimed,
+                fretRangeStart: Self.sessionFretStart,
+                fretRangeEnd: fretEnd,
+                targetNotes: [target],
+                isAdaptive: true
+            )
 
-        return Session(
-            focusMode: .fullFretboard,
-            gameMode: .untimed,
-            fretRangeStart: Self.sessionFretStart,
-            fretRangeEnd: fretEnd,
-            isAdaptive: true
-        )
+        case .positionFocus:
+            let (start, end) = weakestFretRange(from: scores, fretEnd: fretEnd)
+            return Session(
+                focusMode: .fretboardPosition,
+                gameMode: .untimed,
+                fretRangeStart: start,
+                fretRangeEnd: end,
+                isAdaptive: true
+            )
+        }
+    }
+
+    /// Returns the next Fluency focus mode in rotation, advancing the index.
+    private func nextFluencyMode() -> FluencyMode {
+        let index = UserDefaults.standard.integer(forKey: Self.fluencyRotationKey)
+        let mode = FluencyMode(rawValue: index % FluencyMode.allCases.count) ?? .fullFretboard
+        UserDefaults.standard.set(index + 1, forKey: Self.fluencyRotationKey)
+        return mode
+    }
+
+    /// Returns the 5-fret range with the weakest average scores.
+    private func weakestFretRange(from scores: [MasteryScore], fretEnd: Int) -> (start: Int, end: Int) {
+        let windowSize = 5
+        var weakestStart = 0
+        var weakestAvg = Double.infinity
+
+        for start in 0...(max(fretEnd - windowSize, 0)) {
+            let end = min(start + windowSize - 1, fretEnd)
+            var total = 0.0
+            var count = 0
+            let prior = MasteryScore.alpha / (MasteryScore.alpha + MasteryScore.beta)
+            for string in 1...kStringCount {
+                for fret in start...end {
+                    guard let note = fretboardMap.note(string: string, fret: fret) else { continue }
+                    let cellScore = scores.first(where: {
+                        $0.noteRaw == note.rawValue && $0.stringNumber == string
+                    })?.score ?? prior
+                    total += cellScore
+                    count += 1
+                }
+            }
+            let avg = count > 0 ? total / Double(count) : prior
+            if avg < weakestAvg {
+                weakestAvg = avg
+                weakestStart = start
+            }
+        }
+        return (weakestStart, min(weakestStart + windowSize - 1, fretEnd))
     }
 
     // MARK: - Review Sessions
@@ -621,7 +707,13 @@ final class SmartPracticeEngine {
             target = "Cross-String Patterns"
             progress = "All notes, any key"
         case .fluency:
-            target = "Full Fretboard"
+            let index = UserDefaults.standard.integer(forKey: Self.fluencyRotationKey)
+            switch FluencyMode(rawValue: index % FluencyMode.allCases.count) ?? .fullFretboard {
+            case .fullFretboard:  target = "Full Fretboard"
+            case .stringFocus:    target = "String Deep Dive"
+            case .noteFocus:      target = "Note Hunt"
+            case .positionFocus:  target = "Position Focus"
+            }
             progress = nil
         }
 

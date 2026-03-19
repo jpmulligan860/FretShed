@@ -128,6 +128,18 @@ public struct FretboardMap: Sendable {
         return cells.count
     }
 
+    /// Returns the first fret where a given note appears on a given string within a range,
+    /// or `nil` if not found.
+    public func fret(for note: MusicalNote, onString string: Int,
+                     inRange range: ClosedRange<Int> = 0...kMaxFrets) -> Int? {
+        for fret in range {
+            if self.note(string: string, fret: fret) == note {
+                return fret
+            }
+        }
+        return nil
+    }
+
     /// Returns every `Position` on the fretboard where a given note appears.
     /// - Parameters:
     ///   - note: The target `MusicalNote`.

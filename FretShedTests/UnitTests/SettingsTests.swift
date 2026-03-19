@@ -160,6 +160,6 @@ final class SettingsTests: XCTestCase {
                     XCTAssertEqual(LocalUserPreferences.Default.fretboardOrientation,
                                    FretboardOrientation.rightHand.rawValue)
                     XCTAssertEqual(LocalUserPreferences.Default.defaultFretCount,
-                                   DefaultFretCount.twentyTwo.rawValue)
+                                   DefaultFretCount.twelve.rawValue)
                 }
             }

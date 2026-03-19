@@ -109,9 +109,9 @@ enum DesignSystem {
         static let info    = Color(red: 0.35, green: 0.55, blue: 0.75) // warm steel-blue
 
         // Mastery level palette — 4-tier system
-        // Struggling = cherry red, Learning = amber, Proficient = green, Mastered = gold
-        static let masteryMastered   = gold
-        static let masteryProficient = correct
+        // Struggling = cherry red, Learning = amber, Proficient = gold, Mastered = green
+        static let masteryMastered   = correct   // green — spacing gate complete
+        static let masteryProficient = gold       // gold — spacing gate in progress
         static let masteryLearning   = amber
         static let masteryStruggling = cherry
 
@@ -126,7 +126,7 @@ enum DesignSystem {
             switch score {
             case ..<0.50:  return masteryStruggling  // cherry
             case ..<0.75:  return masteryLearning    // amber
-            default:       return masteryProficient  // green
+            default:       return masteryProficient  // gold
             }
         }
 
@@ -135,7 +135,7 @@ enum DesignSystem {
             switch score {
             case ..<0.50:  return masteryStruggling  // cherry
             case ..<0.75:  return masteryLearning    // amber
-            default:       return isMastered ? masteryMastered : masteryProficient
+            default:       return isMastered ? masteryMastered : masteryProficient  // green vs gold
             }
         }
 
@@ -150,22 +150,22 @@ enum DesignSystem {
             ? UIColor(red: 0.831, green: 0.584, blue: 0.227, alpha: 1)  // #D4953A
             : UIColor(red: 0.753, green: 0.522, blue: 0.188, alpha: 1)  // #C08530
         })
-        // Proficient: green
+        // Proficient: gold (spacing gate in progress)
         static let heatmapProficient = Color(UIColor { $0.userInterfaceStyle == .dark
-            ? UIColor(red: 0.298, green: 0.686, blue: 0.314, alpha: 1)  // #4CAF50
-            : UIColor(red: 0.220, green: 0.557, blue: 0.235, alpha: 1)  // #388E3C
-        })
-        // Mastered: bright gold
-        static let heatmapMastered = Color(UIColor { $0.userInterfaceStyle == .dark
             ? UIColor(red: 1.000, green: 0.843, blue: 0.000, alpha: 1)  // #FFD700
             : UIColor(red: 0.855, green: 0.718, blue: 0.000, alpha: 1)  // #DAB700
+        })
+        // Mastered: green (spacing gate complete — durable long-term memory)
+        static let heatmapMastered = Color(UIColor { $0.userInterfaceStyle == .dark
+            ? UIColor(red: 0.298, green: 0.686, blue: 0.314, alpha: 1)  // #4CAF50
+            : UIColor(red: 0.220, green: 0.557, blue: 0.235, alpha: 1)  // #388E3C
         })
 
         // Heatmap glow colors (for .shadow modifier on dark mode)
         static let heatmapStrugglingGlow  = Color(UIColor(red: 0.769, green: 0.196, blue: 0.235, alpha: 1))
         static let heatmapLearningGlow    = Color(UIColor(red: 0.831, green: 0.584, blue: 0.227, alpha: 1))
-        static let heatmapProficientGlow  = Color(UIColor(red: 0.298, green: 0.686, blue: 0.314, alpha: 1))
-        static let heatmapMasteredGlow    = Color(UIColor(red: 1.000, green: 0.843, blue: 0.000, alpha: 1))
+        static let heatmapProficientGlow  = Color(UIColor(red: 1.000, green: 0.843, blue: 0.000, alpha: 1))
+        static let heatmapMasteredGlow    = Color(UIColor(red: 0.298, green: 0.686, blue: 0.314, alpha: 1))
 
         // Fretboard
         static let fretboardWood    = rosewood

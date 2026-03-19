@@ -178,6 +178,25 @@ public final class QuizViewModel: Identifiable {
         return buckets
     }
 
+    // MARK: - Warmup Block State
+
+    /// Pre-built warmup questions served before new content.
+    private var warmupQuestions: [QuizQuestion] = []
+    /// Number of warmup questions (set once at start, does not change).
+    private(set) var warmupQuestionCount: Int = 0
+    /// True while the quiz is serving warmup questions (attemptCount < warmupQuestionCount).
+    public var isInWarmup: Bool { warmupQuestionCount > 0 && attemptCount < warmupQuestionCount }
+    /// True only before the very first warmup question is presented.
+    public private(set) var showWarmupIntro: Bool = false
+
+    /// Set of (noteRaw, stringNumber) pairs quizzed in this session, for spacing gate advancement.
+    private var quizzedCellKeys: Set<Int> = []
+
+    /// Encodes a (noteRaw, stringNumber) pair into a single Int for Set storage.
+    private static func cellKey(noteRaw: Int, string: Int) -> Int {
+        noteRaw * 100 + string
+    }
+
     /// Response times (ms) for correct answers only — used to compute average for timed sessions.
     private var correctResponseTimes: [Int] = []
 
@@ -215,6 +234,8 @@ public final class QuizViewModel: Identifiable {
             logger.error("Failed to load mastery scores: \(error)")
             allScores = []
         }
+        // Build warmup block if 1+ calendar days since last session.
+        buildWarmupBlockIfNeeded()
         // Start session countdown timer if a time limit is set.
         if session.sessionTimeLimitSeconds > 0 {
             sessionTimeRemaining = Double(session.sessionTimeLimitSeconds)
@@ -363,7 +384,15 @@ public final class QuizViewModel: Identifiable {
             showingChordCompleteSummary = false
             chordIndex = (chordIndex + 1) % progression.chords.count
         }
-        let question = selectQuestion()
+        // Dismiss warmup intro after first question starts.
+        if showWarmupIntro { showWarmupIntro = false }
+        // Serve warmup questions before falling back to normal selection.
+        let question: QuizQuestion
+        if attemptCount < warmupQuestions.count {
+            question = warmupQuestions[attemptCount]
+        } else {
+            question = selectQuestion()
+        }
         currentQuestion = question
         lastQuestion = question
         questionStartTime = Date()
@@ -759,9 +788,13 @@ public final class QuizViewModel: Identifiable {
         do { try attemptRepository.save(attempt) } catch {
             logger.error("Failed to save attempt: \(error)")
         }
+        quizzedCellKeys.insert(Self.cellKey(noteRaw: question.note.rawValue, string: question.string))
         do {
             let score = try masteryRepository.score(forNote: question.note, string: question.string)
             score.record(wasCorrect: correct)
+            if !correct {
+                score.regressSpacingCheckpoint()
+            }
             score.updateBestStreak(bestStreak)
             try masteryRepository.save(score)
             if let idx = allScores.firstIndex(where: {
@@ -783,5 +816,144 @@ public final class QuizViewModel: Identifiable {
         do { try sessionRepository.complete(session) } catch {
             logger.error("Failed to complete session: \(error)")
         }
+        advanceSpacingCheckpoints()
+    }
+
+    /// After session completion, advance spacing gate checkpoints for quizzed cells
+    /// that are at proficient level. Enforces calendar-day gaps between checkpoints.
+    private func advanceSpacingCheckpoints() {
+        for score in allScores where quizzedCellKeys.contains(Self.cellKey(noteRaw: score.noteRaw, string: score.stringNumber)) {
+            if let cp = score.tryAdvanceCheckpoint() {
+                logger.info("Spacing checkpoint \(cp) reached for note \(score.noteRaw) string \(score.stringNumber)")
+            }
+            do { try masteryRepository.save(score) } catch {
+                logger.error("Failed to save spacing checkpoint: \(error)")
+            }
+        }
+    }
+
+    /// Dismisses the warmup intro card (called by view on tap or auto-dismiss).
+    public func dismissWarmupIntro() {
+        showWarmupIntro = false
+    }
+
+    // MARK: - Review Block (Always-On Spaced Repetition)
+
+    /// Builds a review block for every Smart Practice session.
+    /// Review notes from completed strings are front-loaded before new content.
+    /// The intro card ("Let's warm up…") only shows after 1+ calendar day away.
+    private func buildWarmupBlockIfNeeded() {
+        // Only for adaptive (Smart Practice) sessions — skip custom sessions and assessments.
+        guard session.isAdaptive else { return }
+
+        let sessionLength = settings.defaultSessionLength
+        let reviewCount = min(max(Int(round(Double(sessionLength) * 0.30)), 3), 10)
+
+        let notes = selectWarmupNotes(count: reviewCount)
+        guard !notes.isEmpty else { return }
+
+        warmupQuestions = notes
+        warmupQuestionCount = notes.count
+
+        // Show intro card only after 1+ calendar day away.
+        if let lastDate = mostRecentCompletedSessionDate() {
+            let calendar = Calendar.current
+            let daysSince = calendar.dateComponents([.day], from: lastDate, to: Date()).day ?? 0
+            if daysSince >= 1 {
+                showWarmupIntro = true
+            }
+        }
+
+        logger.info("Review block: \(notes.count) notes from completed strings")
+    }
+
+    /// Returns the end date of the most recent completed session, or nil if none exist.
+    private func mostRecentCompletedSessionDate() -> Date? {
+        guard let sessions = try? sessionRepository.recentSessions(limit: 1),
+              let last = sessions.first,
+              last.isCompleted,
+              let endTime = last.endTime else {
+            return nil
+        }
+        return endTime
+    }
+
+    /// Selects warmup notes from previously completed strings/phases.
+    /// Priority: (1) notes with active checkpoint progression, (2) lowest effective scores.
+    /// Spreads across different strings.
+    private func selectWarmupNotes(count: Int) -> [QuizQuestion] {
+        let phaseManager = LearningPhaseManager()
+        let completedStrings = completedStringsForWarmup(phaseManager: phaseManager)
+        guard !completedStrings.isEmpty else { return [] }
+
+        // Gather candidate scores from completed strings that have been practiced.
+        let candidates: [(score: MasteryScore, fret: Int)] = allScores.compactMap { score in
+            guard completedStrings.contains(score.stringNumber),
+                  score.totalAttempts > 0,
+                  let note = MusicalNote(rawValue: score.noteRaw),
+                  let fret = fretboardMap.fret(for: note, onString: score.stringNumber,
+                                                inRange: 0...LearningPhaseManager.phaseRequiredFretEnd)
+            else { return nil }
+            return (score, fret)
+        }
+
+        guard !candidates.isEmpty else { return [] }
+
+        // Sort by priority: active checkpoint progression first, then lowest effective score.
+        let sorted = candidates.sorted { a, b in
+            let aActive = a.score.hasActiveCheckpointProgression
+            let bActive = b.score.hasActiveCheckpointProgression
+            if aActive != bActive { return aActive }
+            return a.score.effectiveScore < b.score.effectiveScore
+        }
+
+        // Pick up to `count` notes, spreading across strings.
+        var selected: [QuizQuestion] = []
+        var usedStrings: [Int: Int] = [:]  // string → count
+        let maxPerString = max(count / completedStrings.count, 1)
+
+        for (score, fret) in sorted {
+            guard selected.count < count else { break }
+            let stringCount = usedStrings[score.stringNumber, default: 0]
+            if stringCount >= maxPerString && selected.count + (count - selected.count) > 1 {
+                continue  // Try to spread across strings first
+            }
+            guard let note = MusicalNote(rawValue: score.noteRaw) else { continue }
+            selected.append(QuizQuestion(note: note, string: score.stringNumber, fret: fret))
+            usedStrings[score.stringNumber, default: 0] += 1
+        }
+
+        // If spreading left us short, fill remaining from top priorities.
+        if selected.count < count {
+            for (score, fret) in sorted {
+                guard selected.count < count else { break }
+                guard let note = MusicalNote(rawValue: score.noteRaw) else { continue }
+                let q = QuizQuestion(note: note, string: score.stringNumber, fret: fret)
+                if !selected.contains(q) {
+                    selected.append(q)
+                }
+            }
+        }
+
+        return selected
+    }
+
+    /// Returns the set of strings the user has already completed in earlier phases,
+    /// excluding the current learning target.
+    private func completedStringsForWarmup(phaseManager: LearningPhaseManager) -> Set<Int> {
+        var completed = phaseManager.phaseOneCompletedStrings
+        // In Phase 2+, Phase 1 completed strings are valid review targets.
+        // In Phase 3+, Phase 2 completed strings are also valid.
+        if phaseManager.currentPhase.rawValue >= LearningPhase.connection.rawValue {
+            completed.formUnion(phaseManager.phaseTwoCompletedStrings)
+        }
+        // Exclude the current target string (don't review what we're actively learning).
+        if let target = phaseManager.currentTargetString {
+            completed.remove(target)
+        }
+        if let target = phaseManager.currentPhaseTwoTargetString {
+            completed.remove(target)
+        }
+        return completed
     }
 }

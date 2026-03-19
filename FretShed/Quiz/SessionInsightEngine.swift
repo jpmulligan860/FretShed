@@ -245,6 +245,7 @@ final class SessionInsightEngine {
             let preScore = MasteryCalculator.score(correct: preCorrectAttempts, total: preTotalAttempts)
             let preIsMastered = preScore >= MasteryScore.masteredThreshold
                 && preTotalAttempts >= MasteryScore.masteredMinAttempts
+                && score.hasCompletedSpacingGate
             let preTier = MasteryLevel.from(score: preScore, isMastered: preIsMastered)
 
             if currentTier > preTier {

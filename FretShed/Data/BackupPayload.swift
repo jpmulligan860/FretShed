@@ -229,6 +229,10 @@ struct MasteryScoreBackup: Codable {
     let correctAttempts: Int
     let lastAttemptDate: Date?
     let bestStreakCount: Int
+    // Spacing gate checkpoint dates (v2 — nil in older backups)
+    let spacingCheckpoint1Date: Date?
+    let spacingCheckpoint2Date: Date?
+    let spacingCheckpoint3Date: Date?
 
     init(from score: MasteryScore) {
         self.id = score.id
@@ -238,6 +242,24 @@ struct MasteryScoreBackup: Codable {
         self.correctAttempts = score.correctAttempts
         self.lastAttemptDate = score.lastAttemptDate
         self.bestStreakCount = score.bestStreakCount
+        self.spacingCheckpoint1Date = score.spacingCheckpoint1Date
+        self.spacingCheckpoint2Date = score.spacingCheckpoint2Date
+        self.spacingCheckpoint3Date = score.spacingCheckpoint3Date
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        noteRaw = try container.decode(Int.self, forKey: .noteRaw)
+        stringNumber = try container.decode(Int.self, forKey: .stringNumber)
+        totalAttempts = try container.decode(Int.self, forKey: .totalAttempts)
+        correctAttempts = try container.decode(Int.self, forKey: .correctAttempts)
+        lastAttemptDate = try container.decodeIfPresent(Date.self, forKey: .lastAttemptDate)
+        bestStreakCount = try container.decode(Int.self, forKey: .bestStreakCount)
+        // v2 fields — absent in older backups
+        spacingCheckpoint1Date = try container.decodeIfPresent(Date.self, forKey: .spacingCheckpoint1Date)
+        spacingCheckpoint2Date = try container.decodeIfPresent(Date.self, forKey: .spacingCheckpoint2Date)
+        spacingCheckpoint3Date = try container.decodeIfPresent(Date.self, forKey: .spacingCheckpoint3Date)
     }
 
     func toModel() -> MasteryScore {
@@ -250,6 +272,9 @@ struct MasteryScoreBackup: Codable {
         score.correctAttempts = correctAttempts
         score.lastAttemptDate = lastAttemptDate
         score.bestStreakCount = bestStreakCount
+        score.spacingCheckpoint1Date = spacingCheckpoint1Date
+        score.spacingCheckpoint2Date = spacingCheckpoint2Date
+        score.spacingCheckpoint3Date = spacingCheckpoint3Date
         return score
     }
 }

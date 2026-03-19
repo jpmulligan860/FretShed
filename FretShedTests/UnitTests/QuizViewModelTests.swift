@@ -396,6 +396,9 @@ final class QuizViewModelTests: XCTestCase {
         for note in MusicalNote.allCases where note != .a {
             let score = try masteryRepo.score(forNote: note, string: 1)
             for _ in 0..<20 { score.record(wasCorrect: true) }
+            score.spacingCheckpoint1Date = Date().addingTimeInterval(-10 * 86400)
+            score.spacingCheckpoint2Date = Date().addingTimeInterval(-5 * 86400)
+            score.spacingCheckpoint3Date = Date()
             try masteryRepo.save(score)
         }
         // Also master all other strings for all notes except A on string 2
@@ -403,6 +406,9 @@ final class QuizViewModelTests: XCTestCase {
             for note in MusicalNote.allCases where !(note == .a && string == 2) {
                 let score = try masteryRepo.score(forNote: note, string: string)
                 for _ in 0..<20 { score.record(wasCorrect: true) }
+                score.spacingCheckpoint1Date = Date().addingTimeInterval(-10 * 86400)
+                score.spacingCheckpoint2Date = Date().addingTimeInterval(-5 * 86400)
+                score.spacingCheckpoint3Date = Date()
                 try masteryRepo.save(score)
             }
         }

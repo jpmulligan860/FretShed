@@ -43,6 +43,19 @@ public final class MasteryScore {
     public var lastAttemptDate: Date?
     public var bestStreakCount: Int
 
+    // MARK: Spacing Gate Checkpoint Dates
+
+    /// Date when proficient-level accuracy was first demonstrated (CP1).
+    public var spacingCheckpoint1Date: Date?
+
+    /// Date when proficient accuracy was demonstrated in a different session,
+    /// 1+ calendar day after CP1 (CP2).
+    public var spacingCheckpoint2Date: Date?
+
+    /// Date when proficient accuracy was demonstrated in a different session,
+    /// 3+ calendar days after CP2 (CP3).
+    public var spacingCheckpoint3Date: Date?
+
     // MARK: Computed Properties
 
     /// The note this score tracks.
@@ -69,9 +82,26 @@ public final class MasteryScore {
         )
     }
 
-    /// `true` when the mastery threshold has been sustainably reached.
+    /// `true` when at least one spacing checkpoint has been set but not all three.
+    /// These notes benefit most from being re-tested at a time gap.
+    public var hasActiveCheckpointProgression: Bool {
+        spacingCheckpoint1Date != nil && !hasCompletedSpacingGate
+    }
+
+    /// `true` when all 3 spacing checkpoints have been satisfied,
+    /// proving durable long-term memory through spaced recall.
+    public var hasCompletedSpacingGate: Bool {
+        spacingCheckpoint1Date != nil
+            && spacingCheckpoint2Date != nil
+            && spacingCheckpoint3Date != nil
+    }
+
+    /// `true` when the mastery threshold has been sustainably reached
+    /// AND all spacing checkpoints are complete.
+    /// The spacing gate (3 successful recalls across 5+ days) replaces the
+    /// old attempt-count gate — you can't luck your way through spaced repetition.
     public var isMastered: Bool {
-        score >= Self.masteredThreshold && totalAttempts >= Self.masteredMinAttempts
+        score >= Self.masteredThreshold && hasCompletedSpacingGate
     }
 
     /// `true` when the user appears to be struggling with this cell.
@@ -108,6 +138,66 @@ public final class MasteryScore {
     /// Updates the best streak if `streakCount` exceeds the previous record.
     public func updateBestStreak(_ streakCount: Int) {
         bestStreakCount = max(bestStreakCount, streakCount)
+    }
+
+    /// Minimum attempts on a cell before checkpoint advancement can begin.
+    /// Ensures the Bayesian score has enough data to be meaningful (matches
+    /// the phase advancement `minimumAttempts` threshold).
+    public static let checkpointMinAttempts: Int = 3
+
+    /// Attempts to advance the spacing gate checkpoint for this cell.
+    /// Call after a session completes for each quizzed cell whose score is at proficient level.
+    /// Uses calendar days (not raw hours) to enforce minimum gaps.
+    /// - Parameter today: The current date (injectable for testing).
+    /// - Returns: The checkpoint number advanced (1, 2, or 3), or nil if no advancement.
+    @discardableResult
+    public func tryAdvanceCheckpoint(today: Date = Date()) -> Int? {
+        guard score >= Self.masteredThreshold else { return nil }
+        guard totalAttempts >= Self.checkpointMinAttempts else { return nil }
+        guard !hasCompletedSpacingGate else { return nil }
+
+        let calendar = Calendar.current
+
+        if spacingCheckpoint1Date == nil {
+            spacingCheckpoint1Date = today
+            return 1
+        }
+
+        if spacingCheckpoint2Date == nil, let cp1 = spacingCheckpoint1Date {
+            let daysSinceCP1 = calendar.dateComponents([.day], from: cp1, to: today).day ?? 0
+            if daysSinceCP1 >= 1 {
+                spacingCheckpoint2Date = today
+                return 2
+            }
+            return nil
+        }
+
+        if spacingCheckpoint3Date == nil, let cp2 = spacingCheckpoint2Date {
+            let daysSinceCP2 = calendar.dateComponents([.day], from: cp2, to: today).day ?? 0
+            if daysSinceCP2 >= 3 {
+                spacingCheckpoint3Date = today
+                return 3
+            }
+            return nil
+        }
+
+        return nil
+    }
+
+    /// Regresses spacing checkpoint progress by one step on incorrect answer.
+    /// CP2 earned → drops to CP1 only. CP1 earned → drops to nil.
+    /// Does nothing if the spacing gate is already complete (all 3 checkpoints met).
+    /// Rationale: a single error after 2 successful spaced recalls is more likely
+    /// a performance error than genuine forgetting — preserve prior evidence.
+    public func regressSpacingCheckpoint() {
+        guard !hasCompletedSpacingGate else { return }
+        if spacingCheckpoint2Date != nil {
+            // Had CP1 + CP2 → drop CP2, keep CP1
+            spacingCheckpoint2Date = nil
+        } else if spacingCheckpoint1Date != nil {
+            // Had CP1 only → drop CP1
+            spacingCheckpoint1Date = nil
+        }
     }
 }
 

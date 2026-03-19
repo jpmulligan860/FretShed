@@ -184,6 +184,13 @@ struct QuizView: View {
                     }
                 }
             }
+
+            // Smart Warmup intro card overlay.
+            if vm.showWarmupIntro {
+                warmupIntroCard
+                    .transition(.opacity.combined(with: .scale(scale: 0.95)))
+                    .zIndex(10)
+            }
         }
         .navigationBarHidden(true)
         .alert("End Session?", isPresented: $showEndConfirm) {
@@ -456,8 +463,48 @@ struct QuizView: View {
         .frame(height: 22 * CGFloat(6 + 1))
     }
 
+    /// Brief intro card shown before the first warmup note.
+    private var warmupIntroCard: some View {
+        VStack(spacing: 12) {
+            Spacer()
+            VStack(spacing: 8) {
+                Text("Let's warm up with a quick review.")
+                    .font(.custom("CrimsonPro-Italic", size: 20))
+                    .foregroundStyle(DesignSystem.Colors.text)
+                    .multilineTextAlignment(.center)
+            }
+            .padding(.horizontal, 24)
+            .padding(.vertical, 20)
+            .background(DesignSystem.Colors.surface2.opacity(0.95))
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .shadow(radius: 4)
+            Spacer()
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.black.opacity(0.3))
+        .onTapGesture {
+            withAnimation(.easeOut(duration: 0.2)) {
+                vm.dismissWarmupIntro()
+            }
+        }
+        .task {
+            try? await Task.sleep(for: .seconds(2))
+            withAnimation(.easeOut(duration: 0.2)) {
+                vm.dismissWarmupIntro()
+            }
+        }
+    }
+
     private var promptView: some View {
         VStack(spacing: 2) {
+            // Smart Warmup: "Quick Review" label during warmup block.
+            if vm.isInWarmup {
+                Text("QUICK REVIEW")
+                    .font(DesignSystem.Typography.smallLabel)
+                    .foregroundStyle(DesignSystem.Colors.muted)
+                    .padding(.bottom, 4)
+            }
+
             // Chord progression: show the chord name and tone role above the note.
             if vm.session.focusMode == .chordProgression,
                let chord = vm.currentChord {
@@ -592,6 +639,12 @@ struct QuizView: View {
     /// Compact prompt for landscape — note name, string, and fret hint in a single horizontal row.
     private var compactPromptView: some View {
         HStack(spacing: 12) {
+            if vm.isInWarmup {
+                Text("REVIEW")
+                    .font(DesignSystem.Typography.smallLabel)
+                    .foregroundStyle(DesignSystem.Colors.muted)
+            }
+
             if vm.session.focusMode == .chordProgression,
                let chord = vm.currentChord {
                 VStack(spacing: 2) {

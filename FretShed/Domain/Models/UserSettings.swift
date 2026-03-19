@@ -273,7 +273,7 @@ public final class UserSettings {
         self.forceBuiltInMic = false
         self.defaultGameModeRaw = GameMode.untimed.rawValue
         self.defaultTimerDuration = 10
-        self.defaultSessionLength = 7
+        self.defaultSessionLength = 20
         self.hintTimeoutSeconds = 5
         self.defaultStringOrderingRaw = StringOrdering.random.rawValue
         self.defaultFretboardDisplayRaw = FretboardDisplay.fullFretboard.rawValue

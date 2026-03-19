@@ -204,10 +204,15 @@ final class ProgressViewModelTests: XCTestCase {
 
     func test_load_masteredCellsCount_onlyCountsMastered() async throws {
         // 15 correct → meets mastered threshold (score ≈ 0.944, attempts = 15)
-        try seedMasteryScore(note: .a, string: 1,
+        let masteredScore = try seedMasteryScore(note: .a, string: 1,
                              correct: 15, total: 15,
                              masteryRepo: masteryRepo,
                              attemptRepo: attemptRepo)
+        // Set spacing gate checkpoints so isMastered = true
+        masteredScore.spacingCheckpoint1Date = Date().addingTimeInterval(-10 * 86400)
+        masteredScore.spacingCheckpoint2Date = Date().addingTimeInterval(-5 * 86400)
+        masteredScore.spacingCheckpoint3Date = Date()
+        try masteryRepo.save(masteredScore)
         // 3 correct out of 10 → not mastered
         try seedMasteryScore(note: .b, string: 2,
                              correct: 3, total: 10,
@@ -306,10 +311,15 @@ final class ProgressViewModelTests: XCTestCase {
     }
 
     func test_masteryLevel_masteredData_returnsMastered() async throws {
-        try seedMasteryScore(note: .e, string: 1,
+        let score = try seedMasteryScore(note: .e, string: 1,
                              correct: 20, total: 20,
                              masteryRepo: masteryRepo,
                              attemptRepo: attemptRepo)
+        // Set spacing gate checkpoints so isMastered = true
+        score.spacingCheckpoint1Date = Date().addingTimeInterval(-10 * 86400)
+        score.spacingCheckpoint2Date = Date().addingTimeInterval(-5 * 86400)
+        score.spacingCheckpoint3Date = Date()
+        try masteryRepo.save(score)
         let vm = makeVM(container: container)
         await vm.load()
         XCTAssertEqual(vm.masteryLevel(note: .e, string: 1), .mastered)

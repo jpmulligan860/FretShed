@@ -31,9 +31,9 @@ enum PhaseInsightLibrary {
     ]
 
     static let foundationPerformance: [String] = [
-        "{n_mastered} of {n_total} natural notes mastered on the {string_name} string.",
-        "You nailed {note} this session — that's one more locked in.",
-        "First-time mastery on {note}. The {string_name} string is opening up.",
+        "{n_mastered} of {n_total} natural notes proficient on the {string_name} string.",
+        "You nailed {note} this session — that's one more down.",
+        "{note} is now proficient. The {string_name} string is opening up.",
         "{note} on the {string_name} string clicked today. {n_remaining} to go.",
         "Clean reps on {notes}. The muscle memory is building.",
     ]
@@ -111,7 +111,7 @@ enum PhaseInsightLibrary {
     ]
 
     static let expansionPerformance: [String] = [
-        "Chromatic coverage expanding. {n_mastered} positions now mapped with sharps and flats.",
+        "Chromatic coverage expanding. {n_mastered} positions now proficient with sharps and flats.",
         "{note} is now in your vocabulary. One less gap on the fretboard.",
         "The space between natural notes is filling in.",
         "Sharps and flats at {accuracy}% — the full picture is coming into focus.",
@@ -164,19 +164,19 @@ enum PhaseInsightLibrary {
 
     static let phaseAdvancementMessages: [LearningPhase: [String]] = [
         .expansion: [
-            "Foundation complete! Natural notes are locked in on all 6 strings. Now let's add sharps and flats.",
+            "Foundation complete! Natural notes are proficient on all 6 strings. Now let's add sharps and flats.",
             "Phase 1 done — you know every natural note. Phase 2 fills in the gaps between them.",
             "Natural notes are solid on every string. Time to complete the chromatic picture.",
         ],
         .connection: [
-            "Sharps and flats mastered! Time to connect notes across strings in any key.",
+            "All notes proficient! Time to connect them across strings in any key.",
             "Phase 2 done — every note on every string. Now let's see how they connect across the fretboard.",
             "Full chromatic vocabulary unlocked. Phase 3 ties it together with cross-string patterns.",
         ],
         .fluency: [
-            "Phase 3 Complete! Cross-string connections are solid. Time for total fretboard fluency.",
+            "Phase 3 complete! Cross-string connections are solid. Time for total fretboard fluency.",
             "Every note connects across strings. Phase 4 ties it all together with chord-tone patterns.",
-            "Cross-string mastery achieved. Welcome to the final phase — full fretboard fluency.",
+            "Cross-string work complete. Welcome to the final phase — full fretboard fluency.",
         ],
     ]
 
@@ -189,18 +189,18 @@ enum PhaseInsightLibrary {
     // MARK: - String Completion (Phase 1 milestone)
 
     static let stringCompletionMessages: [String] = [
-        "The {string_name} string is locked in! Moving to the {next_string} string.",
+        "The {string_name} string is proficient! Moving to the {next_string} string.",
         "{string_name} string complete — {n_strings_done} of {n_strings_needed} strings done.",
-        "That's the {string_name} string mastered. {n_remaining_strings} more to Phase 2.",
+        "That's the {string_name} string done. {n_remaining_strings} more to Phase 2.",
         "Solid work on the {string_name} string. Next up: {next_string}.",
     ]
 
     // MARK: - Expansion String Completion (Phase 2 milestone)
 
     static let expansionStringCompletionMessages: [String] = [
-        "Sharps & flats on the {string_name} string: mastered! Moving to the {next_string} string.",
+        "Sharps & flats on the {string_name} string: proficient! Moving to the {next_string} string.",
         "{string_name} string chromatic complete — {n_strings_done} of {n_strings_needed} strings done.",
-        "Every note on the {string_name} string is yours. {n_remaining_strings} more to Phase 3.",
+        "Every note on the {string_name} string is proficient. {n_remaining_strings} more to Phase 3.",
         "Full chromatic coverage on the {string_name} string. Next up: {next_string}.",
     ]
 

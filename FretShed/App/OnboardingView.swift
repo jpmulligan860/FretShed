@@ -77,11 +77,11 @@ struct OnboardingView: View {
 
             VStack(spacing: DesignSystem.Spacing.lg) {
                 Text("FretShed")
-                    .font(.custom("Montserrat-Black", size: 52))
+                    .font(DesignSystem.Typography.quizNote)
                     .foregroundStyle(DesignSystem.Gradients.sunburst)
 
                 Text("Finally get your notes right.")
-                    .font(.custom("CrimsonPro-Italic", size: 20))
+                    .font(DesignSystem.Typography.accentBody)
                     .foregroundStyle(DesignSystem.Colors.text2)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, DesignSystem.Spacing.lg)
@@ -118,8 +118,8 @@ struct OnboardingView: View {
                 featureRow(
                     icon: "brain",
                     color: DesignSystem.Colors.cherry,
-                    title: "Adaptive Learning",
-                    subtitle: "FretShed learns the notes you find hardest and targets your weak spots."
+                    title: "Smart Practice",
+                    subtitle: "A structured path from your first note to full fretboard fluency, adapted to your pace."
                 )
 
                 Divider()

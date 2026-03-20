@@ -253,8 +253,8 @@ struct PracticeHomeView: View {
         ScrollView {
             VStack(spacing: 20) {
                 header
-                if !isNewUser { phaseStepIndicator }
                 rigProfileCard
+                if !isNewUser { phaseStepIndicator }
                 primaryCTA
                 customSessionCTA
                 quickStartSection

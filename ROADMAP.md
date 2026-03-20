@@ -234,6 +234,7 @@ Estimated: 6–8 hours
 | SG.4 | Integration & Edge Cases — Checkpoint regression (single-step, not full reset). Completed gate permanent. Score regression preserves checkpoints. SessionInsightEngine pre-tier fix. TelemetryDeck event definitions | ✅ |
 | SG.5 | Fluency Focus Mode Rotation — 4-mode cycle (Full Fretboard → String Deep Dive → Note Hunt → Position Focus) targeting weakest areas. `weakestFretRange()` 5-fret sliding window | ✅ |
 | SG.6 | Default Session Length Fix — Reverted from 7 (testing) to 20 (intended). Fixed stale defaultFretCount test (twelve, not twentyTwo). All pre-existing test failures resolved | ✅ |
+| SG.7 | Phase Roadmap Section — Collapsible roadmap on Journey tab between stats card and heatmap. 5 subviews: PhaseRoadmapHeader (pip + name + tagline + indicator + chevron), PhaseRoadmapRow (status badge + NOW tag + expand/collapse), PhaseRoadmapDetail (description + SCOPE + ADVANCES WHEN chips), StringProgressDots (6 dots with glow), accuracy ring for Phase 3/4. UI-only, reads LearningPhaseManager. Fixed stale NotificationScheduler.swift in project.yml | ✅ |
 
 ---
 

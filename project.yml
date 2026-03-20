@@ -13,7 +13,6 @@ targets:
     deploymentTarget: "17.0"
     sources:
       - path: FretShed
-      - NotificationScheduler.swift
     configFiles:
       Debug: Local.xcconfig
       Release: Local.xcconfig

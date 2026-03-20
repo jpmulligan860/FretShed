@@ -99,6 +99,12 @@ public struct ProgressTabView: View {
                                 .padding(.horizontal, 16)
                                 .padding(.top, 8)
 
+                                PhaseRoadmapSection(
+                                    phaseManager: LearningPhaseManager(),
+                                    sessionAccuracy: vm.overallMastery
+                                )
+                                .padding(.horizontal, 16)
+
                                 if !vm.accuracyTrend.isEmpty {
                                     accuracyChart
                                         .padding(.horizontal, 16)
@@ -110,11 +116,17 @@ public struct ProgressTabView: View {
                                 }
                             } else {
                                 // iPhone: stacked layout
-                                // Order: Streak/Filter → Overall → Fretboard Mastery → Accuracy Trend → Avg Response Time
+                                // Order: Streak/Filter → Overall → Phase Roadmap → Fretboard Mastery → Accuracy Trend → Avg Response Time
                                 streakFilterRow
 
                                 overallCard
                                     .padding(.horizontal, 16)
+
+                                PhaseRoadmapSection(
+                                    phaseManager: LearningPhaseManager(),
+                                    sessionAccuracy: vm.overallMastery
+                                )
+                                .padding(.horizontal, 16)
 
                                 VStack(alignment: .leading, spacing: 8) {
                                     masterySectionHeader

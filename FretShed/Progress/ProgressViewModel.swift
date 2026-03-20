@@ -347,7 +347,7 @@ public final class ProgressViewModel {
     public func masteryLevel(note: MusicalNote, string: Int) -> MasteryLevel {
         let score = scoreGrid[string][note.rawValue]
         let value = score?.score ?? (MasteryScore.alpha / (MasteryScore.alpha + MasteryScore.beta))
-        return MasteryLevel.from(score: value, isMastered: score?.isMastered ?? false)
+        return MasteryLevel.from(score: value, isMastered: score?.isMastered ?? false, totalAttempts: score?.totalAttempts ?? 0)
     }
 
     // MARK: - Deletion

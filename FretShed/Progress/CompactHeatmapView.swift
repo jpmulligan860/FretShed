@@ -60,18 +60,21 @@ struct CompactHeatmapView: View {
         let hasData = scoreObj != nil
         let score = scoreObj?.score ?? 0.0
         let isMastered = scoreObj?.isMastered ?? false
+        let attempts = scoreObj?.totalAttempts ?? 0
 
         RoundedRectangle(cornerRadius: 2)
-            .fill(hasData ? cellColor(score: score, isMastered: isMastered) : DesignSystem.Colors.surface2)
+            .fill(hasData ? cellColor(score: score, isMastered: isMastered, totalAttempts: attempts) : DesignSystem.Colors.surface2)
             .frame(height: 10)
             .frame(maxWidth: .infinity)
     }
 
-    private func cellColor(score: Double, isMastered: Bool) -> Color {
-        switch score {
-        case ..<0.50:  return DesignSystem.Colors.heatmapStruggling
-        case ..<0.75:  return DesignSystem.Colors.heatmapLearning
-        default:       return isMastered ? DesignSystem.Colors.heatmapMastered : DesignSystem.Colors.heatmapProficient
+    private func cellColor(score: Double, isMastered: Bool, totalAttempts: Int) -> Color {
+        let level = MasteryLevel.from(score: score, isMastered: isMastered, totalAttempts: totalAttempts)
+        switch level {
+        case .struggling, .beginner:   return DesignSystem.Colors.heatmapStruggling
+        case .learning, .developing:   return DesignSystem.Colors.heatmapLearning
+        case .proficient:              return DesignSystem.Colors.heatmapProficient
+        case .mastered:                return DesignSystem.Colors.heatmapMastered
         }
     }
 

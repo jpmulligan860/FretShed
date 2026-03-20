@@ -235,7 +235,7 @@ final class SessionInsightEngine {
             }) else { continue }
 
             // Current tier
-            let currentTier = MasteryLevel.from(score: score.score, isMastered: score.isMastered)
+            let currentTier = MasteryLevel.from(score: score.score, isMastered: score.isMastered, totalAttempts: score.totalAttempts)
 
             // Pre-session score
             let preTotalAttempts = score.totalAttempts - counts.total
@@ -244,9 +244,8 @@ final class SessionInsightEngine {
 
             let preScore = MasteryCalculator.score(correct: preCorrectAttempts, total: preTotalAttempts)
             let preIsMastered = preScore >= MasteryScore.masteredThreshold
-                && preTotalAttempts >= MasteryScore.masteredMinAttempts
                 && score.hasCompletedSpacingGate
-            let preTier = MasteryLevel.from(score: preScore, isMastered: preIsMastered)
+            let preTier = MasteryLevel.from(score: preScore, isMastered: preIsMastered, totalAttempts: preTotalAttempts)
 
             if currentTier > preTier {
                 transitions.append(TierTransition(
@@ -846,7 +845,7 @@ final class SessionInsightEngine {
 
         let proficientPlus = scores.filter {
             accessibleStrings.contains($0.stringNumber)
-            && MasteryLevel.from(score: $0.score, isMastered: $0.isMastered) >= .proficient
+            && MasteryLevel.from(score: $0.score, isMastered: $0.isMastered, totalAttempts: $0.totalAttempts) >= .proficient
         }.count
 
         if Double(proficientPlus) / Double(max(attempted, 1)) >= 0.40 {

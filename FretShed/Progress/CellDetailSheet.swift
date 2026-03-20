@@ -18,7 +18,7 @@ struct CellDetailSheet: View {
     private var masteryValue: Double {
         score?.score ?? (MasteryScore.alpha / (MasteryScore.alpha + MasteryScore.beta))
     }
-    private var level: MasteryLevel { MasteryLevel.from(score: masteryValue, isMastered: score?.isMastered ?? false) }
+    private var level: MasteryLevel { MasteryLevel.from(score: masteryValue, isMastered: score?.isMastered ?? false, totalAttempts: score?.totalAttempts ?? 0) }
 
     private static let stringNames: [Int: String] = [
         1: "String 1 (high e)", 2: "String 2 (B)", 3: "String 3 (G)",

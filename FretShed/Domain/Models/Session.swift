@@ -95,12 +95,16 @@ public enum MasteryLevel: String, CaseIterable, Codable, Sendable, Comparable {
         }
     }
 
-    /// Derives a `MasteryLevel` with full context (score + attempt threshold).
-    public static func from(score: Double, isMastered: Bool) -> MasteryLevel {
+    /// Derives a `MasteryLevel` with full context (score + attempt count + spacing gate).
+    /// Cells with fewer than 3 attempts cap at `.learning` regardless of score —
+    /// one lucky answer shouldn't earn proficient status.
+    public static func from(score: Double, isMastered: Bool, totalAttempts: Int = Int.max) -> MasteryLevel {
         switch score {
         case ..<0.50:  return .struggling
         case ..<0.75:  return .learning
-        default:       return isMastered ? .mastered : .proficient
+        default:
+            if totalAttempts < MasteryScore.checkpointMinAttempts { return .learning }
+            return isMastered ? .mastered : .proficient
         }
     }
 

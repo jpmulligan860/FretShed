@@ -69,9 +69,26 @@ struct PhaseRoadmapSection: View {
     let sessionAccuracy: Double
 
     @State private var isExpanded = false
+    @State private var showInfo = false
 
     var body: some View {
         VStack(spacing: 0) {
+            // Section title
+            HStack(spacing: 6) {
+                Text("SMART PRACTICE PHASE PROGRESS")
+                    .font(DesignSystem.Typography.smallLabel)
+                    .foregroundStyle(DesignSystem.Colors.text2)
+                Button { showInfo = true } label: {
+                    Image(systemName: "info.circle")
+                        .font(DesignSystem.Typography.smallLabel)
+                        .foregroundStyle(DesignSystem.Colors.text2)
+                }
+                Spacer()
+            }
+            .padding(.horizontal, 14)
+            .padding(.top, 12)
+            .padding(.bottom, 6)
+
             PhaseRoadmapHeader(
                 currentPhase: phaseManager.currentPhase,
                 completedStrings: completedStringsForCurrentPhase,
@@ -114,6 +131,9 @@ struct PhaseRoadmapSection: View {
                 .stroke(isExpanded ? phaseManager.currentPhase.dimBorder : DesignSystem.Colors.border, lineWidth: 1)
         )
         .animation(.easeInOut(duration: 0.3), value: isExpanded)
+        .sheet(isPresented: $showInfo) {
+            PhaseRoadmapInfoSheet()
+        }
     }
 
     private var completedStringsForCurrentPhase: Int {
@@ -435,5 +455,67 @@ private struct StringProgressDots: View {
                     .stroke(isCurrent ? phaseColor : Color.clear, lineWidth: 1.5)
             )
             .shadow(color: isCompleted ? DesignSystem.Colors.correct.opacity(0.5) : (isCurrent ? phaseColor.opacity(0.4) : .clear), radius: 2)
+    }
+}
+
+// MARK: - PhaseRoadmapInfoSheet
+
+private struct PhaseRoadmapInfoSheet: View {
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    Text("Smart Practice guides you through four phases, each building on the last. You don't need to think about what to practice \u{2014} the app picks the right notes, the right focus, and the right challenge level for where you are.")
+                        .font(DesignSystem.Typography.bodyLabel)
+                        .foregroundStyle(DesignSystem.Colors.text2)
+
+                    ForEach(LearningPhase.allCases, id: \.rawValue) { phase in
+                        VStack(alignment: .leading, spacing: 4) {
+                            HStack(spacing: 8) {
+                                Circle()
+                                    .fill(phase.color)
+                                    .frame(width: 20, height: 20)
+                                    .overlay(
+                                        Text("\(phase.rawValue)")
+                                            .font(.custom("JetBrainsMono-Bold", size: 10))
+                                            .foregroundStyle(.white)
+                                    )
+                                Text("Phase \(phase.rawValue): \(phase.displayName)")
+                                    .font(DesignSystem.Typography.bodyLabel)
+                            }
+                            Text(phase.tagline)
+                                .font(DesignSystem.Typography.smallLabel)
+                                .foregroundStyle(DesignSystem.Colors.text2)
+                        }
+                    }
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("How mastery works")
+                            .font(DesignSystem.Typography.bodyLabel)
+                        Text("A note turns green when you\u{2019}ve named it correctly across multiple practice sessions over several days. One mistake sets you back a step, but never erases all your progress.")
+                            .font(DesignSystem.Typography.smallLabel)
+                            .foregroundStyle(DesignSystem.Colors.text2)
+                    }
+                    .padding(.top, 4)
+
+                    Text("Tap the roadmap to expand it and see details for each phase.")
+                        .font(DesignSystem.Typography.smallLabel)
+                        .foregroundStyle(DesignSystem.Colors.muted)
+                }
+                .padding(20)
+            }
+            .background(DesignSystem.Colors.background)
+            .navigationTitle("Smart Practice Phases")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
+                }
+            }
+        }
+        .presentationDetents([.medium])
+        .presentationDragIndicator(.visible)
     }
 }

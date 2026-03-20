@@ -143,7 +143,7 @@ final class SmartPracticeEngineTests: XCTestCase {
         phaseManager.currentPhaseTwoTargetString = 5
         let scores = try masteryRepo.allScores()
         let desc = engine.currentFocusDescription(using: scores)
-        XCTAssertTrue(desc.contains("Sharps & Flats"), "Description: \(desc)")
+        XCTAssertTrue(desc.contains("All Notes"), "Description: \(desc)")
         XCTAssertTrue(desc.contains("A"), "Should mention target string: \(desc)")
     }
 

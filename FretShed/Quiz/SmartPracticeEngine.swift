@@ -239,7 +239,7 @@ final class SmartPracticeEngine {
             let progress = phaseManager.currentStringProgress(using: scores)
             let stringName = Self.stringName(target)
             if let p = progress {
-                return "\(stringName) String Natural Notes — \(p.mastered) of \(p.total) mastered"
+                return "\(stringName) String Natural Notes — \(p.mastered) of \(p.total) ready"
             }
             return "\(stringName) String Natural Notes"
 
@@ -250,7 +250,7 @@ final class SmartPracticeEngine {
             let progress = phaseManager.currentPhaseTwoStringProgress(using: scores)
             let stringName = Self.stringName(target)
             if let p = progress {
-                return "\(stringName) String Sharps & Flats — \(p.mastered) of \(p.total) mastered"
+                return "\(stringName) String All Notes — \(p.mastered) of \(p.total) ready"
             }
             return "\(stringName) String Sharps & Flats"
 
@@ -682,7 +682,7 @@ final class SmartPracticeEngine {
                 let stringName = Self.stringName(ts)
                 target = "\(stringName) String Natural Notes"
                 if let p = phaseManager.currentStringProgress(using: scores) {
-                    progress = "\(p.mastered) of \(p.total) mastered"
+                    progress = "\(p.mastered) of \(p.total) ready"
                 } else {
                     progress = nil
                 }
@@ -693,9 +693,9 @@ final class SmartPracticeEngine {
         case .expansion:
             if let ts = phaseManager.currentPhaseTwoTargetString {
                 let stringName = Self.stringName(ts)
-                target = "\(stringName) String Sharps & Flats"
+                target = "\(stringName) String All Notes"
                 if let p = phaseManager.currentPhaseTwoStringProgress(using: scores) {
-                    progress = "\(p.mastered) of \(p.total) mastered"
+                    progress = "\(p.mastered) of \(p.total) ready"
                 } else {
                     progress = nil
                 }

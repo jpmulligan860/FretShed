@@ -14,7 +14,7 @@ import SwiftData
 /// where α = 2 (slight optimism prior) and β = 1.
 ///
 /// Thresholds:
-/// - "Mastered"   : mastery ≥ 0.75 AND total ≥ 15
+/// - "Mastered"   : mastery ≥ 0.75 AND spacing gate complete (3 checkpoints across days)
 /// - "Struggling" : mastery < 0.50 AND total ≥ 5
 @Model
 public final class MasteryScore {

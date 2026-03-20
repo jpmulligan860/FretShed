@@ -782,10 +782,18 @@ final class SessionInsightEngine {
         // Reset weakness counter on a positive event
         UserDefaults.standard.set(0, forKey: Keys.consecutiveWeaknessCountSummary)
 
+        let body: String?
+        if transitions.count > 1 {
+            let noteNames = transitions.map { $0.note.displayName(format: noteFormat) }
+            body = "\(noteNames.joined(separator: ", ")) — \(transitions.count) notes promoted this session."
+        } else {
+            body = nil
+        }
+
         return InsightCard(
             type: .tierTransition,
             headline: headline,
-            body: transitions.count > 1 ? "\(transitions.count) cells promoted this session." : nil,
+            body: body,
             isPositive: true,
             isMilestone: true
         )

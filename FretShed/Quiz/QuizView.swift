@@ -818,6 +818,7 @@ struct QuizView: View {
                         VStack(spacing: 16) {
                             completedStatsGrid
                             completedPhaseCards
+                            completedNextUpCard
                         }
                         .padding(.horizontal, 20)
                         .padding(.vertical, 20)
@@ -825,7 +826,7 @@ struct QuizView: View {
                     .frame(maxWidth: .infinity)
                 }
             } else {
-                // Portrait: scrollable content above, buttons pinned at bottom
+                // Portrait: scrollable content above, Next Up + buttons pinned at bottom
                 VStack(spacing: 0) {
                     ScrollView {
                         VStack(spacing: 0) {
@@ -843,6 +844,11 @@ struct QuizView: View {
                         }
                         .padding(.bottom, 16)
                     }
+
+                    // Next Up pinned above buttons so it's always visible
+                    completedNextUpCard
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 8)
 
                     completedButtons
                         .padding(.bottom, 32)
@@ -871,13 +877,13 @@ struct QuizView: View {
             }
             if let headline {
                 Text(headline)
-                    .font(DesignSystem.Typography.subDisplay)
+                    .font(DesignSystem.Typography.screenTitle)
                     .foregroundStyle(.white)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 20)
                 if let body {
                     Text(body)
-                        .font(DesignSystem.Typography.accentLarge)
+                        .font(DesignSystem.Typography.accentDescription)
                         .foregroundStyle(.white.opacity(0.75))
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 24)
@@ -1058,7 +1064,11 @@ struct QuizView: View {
             .woodshopCard()
         }
 
-        // Next session recommendation — tappable to launch
+    }
+
+    /// Next Up card — extracted so it can be pinned outside the ScrollView in portrait.
+    @ViewBuilder
+    private var completedNextUpCard: some View {
         if let rec = nextSessionRec {
             Button {
                 onNextSession?(nextSessionUsesTargetNotes ? insightCard?.targetNotes : nil, nextSessionPrebuilt, nextSessionGroups)

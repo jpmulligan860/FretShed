@@ -361,7 +361,7 @@ public struct TunerView: View {
     private func stringIndicator(_ info: GuitarStringInfo) -> some View {
         HStack(spacing: 4) {
             Text("\(info.number)")
-                .font(.system(size: 10, weight: .bold, design: .monospaced))
+                .font(DesignSystem.Typography.dataPip)
                 .foregroundStyle(DesignSystem.Colors.surface)
                 .frame(width: 16, height: 16)
                 .background(DesignSystem.Colors.amber, in: Circle())
@@ -590,7 +590,7 @@ struct DialTicks: View {
                 let color = cents == 0 ? DesignSystem.Colors.correct : DesignSystem.Colors.text2
                 let resolved = ctx.resolve(
                     Text(label)
-                        .font(.system(size: 10, weight: .medium, design: .monospaced))
+                        .font(DesignSystem.Typography.dataPip)
                         .foregroundStyle(color)
                 )
                 ctx.draw(resolved, at: pos, anchor: .center)

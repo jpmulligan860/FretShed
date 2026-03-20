@@ -503,7 +503,7 @@ public struct ProgressTabView: View {
                     AxisValueLabel {
                         if let v = value.as(Double.self) {
                             Text("\(Int(v * 100))%")
-                                .font(.system(size: 10))
+                                .font(DesignSystem.Typography.microLabel)
                         }
                     }
                 }
@@ -514,7 +514,7 @@ public struct ProgressTabView: View {
                     AxisValueLabel {
                         if let date = value.as(Date.self) {
                             Text(date, format: .dateTime.month(.defaultDigits).day())
-                                .font(.system(size: 9))
+                                .font(DesignSystem.Typography.sectionLabel)
                         }
                     }
                 }
@@ -570,7 +570,7 @@ public struct ProgressTabView: View {
                     AxisValueLabel {
                         if let v = value.as(Double.self) {
                             Text(String(format: "%.1fs", v))
-                                .font(.system(size: 10))
+                                .font(DesignSystem.Typography.microLabel)
                         }
                     }
                 }
@@ -581,7 +581,7 @@ public struct ProgressTabView: View {
                     AxisValueLabel {
                         if let date = value.as(Date.self) {
                             Text(date, format: .dateTime.month(.defaultDigits).day())
-                                .font(.system(size: 9))
+                                .font(DesignSystem.Typography.sectionLabel)
                         }
                     }
                 }
@@ -700,10 +700,10 @@ private struct OverallMasteryRing: View {
                 .animation(.spring(duration: 0.8), value: value)
             VStack(spacing: 0) {
                 Text("\(Int(value * 100))")
-                    .font(.system(size: 26, weight: .black, design: .rounded))
+                    .font(DesignSystem.Typography.mediumTitle)
                     .monospacedDigit()
                 Text("%")
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(DesignSystem.Typography.smallLabel)
                     .foregroundStyle(DesignSystem.Colors.text2)
             }
         }

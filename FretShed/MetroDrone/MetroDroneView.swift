@@ -103,7 +103,7 @@ struct MetroDroneView: View {
 
             // Large BPM display
             Text("\(Int(vm.bpm))")
-                .font(.system(size: 72, weight: .bold, design: .rounded))
+                .font(DesignSystem.Typography.bpmDisplay)
                 .monospacedDigit()
                 .contentTransition(.numericText())
 

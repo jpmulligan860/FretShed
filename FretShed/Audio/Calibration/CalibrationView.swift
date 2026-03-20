@@ -393,7 +393,7 @@ struct CalibrationView: View {
                     .foregroundStyle(DesignSystem.Colors.text2)
 
                 Text("\(remaining)")
-                    .font(.system(size: 64, weight: .bold, design: .rounded))
+                    .font(DesignSystem.Typography.bpmDisplay)
                     .foregroundStyle(DesignSystem.Colors.cherry)
                     .contentTransition(.numericText())
                     .animation(.spring(duration: 0.2), value: remaining)

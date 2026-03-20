@@ -222,7 +222,7 @@ public struct CompactFretboardView: View {
         if showNoteNames {
             let label = ctx.resolve(
                 Text(note.displayName(format: format))
-                    .font(.system(size: 9, weight: .bold))
+                    .font(DesignSystem.Typography.sectionLabel)
                     .foregroundColor(.white)
             )
             ctx.draw(label, at: pt)

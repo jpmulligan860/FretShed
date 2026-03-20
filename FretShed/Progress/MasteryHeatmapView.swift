@@ -97,7 +97,7 @@ struct MasteryHeatmapView: View {
                     .frame(width: 22)
                 ForEach(Array(fretRange), id: \.self) { fret in
                     Text("\(fret)")
-                        .font(.system(size: 8, weight: .semibold))
+                        .font(DesignSystem.Typography.tinyLabel)
                         .foregroundStyle(DesignSystem.Colors.text2)
                         .frame(width: cellSize)
                 }
@@ -108,7 +108,7 @@ struct MasteryHeatmapView: View {
             ForEach(strings, id: \.self) { string in
                 HStack(spacing: 2) {
                     Text(stringLabels[string] ?? "")
-                        .font(.system(size: 9, weight: .bold, design: .monospaced))
+                        .font(DesignSystem.Typography.sectionLabel)
                         .foregroundStyle(DesignSystem.Colors.text2)
                         .frame(width: 22, alignment: .center)
 
@@ -161,7 +161,7 @@ private struct HeatCell: View {
                 .fill(cellColor)
             if let name = noteName {
                 Text(name)
-                    .font(.system(size: 7, weight: .bold))
+                    .font(DesignSystem.Typography.heatmapLabel)
                     .foregroundStyle(textColor)
                     .lineLimit(1)
                     .minimumScaleFactor(0.5)
@@ -246,7 +246,7 @@ struct HeatmapLegend: View {
             legendItem(color: DesignSystem.Colors.heatmapProficient,  label: "Proficient", count: counts.proficient)
             legendItem(color: DesignSystem.Colors.heatmapMastered,    label: "Mastered", count: counts.mastered)
         }
-        .font(.system(size: 9))
+        .font(DesignSystem.Typography.sectionLabel)
         .foregroundStyle(DesignSystem.Colors.text2)
     }
 

@@ -469,7 +469,7 @@ struct QuizView: View {
             Spacer()
             VStack(spacing: 8) {
                 Text("Let's warm up with a quick review.")
-                    .font(.custom("CrimsonPro-Italic", size: 20))
+                    .font(DesignSystem.Typography.accentBody)
                     .foregroundStyle(DesignSystem.Colors.text)
                     .multilineTextAlignment(.center)
             }
@@ -522,25 +522,25 @@ struct QuizView: View {
                 .padding(.bottom, 2)
             } else {
                 Text(vm.settings.tapToAnswerEnabled ? "Find this note:" : "Play this note:")
-                    .font(.system(size: 22, weight: .medium))
+                    .font(DesignSystem.Typography.promptLabel)
                     .foregroundStyle(DesignSystem.Colors.text2)
             }
 
             if let q = vm.currentQuestion {
                 Text("String \(q.string)")
-                    .font(.system(size: 40, weight: .bold, design: .rounded))
+                    .font(DesignSystem.Typography.largeNumber)
                     .foregroundStyle(promptColor)
                     .monospacedDigit()
 
                 Text(q.note.displayName(format: noteFormat))
-                    .font(.system(size: 79, weight: .black, design: .rounded))
+                    .font(DesignSystem.Typography.noteDisplay)
                     .foregroundStyle(promptColor)
                     .contentTransition(.numericText())
                     .animation(.spring(duration: 0.3), value: q.note)
 
                 if showFretHint {
                     Text("Fret \(q.fret)")
-                        .font(.system(size: 27, weight: .semibold))
+                        .font(DesignSystem.Typography.feedbackLabel)
                         .foregroundStyle(DesignSystem.Colors.text2)
                         .monospacedDigit()
                         .transition(.opacity)
@@ -549,7 +549,7 @@ struct QuizView: View {
                         withAnimation { showFretHint = true }
                     } label: {
                         Label("Show Fret", systemImage: "eye")
-                            .font(.system(size: 27, weight: .semibold))
+                            .font(DesignSystem.Typography.feedbackLabel)
                             .foregroundStyle(DesignSystem.Colors.cherry)
                     }
                     .buttonStyle(.plain)
@@ -578,15 +578,15 @@ struct QuizView: View {
                 let color = isCorrect ? DesignSystem.Colors.correct : DesignSystem.Colors.wrong
                 VStack(spacing: 2) {
                     Text("You Played:")
-                        .font(.system(size: 22, weight: .medium))
+                        .font(DesignSystem.Typography.promptLabel)
                         .foregroundStyle(DesignSystem.Colors.text2)
                     Text(played.displayName(format: noteFormat))
-                        .font(.system(size: 79, weight: .black, design: .rounded))
+                        .font(DesignSystem.Typography.noteDisplay)
                         .foregroundStyle(color)
                     HStack(spacing: 6) {
                         Image(systemName: isCorrect ? "checkmark.circle.fill" : "xmark.circle.fill")
                         Text(isCorrect ? "Correct" : "Incorrect")
-                            .font(.system(size: 27, weight: .semibold))
+                            .font(DesignSystem.Typography.feedbackLabel)
                     }
                     .foregroundStyle(color)
                 }
@@ -619,7 +619,7 @@ struct QuizView: View {
                     Text("Played:")
                         .font(DesignSystem.Typography.smallLabel)
                     Text(played.displayName(format: noteFormat))
-                        .font(.system(size: 28, weight: .black, design: .rounded))
+                        .font(DesignSystem.Typography.subDisplay)
                 }
                 .foregroundStyle(color)
                 .padding(.horizontal, 10)
@@ -664,7 +664,7 @@ struct QuizView: View {
 
             if let q = vm.currentQuestion {
                 Text(q.note.displayName(format: noteFormat))
-                    .font(.system(size: 36, weight: .black, design: .rounded))
+                    .font(DesignSystem.Typography.compactNote)
                     .foregroundStyle(promptColor)
                     .contentTransition(.numericText())
                     .animation(.spring(duration: 0.3), value: q.note)
@@ -706,10 +706,10 @@ struct QuizView: View {
     private func statPill(label: String, value: String) -> some View {
         VStack(spacing: 1) {
             Text(label)
-                .font(.system(size: 9, weight: .semibold))
+                .font(DesignSystem.Typography.sectionLabel)
                 .foregroundStyle(DesignSystem.Colors.text2)
             Text(value)
-                .font(.system(size: 14, weight: .bold))
+                .font(DesignSystem.Typography.quizStatValue)
                 .monospacedDigit()
                 .contentTransition(.numericText())
         }
@@ -733,7 +733,7 @@ struct QuizView: View {
                         style: StrokeStyle(lineWidth: 3, lineCap: .round))
                 .rotationEffect(.degrees(-90))
             Text("\(Int(pct * 100))%")
-                .font(.system(size: 9, weight: .bold))
+                .font(DesignSystem.Typography.sectionLabel)
         }
         .frame(width: 32, height: 32)
         .animation(.easeInOut, value: pct)
@@ -871,13 +871,13 @@ struct QuizView: View {
             }
             if let headline {
                 Text(headline)
-                    .font(.custom("Montserrat-ExtraBold", size: 28))
+                    .font(DesignSystem.Typography.subDisplay)
                     .foregroundStyle(.white)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 20)
                 if let body {
                     Text(body)
-                        .font(.custom("CrimsonPro-Italic", size: 18))
+                        .font(DesignSystem.Typography.accentLarge)
                         .foregroundStyle(.white.opacity(0.75))
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 24)

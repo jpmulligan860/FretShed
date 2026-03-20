@@ -876,7 +876,7 @@ public struct SessionSetupView: View {
                                 .lineLimit(1)
                                 .minimumScaleFactor(0.8)
                             Text(preset.transposed(toKey: progressionKey).shortDescription)
-                                .font(.system(size: 9))
+                                .font(DesignSystem.Typography.sectionLabel)
                                 .foregroundStyle(selectedPresetIndex == idx ? .white.opacity(0.8) : .secondary)
                                 .lineLimit(1)
                                 .minimumScaleFactor(0.7)
@@ -902,7 +902,7 @@ public struct SessionSetupView: View {
                         Text("Custom")
                             .font(DesignSystem.Typography.smallLabel)
                         Text("Build your own")
-                            .font(.system(size: 9))
+                            .font(DesignSystem.Typography.sectionLabel)
                             .foregroundStyle(selectedPresetIndex == nil ? .white.opacity(0.8) : .secondary)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)

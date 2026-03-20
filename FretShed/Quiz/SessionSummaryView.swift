@@ -142,13 +142,13 @@ public struct SessionSummaryView: View {
 
             if let headline = insightHeadline {
                 Text(headline)
-                    .font(.custom("Montserrat-ExtraBold", size: 28))
+                    .font(DesignSystem.Typography.subDisplay)
                     .foregroundStyle(.white)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 20)
                 if let body = insightBody {
                     Text(body)
-                        .font(.custom("CrimsonPro-Italic", size: 18))
+                        .font(DesignSystem.Typography.accentLarge)
                         .foregroundStyle(.white.opacity(0.75))
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 24)

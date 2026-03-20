@@ -207,11 +207,27 @@ enum DesignSystem {
         static let dataLarge:    Font = .custom("JetBrainsMono-Bold", size: 20)
         static let quizStatValue: Font = .custom("JetBrainsMono-Bold", size: 14)
 
+        // --- Crimson Pro extended sizes ---
+        static let accentBody:   Font = .custom("CrimsonPro-Italic", size: 20)
+        static let accentLarge:  Font = .custom("CrimsonPro-Italic", size: 18)
+        static let bodyText:     Font = .custom("CrimsonPro-Regular", size: 14)
+
+        // --- JetBrains Mono extended sizes ---
+        static let dataMicro:    Font = .custom("JetBrainsMono-Bold", size: 13)
+        static let dataTiny:     Font = .custom("JetBrainsMono-Regular", size: 8)
+        static let dataPip:      Font = .custom("JetBrainsMono-Bold", size: 10)
+        static let dataChip:     Font = .custom("JetBrainsMono-SemiBold", size: 8)
+
+        // --- Montserrat extended sizes ---
+        static let promptLabel:  Font = .custom("Montserrat-SemiBold", size: 22)
+        static let feedbackLabel: Font = .custom("Montserrat-SemiBold", size: 27)
+
         // --- App-specific display sizes (Montserrat) ---
         static let noteDisplay:  Font = .custom("Montserrat-Black", size: 80)
         static let heroNote:     Font = .custom("Montserrat-Black", size: 72)
         static let bpmDisplay:   Font = .custom("Montserrat-Bold", size: 64)
         static let quizNote:     Font = .custom("Montserrat-Black", size: 52)
+        static let compactNote:  Font = .custom("Montserrat-Black", size: 36)
         static let largeNumber:  Font = .custom("Montserrat-Black", size: 40)
         static let subDisplay:   Font = .custom("Montserrat-ExtraBold", size: 28)
         static let mediumTitle:  Font = .custom("Montserrat-ExtraBold", size: 26)

@@ -296,7 +296,7 @@ struct PracticeHomeView: View {
                 .font(DesignSystem.Typography.screenTitle)
                 .foregroundStyle(DesignSystem.Colors.text)
             Text(isNewUser ? "Welcome to the Woodshed — let's get to work." : "Welcome back to the Shed.")
-                .font(.custom("CrimsonPro-Italic", size: 19.5))
+                .font(DesignSystem.Typography.accentBody)
                 .foregroundStyle(DesignSystem.Colors.muted)
             if !isNewUser {
                 Group {
@@ -318,7 +318,7 @@ struct PracticeHomeView: View {
                         }
                     }
                 }
-                .font(.custom("CrimsonPro-Italic", size: 19.5))
+                .font(DesignSystem.Typography.accentBody)
                 .foregroundStyle(DesignSystem.Colors.muted)
                 .animation(.easeInOut(duration: 0.4), value: showTimeStat)
                 .onAppear {

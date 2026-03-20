@@ -178,16 +178,16 @@ private struct PhaseRoadmapHeader: View {
                     .fill(currentPhase.color)
                     .frame(width: 28, height: 28)
                 Text("\(currentPhase.rawValue)")
-                    .font(.custom("JetBrainsMono-Bold", size: 13))
+                    .font(DesignSystem.Typography.dataMicro)
                     .foregroundStyle(.white)
             }
 
             // Phase name + tagline
             VStack(alignment: .leading, spacing: 1) {
                 Text(currentPhase.displayName)
-                    .font(.custom("Montserrat-ExtraBold", size: 14))
+                    .font(DesignSystem.Typography.bodyLabel)
                 Text(currentPhase.tagline)
-                    .font(.custom("CrimsonPro-Italic", size: 13))
+                    .font(DesignSystem.Typography.accentDescription)
                     .foregroundStyle(DesignSystem.Colors.text2)
             }
 
@@ -198,7 +198,7 @@ private struct PhaseRoadmapHeader: View {
 
             // Chevron
             Image(systemName: "chevron.down")
-                .font(.system(size: 12, weight: .semibold))
+                .font(DesignSystem.Typography.smallLabel)
                 .foregroundStyle(DesignSystem.Colors.muted)
                 .rotationEffect(.degrees(isExpanded ? 180 : 0))
         }
@@ -226,7 +226,7 @@ private struct PhaseRoadmapHeader: View {
                     .frame(width: 20, height: 20)
                     .rotationEffect(.degrees(-90))
                 Text("\(Int(sessionAccuracy * 100))")
-                    .font(.custom("JetBrainsMono-Regular", size: 7))
+                    .font(DesignSystem.Typography.heatmapLabel)
             }
         }
     }
@@ -271,11 +271,11 @@ private struct PhaseRoadmapRow: View {
                 VStack(alignment: .leading, spacing: 1) {
                     HStack(spacing: 6) {
                         Text(phase.displayName)
-                            .font(.custom("Montserrat-ExtraBold", size: 14))
+                            .font(DesignSystem.Typography.bodyLabel)
 
                         if status == .active {
                             Text("NOW")
-                                .font(.custom("JetBrainsMono-Bold", size: 8))
+                                .font(DesignSystem.Typography.dataChip)
                                 .foregroundStyle(phase.color)
                                 .padding(.horizontal, 5)
                                 .padding(.vertical, 2)
@@ -284,7 +284,7 @@ private struct PhaseRoadmapRow: View {
                         }
                     }
                     Text(phase.tagline)
-                        .font(.custom("CrimsonPro-Italic", size: 13))
+                        .font(DesignSystem.Typography.accentDescription)
                         .foregroundStyle(DesignSystem.Colors.text2)
                 }
 
@@ -310,13 +310,13 @@ private struct PhaseRoadmapRow: View {
                                 .frame(width: 20, height: 20)
                                 .rotationEffect(.degrees(-90))
                             Text("\(Int(sessionAccuracy * 100))")
-                                .font(.custom("JetBrainsMono-Regular", size: 7))
+                                .font(DesignSystem.Typography.heatmapLabel)
                         }
                     }
                 }
 
                 Image(systemName: "chevron.down")
-                    .font(.system(size: 10, weight: .medium))
+                    .font(DesignSystem.Typography.microLabel)
                     .foregroundStyle(DesignSystem.Colors.muted)
                     .rotationEffect(.degrees(isExpanded ? 180 : 0))
             }
@@ -351,7 +351,7 @@ private struct PhaseRoadmapRow: View {
                 )
                 .overlay(
                     Text("\(phase.rawValue)")
-                        .font(.custom("JetBrainsMono-Bold", size: 13))
+                        .font(DesignSystem.Typography.dataMicro)
                         .foregroundStyle(phase.color)
                 )
         case .complete:
@@ -363,7 +363,7 @@ private struct PhaseRoadmapRow: View {
                 )
                 .overlay(
                     Image(systemName: "checkmark")
-                        .font(.system(size: 12, weight: .bold))
+                        .font(DesignSystem.Typography.smallLabel)
                         .foregroundStyle(DesignSystem.Colors.correct)
                 )
         case .locked:
@@ -375,7 +375,7 @@ private struct PhaseRoadmapRow: View {
                 )
                 .overlay(
                     Image(systemName: "lock.fill")
-                        .font(.system(size: 10))
+                        .font(DesignSystem.Typography.microLabel)
                         .foregroundStyle(DesignSystem.Colors.muted)
                 )
         }
@@ -394,7 +394,7 @@ private struct PhaseRoadmapDetail: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(phase.descriptionText)
-                .font(.custom("CrimsonPro-Regular", size: 14))
+                .font(DesignSystem.Typography.bodyText)
                 .foregroundStyle(DesignSystem.Colors.text2)
                 .lineSpacing(1.3)
 
@@ -412,11 +412,11 @@ private struct PhaseRoadmapDetail: View {
     private func chipRow(label: String, value: String) -> some View {
         VStack(alignment: .leading, spacing: 3) {
             Text(label)
-                .font(.custom("JetBrainsMono-SemiBold", size: 8))
+                .font(DesignSystem.Typography.dataChip)
                 .foregroundStyle(DesignSystem.Colors.muted)
                 .tracking(0.8)
             Text(value)
-                .font(.custom("Montserrat-SemiBold", size: 11))
+                .font(DesignSystem.Typography.smallLabel)
                 .foregroundStyle(DesignSystem.Colors.text2)
         }
     }
@@ -437,7 +437,7 @@ private struct StringProgressDots: View {
                 }
             }
             Text("STRING \(completedCount + (currentString != nil ? 1 : 0))/6")
-                .font(.custom("JetBrainsMono-Regular", size: 8))
+                .font(DesignSystem.Typography.dataTiny)
                 .foregroundStyle(DesignSystem.Colors.muted)
         }
     }
@@ -479,7 +479,7 @@ private struct PhaseRoadmapInfoSheet: View {
                                     .frame(width: 20, height: 20)
                                     .overlay(
                                         Text("\(phase.rawValue)")
-                                            .font(.custom("JetBrainsMono-Bold", size: 10))
+                                            .font(DesignSystem.Typography.dataPip)
                                             .foregroundStyle(.white)
                                     )
                                 Text("Phase \(phase.rawValue): \(phase.displayName)")

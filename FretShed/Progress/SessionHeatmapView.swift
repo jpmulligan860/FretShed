@@ -70,7 +70,7 @@ struct SessionHeatmapView: View {
                     .frame(width: 22)
                 ForEach(Array(fretRange), id: \.self) { fret in
                     Text("\(fret)")
-                        .font(.system(size: 8, weight: .semibold))
+                        .font(DesignSystem.Typography.tinyLabel)
                         .foregroundStyle(DesignSystem.Colors.text2)
                         .frame(width: cellSize)
                 }
@@ -81,7 +81,7 @@ struct SessionHeatmapView: View {
             ForEach(strings, id: \.self) { string in
                 HStack(spacing: 2) {
                     Text(stringLabels[string] ?? "")
-                        .font(.system(size: 9, weight: .bold, design: .monospaced))
+                        .font(DesignSystem.Typography.sectionLabel)
                         .foregroundStyle(DesignSystem.Colors.text2)
                         .frame(width: 22, alignment: .center)
 
@@ -140,7 +140,7 @@ private struct SessionHeatCell: View {
                 .fill(cellColor)
             if let name = noteName {
                 Text(name)
-                    .font(.system(size: 7, weight: .bold))
+                    .font(DesignSystem.Typography.heatmapLabel)
                     .foregroundStyle(textColor)
                     .lineLimit(1)
                     .minimumScaleFactor(0.5)
@@ -180,7 +180,7 @@ struct SessionHeatmapLegend: View {
             legendItem(color: DesignSystem.Colors.wrong.opacity(0.65),   label: "Wrong")
             legendItem(color: DesignSystem.Colors.amber.opacity(0.65),   label: "Mixed")
         }
-        .font(.system(size: 10))
+        .font(DesignSystem.Typography.microLabel)
         .foregroundStyle(DesignSystem.Colors.text2)
     }
 

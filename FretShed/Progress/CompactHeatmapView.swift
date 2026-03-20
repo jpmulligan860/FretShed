@@ -26,7 +26,7 @@ struct CompactHeatmapView: View {
             ForEach(strings, id: \.self) { string in
                 HStack(spacing: 1.5) {
                     Text(stringLabels[string] ?? "")
-                        .font(.system(size: 8, weight: .bold, design: .monospaced))
+                        .font(DesignSystem.Typography.dataChip)
                         .foregroundStyle(DesignSystem.Colors.text2)
                         .frame(width: 14, alignment: .center)
 
@@ -81,7 +81,7 @@ struct CompactHeatmapView: View {
                 .fill(color)
                 .frame(width: 6, height: 6)
             Text(label)
-                .font(.system(size: 9))
+                .font(DesignSystem.Typography.sectionLabel)
                 .foregroundStyle(DesignSystem.Colors.muted)
         }
     }

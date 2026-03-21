@@ -62,7 +62,7 @@ public enum AudioInputSource: String, Codable, Sendable {
         switch self {
         case .builtInMic:     return "Built-in Microphone"
         case .usbInterface:   return "USB Audio Interface"
-        case .bluetoothAudio: return "Bluetooth Audio"
+        case .bluetoothAudio: return "Wireless Audio"
         case .wiredHeadset:   return "Wired Headset"
         case .unknown:        return "Unknown"
         }

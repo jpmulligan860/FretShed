@@ -43,6 +43,9 @@ public final class AppContainer {
     /// The pre-computed fretboard map (standard tuning, 0–24 frets).
     public let fretboardMap: FretboardMap
 
+    /// Central entitlement manager — single source of truth for free vs premium.
+    public let entitlementManager: EntitlementManager
+
     // MARK: Async Factory
 
     /// Creates the production dependency graph asynchronously.
@@ -94,6 +97,7 @@ public final class AppContainer {
         self.settingsRepository = SwiftDataSettingsRepository(context: sharedContext)
         self.calibrationRepository = SwiftDataCalibrationRepository(context: sharedContext)
         self.fretboardMap = FretboardMap()
+        self.entitlementManager = EntitlementManager()
         logger.info("AppContainer initialised")
     }
 
@@ -119,6 +123,7 @@ public final class AppContainer {
         self.settingsRepository = SwiftDataSettingsRepository(context: sharedContext)
         self.calibrationRepository = SwiftDataCalibrationRepository(context: sharedContext)
         self.fretboardMap = FretboardMap()
+        self.entitlementManager = EntitlementManager()
     }
 }
 

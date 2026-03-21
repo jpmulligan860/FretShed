@@ -253,7 +253,7 @@ Estimated: 10–13 hours
 | Decision | Value |
 |---|---|
 | **Free tier modes** | Full Fretboard + Single String only |
-| **Free tier fretboard** | Strings 4–6, frets 0–7 |
+| **Free tier fretboard** | Strings 4–6, frets 0–12 |
 | **Free tier features** | Audio detection ON, adaptive ON, full stats, built-in mic calibration |
 | **Premium modes** | All 7 focus modes (adds Single Note, Fretboard Position, Circle of 4ths/5ths, Chord Progression) |
 | **Premium fretboard** | All 6 strings, all frets |
@@ -275,9 +275,9 @@ Estimated: 10–13 hours
 
 | # | Task | Est. | Status |
 |---|---|---|---|
-| 4.5 | Build `EntitlementManager.swift` — `@Observable` class, check StoreKit 2 subscription status, expose `isPremium: Bool` | 2–3 hrs | 🔲 |
-| 4.6 | Inject `EntitlementManager` into `AppContainer` via `@Environment` | 30 min | 🔲 |
-| 4.7 | Define free vs premium gates — Free: Full Fretboard + Single String modes, strings 4–6, frets 0–7, audio detection, adaptive, full stats. Premium: all 7 focus modes, all strings/frets, USB/BT calibration profiles, unlimited history. | 1 hr | 🔲 |
+| 4.5 | Build `EntitlementManager.swift` — `@Observable` class, check StoreKit 2 subscription status, expose `isPremium: Bool` | 2–3 hrs | ✅ |
+| 4.6 | Inject `EntitlementManager` into `AppContainer` via `@Environment` | 30 min | ✅ |
+| 4.7 | Define free vs premium gates — Free: Full Fretboard + Single String modes, strings 4–6, frets 0–12, audio detection, adaptive, full stats, single calibration profile. Premium: all focus modes, all strings/frets, multiple calibration profiles. | 1 hr | ✅ |
 
 ### 4C — PaywallView
 

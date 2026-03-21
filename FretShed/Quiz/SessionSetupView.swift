@@ -452,7 +452,11 @@ public struct SessionSetupView: View {
                 Spacer()
                 // "All" shortcut
                 Button("All") {
-                    selectedStrings = [1, 2, 3, 4, 5, 6]
+                    if container.entitlementManager.isPremium {
+                        selectedStrings = [1, 2, 3, 4, 5, 6]
+                    } else {
+                        showPaywall = true
+                    }
                 }
                 .font(DesignSystem.Typography.smallLabel)
                 .foregroundStyle(DesignSystem.Colors.cherry)
@@ -463,8 +467,11 @@ public struct SessionSetupView: View {
                 // Display from 6 (low E) to 1 (high e).
                 ForEach([6, 5, 4, 3, 2, 1], id: \.self) { string in
                     let isSelected = selectedStrings.contains(string)
+                    let isLocked = string <= 3 && !container.entitlementManager.isPremium
                     Button {
-                        if isSelected {
+                        if isLocked {
+                            showPaywall = true
+                        } else if isSelected {
                             if selectedStrings.count > 1 {
                                 selectedStrings.remove(string)
                             }
@@ -473,8 +480,16 @@ public struct SessionSetupView: View {
                         }
                     } label: {
                         VStack(spacing: 2) {
-                            Text("\(string)")
-                                .font(DesignSystem.Typography.bodyLabel)
+                            ZStack {
+                                Text("\(string)")
+                                    .font(DesignSystem.Typography.bodyLabel)
+                                if isLocked {
+                                    Image(systemName: "lock.fill")
+                                        .font(.system(size: 8))
+                                        .foregroundStyle(.white.opacity(0.5))
+                                        .offset(x: 12, y: -6)
+                                }
+                            }
                             Text(Self.stringNoteName(string))
                                 .font(DesignSystem.Typography.smallLabel)
                                 .foregroundStyle(isSelected ? .white.opacity(0.8) : .secondary)
@@ -482,10 +497,11 @@ public struct SessionSetupView: View {
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 8)
                         .background(
-                            isSelected ? DesignSystem.Colors.cherry : DesignSystem.Colors.surface2,
+                            isLocked ? DesignSystem.Colors.surface2.opacity(0.6)
+                            : isSelected ? DesignSystem.Colors.cherry : DesignSystem.Colors.surface2,
                             in: Capsule()
                         )
-                        .foregroundStyle(isSelected ? .white : .primary)
+                        .foregroundStyle(isLocked ? DesignSystem.Colors.muted : isSelected ? .white : .primary)
                     }
                     .buttonStyle(.plain)
                     .animation(.easeInOut(duration: 0.15), value: isSelected)

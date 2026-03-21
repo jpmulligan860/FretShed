@@ -285,7 +285,7 @@ public struct SessionSetupView: View {
                     FocusModeChip(
                         mode: mode,
                         isSelected: selectedFocusMode == mode,
-                        isPremium: !mode.isFreeMode
+                        isPremium: !mode.isFreeMode && !container.entitlementManager.isPremium
                     ) {
                         if mode.isFreeMode || container.entitlementManager.isPremium {
                             selectedFocusMode = mode

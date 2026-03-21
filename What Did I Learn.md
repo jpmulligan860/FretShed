@@ -257,3 +257,18 @@ Building FretShed from a working prototype to an App Store-ready product taught 
 4. **Fix your testing defaults before they become production defaults.** A session length of 7 was set for quick testing and accidentally shipped as the default. Two "pre-existing" test failures were actually tests correctly asserting the intended default of 20. The third was a fret count default similarly overridden. Testing overrides that linger in production code are invisible bugs — they look intentional until someone checks the test expectations.
 
 5. **Variety prevents churn, not just correctness.** The Fluency phase rotation (Full Fretboard → String Deep Dive → Note Hunt → Position Focus) doesn't change what the user learns — it changes how they experience learning. Same notes, different angles. The team consensus was clear: users don't leave because mastery takes time, they leave because Tuesday feels like Monday. Rotation was a 50-line change that transforms the daily experience.
+
+---
+
+### Session: Mar 2026 — Phase 4 Monetization (4.5–4.13)
+*The "Gate Everything, Then Test Everything" Session*
+
+1. **Gate at the chokepoint, not the UI.** I wired paywall triggers to locked focus modes, string buttons, and heatmap cells — but the quiz itself was still serving all 6 strings to free users. The UI said "locked" while the engine said "sure, here's string 1." The real fix was one filter in `buildCandidates()` — the single chokepoint where all quiz questions are generated. Gate where the data flows, not where the buttons are.
+
+2. **Every gate needs three layers.** UI locks (visual indicators + paywall on tap) are the first layer. Engine limits (SmartPracticeEngine only targeting free strings) are the second. Quiz filtering (buildCandidates restricts the candidate pool) is the third. Any single layer can be bypassed — quick start tiles, repeat last session, Smart Practice CTA. All three layers together are airtight.
+
+3. **Test as a free user, not just a developer.** Delete the app, reinstall, and use it as a brand new free user. Every quick start button, every string selector, every heatmap cell. I found the string selector gate missing because I'd been testing with premium access. The sandbox purchase flow is worth the extra 2 minutes of setup.
+
+4. **StoreKit local config files are a game changer.** App Store Connect subscriptions can't be sandbox tested until metadata is complete and a binary is submitted. A local `.storekit` config file mocks the products instantly in Xcode — full purchase flow on device without any App Store Connect approval. Should have set this up on day one of Phase 4.
+
+5. **Terminology is a product decision, not a copy decision.** "Mastered," "proficient," "ready," "locked in" — each word implies a specific threshold to the user. When the Smart Practice CTA said "mastered" and the heatmap showed zero mastered cells, that wasn't a copy bug — it was a product inconsistency. One word, one meaning, everywhere. Audit every user-facing string against the data model before shipping.

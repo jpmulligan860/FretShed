@@ -15,8 +15,8 @@ FretShed is an iOS guitar fretboard training application that helps guitarists m
 
 > **Positioning note (Feb 2026):** Multiple competitors offer mic-based audio detection for fretboard training (Fret Pro, Solo, Guitar Blast, Fretonomy, plus broader apps like Yousician). FretShed is NOT "the only app that listens." Our defensible differentiators are: (1) environment calibration — no competitor calibrates to the user's room/guitar/input source; (2) Bayesian adaptive mastery scoring — no competitor dynamically weights quiz selection per fretboard position; (3) all-in-one practice toolkit (tuner + metronome + drone). See `FretShed_Competitive_Analysis.md` in the Claude.ai project for full details.
 
-**App Store name:** FretShed: Guitar Fretboard  
-**Subtitle:** Learn Every Fretboard Note
+**App Store name:** FretShed: Smart Practice System  
+**Subtitle:** Learn Every Guitar Fretboard Note
 **Bundle ID:** com.jpm.fretshed (set in App Store Connect — do not change once submitted)
 
 ---
@@ -289,7 +289,7 @@ Full analysis: `FretShed_Competitive_Analysis.md` in Claude.ai project files.
 - UserSettings snapshot documented as design decision (live reference safe due to fullscreen overlay)
 - Backup/restore (F30): JSON export/import of all SwiftData models via Settings > Data Management
 
-**Finalized business model:** Free tier (strings 4–6, frets 0–12, Full Fretboard + Single String modes, audio detection, adaptive, full stats, Phases 1–2 on free strings, Phase 3–4 require premium). Premium ($4.99/mo, $29.99/yr, $49.99 lifetime, 14-day trial, multiple calibration profiles). Analytics: TelemetryDeck. Subtitle: "Learn Every Fretboard Note."
+**Finalized business model:** Free tier (strings 4–6, frets 0–12, Full Fretboard + Single String modes, audio detection, adaptive, full stats, Phases 1–2 on free strings, Phase 3–4 require premium). Premium ($4.99/mo, $29.99/yr, $49.99 lifetime, 14-day trial, multiple calibration profiles). Analytics: TelemetryDeck. Subtitle: "Learn Every Guitar Fretboard Note."
 
 **Shed Redesign (Phase 3.6) — IMPLEMENTED.** Complete redesign of the Practice ("Shed") tab:
 - `BaselinePrior.swift`: `BaselineLevel` enum (5 cases) seeds Bayesian mastery priors for new users based on experience level

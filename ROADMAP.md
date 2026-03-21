@@ -22,7 +22,7 @@ The core product is feature-complete and well-architected:
 - Piano drone timbre (F26), practice streak tracker (F27), tap mode bypass for calibration (F28)
 - Swift 6 strict concurrency
 
-> **Product name decided**: FretShed: Guitar Fretboard · Bundle ID: `com.jpm.fretshed` (locked in App Store Connect)
+> **Product name decided**: FretShed: Smart Practice System · Bundle ID: `com.jpm.fretshed` (locked in App Store Connect)
 
 ---
 
@@ -246,7 +246,7 @@ Estimated: 6–8 hours
 Estimated: 10–13 hours
 
 > **Bundle ID locked**: `com.jpm.fretshed` (App Store Connect)
-> **Subtitle**: "Learn Every Fretboard Note"
+> **Subtitle**: "Learn Every Guitar Fretboard Note"
 
 ### Finalized Business Decisions
 

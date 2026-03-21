@@ -277,7 +277,8 @@ struct PracticeHomeView: View {
             let engine = SmartPracticeEngine(
                 masteryRepository: container.masteryRepository,
                 sessionRepository: container.sessionRepository,
-                fretboardMap: container.fretboardMap
+                fretboardMap: container.fretboardMap,
+                isPremium: container.entitlementManager.isPremium
             )
             smartEngine = engine
             smartDescription = engine.nextModeDescription()

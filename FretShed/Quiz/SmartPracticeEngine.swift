@@ -31,11 +31,15 @@ final class SmartPracticeEngine {
     private let phaseManager: LearningPhaseManager
     private let groupingEngine: NoteGroupingEngine
 
-    // Session constraints — currently unrestricted (all strings, frets 0-12).
-    // Phase 4 (EntitlementManager) will gate free-tier to strings 4-6, frets 0-7.
-    static let sessionStrings: [Int] = LearningPhaseManager.allStrings
+    // Session constraints — gated by entitlement for free-tier users.
+    private static let allStrings: [Int] = LearningPhaseManager.allStrings
+    private static let freeStrings: [Int] = [4, 5, 6]
     static let sessionFretStart = 0
     static let sessionFretEnd = LearningPhaseManager.phaseRequiredFretEnd
+
+    /// Strings available for this engine instance, respecting entitlement.
+    var sessionStrings: [Int] { isPremium ? Self.allStrings : Self.freeStrings }
+    private let isPremium: Bool
 
     // Fluency rotation
     private static let fluencyRotationKey = "smartPractice_fluencyRotationIndex"
@@ -59,13 +63,15 @@ final class SmartPracticeEngine {
         masteryRepository: any MasteryRepository,
         sessionRepository: any SessionRepository,
         fretboardMap: FretboardMap,
-        phaseManager: LearningPhaseManager? = nil
+        phaseManager: LearningPhaseManager? = nil,
+        isPremium: Bool = false
     ) {
         self.masteryRepository = masteryRepository
         self.sessionRepository = sessionRepository
         self.fretboardMap = fretboardMap
         self.phaseManager = phaseManager ?? LearningPhaseManager(fretboardMap: fretboardMap)
         self.groupingEngine = NoteGroupingEngine(fretboardMap: fretboardMap)
+        self.isPremium = isPremium
     }
 
     // MARK: - Public API (preserved for PracticeHomeView compatibility)
@@ -161,7 +167,7 @@ final class SmartPracticeEngine {
     func weakSpotCount() throws -> Int {
         let allScores = try masteryRepository.allScores()
         var count = 0
-        for string in Self.sessionStrings {
+        for string in sessionStrings {
             guard let fretMap = fretboardMap.map[string] else { continue }
             for fret in Self.sessionFretStart...Self.sessionFretEnd {
                 guard let note = fretMap[fret] else { continue }
@@ -194,7 +200,7 @@ final class SmartPracticeEngine {
         alternatives.append((fullSession, "Full Fretboard", "Cover all positions", "rectangle.grid.3x2.fill"))
 
         // Offer weakest string as alternative
-        let weakest = Self.weakestString(from: allScores, strings: Self.sessionStrings, fretboardMap: fretboardMap)
+        let weakest = Self.weakestString(from: allScores, strings: sessionStrings, fretboardMap: fretboardMap)
         let name = Self.stringName(weakest)
         let stringSession = Session(
             focusMode: .singleString,

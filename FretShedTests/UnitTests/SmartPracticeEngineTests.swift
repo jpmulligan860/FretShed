@@ -26,7 +26,8 @@ final class SmartPracticeEngineTests: XCTestCase {
             masteryRepository: masteryRepo,
             sessionRepository: sessionRepo,
             fretboardMap: FretboardMap(),
-            phaseManager: phaseManager
+            phaseManager: phaseManager,
+            isPremium: true  // Tests run with full access
         )
         // Clear persisted state
         UserDefaults.standard.removeObject(forKey: "lastSmartPracticeMode")

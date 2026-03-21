@@ -983,7 +983,8 @@ struct QuizView: View {
             let smartEngine = SmartPracticeEngine(
                 masteryRepository: container.masteryRepository,
                 sessionRepository: container.sessionRepository,
-                fretboardMap: container.fretboardMap
+                fretboardMap: container.fretboardMap,
+                isPremium: container.entitlementManager.isPremium
             )
             if let (session, description) = try? smartEngine.nextSession() {
                 nextSessionRec = description

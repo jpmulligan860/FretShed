@@ -245,7 +245,8 @@ final class QuizLaunchCoordinator {
             let engine = SmartPracticeEngine(
                 masteryRepository: container.masteryRepository,
                 sessionRepository: container.sessionRepository,
-                fretboardMap: container.fretboardMap
+                fretboardMap: container.fretboardMap,
+                isPremium: container.entitlementManager.isPremium
             )
             guard let (session, _) = try? engine.nextSession() else { return }
             lastSessionGroups = engine.lastSessionPlan?.groups

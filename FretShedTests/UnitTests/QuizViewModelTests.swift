@@ -30,7 +30,8 @@ private func makeVM(
         settings: settings,
         masteryRepository: SwiftDataMasteryRepository(context: ModelContext(container)),
         sessionRepository: SwiftDataSessionRepository(context: ModelContext(container)),
-        attemptRepository: SwiftDataAttemptRepository(context: ModelContext(container))
+        attemptRepository: SwiftDataAttemptRepository(context: ModelContext(container)),
+        isPremium: true  // Tests run with full access
     )
 }
 
@@ -210,7 +211,8 @@ final class QuizViewModelTests: XCTestCase {
             settings: settings,
             masteryRepository: SwiftDataMasteryRepository(context: ModelContext(container)),
             sessionRepository: SwiftDataSessionRepository(context: ModelContext(container)),
-            attemptRepository: SwiftDataAttemptRepository(context: ModelContext(container))
+            attemptRepository: SwiftDataAttemptRepository(context: ModelContext(container)),
+            isPremium: true
         )
 
         await vm.start()
@@ -240,7 +242,8 @@ final class QuizViewModelTests: XCTestCase {
             settings: settings,
             masteryRepository: SwiftDataMasteryRepository(context: ModelContext(container)),
             sessionRepository: SwiftDataSessionRepository(context: ModelContext(container)),
-            attemptRepository: SwiftDataAttemptRepository(context: ModelContext(container))
+            attemptRepository: SwiftDataAttemptRepository(context: ModelContext(container)),
+            isPremium: true
         )
 
         await vm.start()
@@ -421,7 +424,8 @@ final class QuizViewModelTests: XCTestCase {
             settings: settings,
             masteryRepository: masteryRepo,
             sessionRepository: SwiftDataSessionRepository(context: ModelContext(container)),
-            attemptRepository: SwiftDataAttemptRepository(context: ModelContext(container))
+            attemptRepository: SwiftDataAttemptRepository(context: ModelContext(container)),
+            isPremium: true
         )
         await vm.start()
 
@@ -452,7 +456,8 @@ final class QuizViewModelTests: XCTestCase {
             settings: settings,
             masteryRepository: SwiftDataMasteryRepository(context: ModelContext(container)),
             sessionRepository: SwiftDataSessionRepository(context: ModelContext(container)),
-            attemptRepository: SwiftDataAttemptRepository(context: ModelContext(container))
+            attemptRepository: SwiftDataAttemptRepository(context: ModelContext(container)),
+            isPremium: true
         )
         await vm.start()
 

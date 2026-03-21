@@ -864,7 +864,8 @@ public struct SettingsView: View {
                 settings: settings,
                 masteryRepository: container.masteryRepository,
                 sessionRepository: container.sessionRepository,
-                attemptRepository: container.attemptRepository
+                attemptRepository: container.attemptRepository,
+                isPremium: container.entitlementManager.isPremium
             )
             NotificationCenter.default.post(name: .launchQuiz, object: vm)
         }

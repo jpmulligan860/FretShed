@@ -207,13 +207,19 @@ public final class QuizViewModel: Identifiable {
 
     // MARK: - Initializer
 
+    // MARK: - Free Tier Limits
+    private let isPremium: Bool
+    private static let freeStrings: Set<Int> = [4, 5, 6]
+    private static let freeFretMax: Int = 12
+
     public init(
         session: Session,
         fretboardMap: FretboardMap,
         settings: UserSettings,
         masteryRepository: any MasteryRepository,
         sessionRepository: any SessionRepository,
-        attemptRepository: any AttemptRepository
+        attemptRepository: any AttemptRepository,
+        isPremium: Bool = false
     ) {
         self.id = UUID()
         self.session = session
@@ -222,6 +228,7 @@ public final class QuizViewModel: Identifiable {
         self.masteryRepository = masteryRepository
         self.sessionRepository = sessionRepository
         self.attemptRepository = attemptRepository
+        self.isPremium = isPremium
     }
 
     // MARK: - Public Interface
@@ -639,8 +646,10 @@ public final class QuizViewModel: Identifiable {
     private func buildCandidates() -> [QuizQuestion] {
         var questions: [QuizQuestion] = []
         let fretStart = session.fretRangeStart
-        let fretEnd   = session.fretRangeEnd
+        let fretEnd   = isPremium ? session.fretRangeEnd : min(session.fretRangeEnd, Self.freeFretMax)
         for stringNum in 1...kStringCount {
+            // Free tier: strings 4–6 only
+            if !isPremium && !Self.freeStrings.contains(stringNum) { continue }
             guard let fretMap = fretboardMap.map[stringNum] else { continue }
             for fret in fretStart...fretEnd {
                 guard let note = fretMap[fret] else { continue }

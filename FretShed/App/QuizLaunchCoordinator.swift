@@ -323,7 +323,8 @@ final class QuizLaunchCoordinator {
             settings: settings,
             masteryRepository: container.masteryRepository,
             sessionRepository: container.sessionRepository,
-            attemptRepository: container.attemptRepository
+            attemptRepository: container.attemptRepository,
+            isPremium: container.entitlementManager.isPremium
         )
         launchQuiz(vm: vm)
     }

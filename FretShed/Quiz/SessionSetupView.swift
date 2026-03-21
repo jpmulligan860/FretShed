@@ -1075,7 +1075,8 @@ public struct SessionSetupView: View {
                 settings: settings,
                 masteryRepository: container.masteryRepository,
                 sessionRepository: container.sessionRepository,
-                attemptRepository: container.attemptRepository
+                attemptRepository: container.attemptRepository,
+                isPremium: container.entitlementManager.isPremium
             )
             // Post the notification — ContentView receives it, dismisses this
             // sheet (via showSetup = false), and presents the quiz window.

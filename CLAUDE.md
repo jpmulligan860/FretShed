@@ -160,8 +160,8 @@ Full analysis: `FretShed_Competitive_Analysis.md` in Claude.ai project files.
 ---
 
 ## Monetization Model (Phase 4)
-- **Free tier:** Full experience on strings 4–6, frets 0–7. Free modes: Full Fretboard + Single String. Audio detection included. Full progress statistics and session history.
-- **Premium ($4.99/mo, $29.99/yr, or $49.99 lifetime):** Full fretboard (all strings, all frets), all focus modes (Single Note, Fretboard Position, Circle of 4ths, Circle of 5ths, Chord Progression). Premium-only calibration profiles for USB/Bluetooth interfaces.
+- **Free tier:** Full experience on strings 4–6, frets 0–12. Free modes: Full Fretboard + Single String. Audio detection included. Full progress statistics and session history. No phase gate — all 4 phases accessible on free strings.
+- **Premium ($4.99/mo, $29.99/yr, or $49.99 lifetime):** Full fretboard (all strings, all frets), all focus modes (Single Note, Fretboard Position, Circle of 4ths, Circle of 5ths, Chord Progression). Multiple saved named calibration profiles (USB/wired interface). Single calibration profile is free.
 - **Trial:** 14-day free trial on monthly and annual plans
 - **Subscription Group:** "FretShed Premium"
 - **Product IDs:** `com.jpm.fretshed.premium.monthly`, `com.jpm.fretshed.premium.annual`, `com.jpm.fretshed.premium.lifetime`
@@ -189,7 +189,7 @@ Full analysis: `FretShed_Competitive_Analysis.md` in Claude.ai project files.
 ---
 
 ## Testing
-- Test suite: 230 tests passing
+- Test suite: 448 tests passing (0 failures)
 - Run: `xcodebuild test -scheme FretShed -destination 'platform=iOS Simulator,name=iPhone 16 Pro'`
 - All tests must pass before marking any task complete
 - New audio processing functions should have unit tests using pre-recorded PCM buffer fixtures
@@ -286,7 +286,7 @@ Full analysis: `FretShed_Competitive_Analysis.md` in Claude.ai project files.
 - UserSettings snapshot documented as design decision (live reference safe due to fullscreen overlay)
 - Backup/restore (F30): JSON export/import of all SwiftData models via Settings > Data Management
 
-**Finalized business model:** Free tier (strings 4–6, frets 0–7, Full Fretboard + Single String modes, audio detection, adaptive, full stats). Premium ($4.99/mo, $29.99/yr, $49.99 lifetime, 14-day trial). Analytics: TelemetryDeck. Subtitle: "Learn Every Fretboard Note."
+**Finalized business model:** Free tier (strings 4–6, frets 0–12, Full Fretboard + Single String modes, audio detection, adaptive, full stats, all 4 phases on free strings). Premium ($4.99/mo, $29.99/yr, $49.99 lifetime, 14-day trial, multiple calibration profiles). Analytics: TelemetryDeck. Subtitle: "Learn Every Fretboard Note."
 
 **Shed Redesign (Phase 3.6) — IMPLEMENTED.** Complete redesign of the Practice ("Shed") tab:
 - `BaselinePrior.swift`: `BaselineLevel` enum (5 cases) seeds Bayesian mastery priors for new users based on experience level

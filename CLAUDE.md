@@ -1,9 +1,12 @@
 ## Start of Every Session
 1. Read this file fully
 2. Read ROADMAP.md to know current technical task status
-3. Read CLAUDE_STRATEGY.md for business context (read only — do not edit)
-4. Run `find . -name "*.swift" | sort > FILE_MANIFEST.txt` and review it
-5. Confirm which task we are working on before writing any code
+3. **Scan the Sync Ledger in CLAUDE.md and ROADMAP.md** — find any 🔲 Pending inbound entries requested by Claude.ai. Apply them before starting new work.
+4. Read CLAUDE_STRATEGY.md for business context (read only — do not edit)
+5. Run `find . -name "*.swift" | sort > FILE_MANIFEST.txt` and review it
+6. Confirm which task we are working on before writing any code
+
+> **Why step 3 matters:** Claude.ai logs requested changes to the Sync Ledger. If Claude Code doesn't scan for pending inbound items at session start, those requests get missed — producing stale documentation and inconsistent state.
 
 ---
 

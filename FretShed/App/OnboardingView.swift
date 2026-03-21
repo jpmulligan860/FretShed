@@ -13,6 +13,7 @@
 // Setting hasCompletedOnboarding = true (via @AppStorage) dismisses the cover.
 
 import SwiftUI
+import TelemetryDeck
 
 struct OnboardingView: View {
 
@@ -302,6 +303,7 @@ struct OnboardingView: View {
     // MARK: - Actions
 
     private func complete() {
+        TelemetryDeck.signal(AnalyticsEvent.onboardingCompleted)
         hasCompletedOnboarding = true
     }
 }

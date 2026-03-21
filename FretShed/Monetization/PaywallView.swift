@@ -6,6 +6,7 @@
 
 import SwiftUI
 import StoreKit
+import TelemetryDeck
 
 struct PaywallView: View {
 
@@ -70,6 +71,7 @@ struct PaywallView: View {
             .padding(.top, 16)
             .padding(.trailing, 16)
         }
+        .onAppear { TelemetryDeck.signal(AnalyticsEvent.paywallShown) }
     }
 
     // MARK: - Value Props

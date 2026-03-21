@@ -22,6 +22,7 @@
 
 import Foundation
 import StoreKit
+import TelemetryDeck
 import OSLog
 
 private let logger = Logger(subsystem: "com.jpm.fretshed", category: "EntitlementManager")
@@ -114,6 +115,7 @@ public final class EntitlementManager {
             switch verification {
             case .verified(let transaction):
                 await transaction.finish()
+                TelemetryDeck.signal(AnalyticsEvent.subscriptionStarted)
                 await checkEntitlement()
                 logger.info("Purchase successful: \(product.id)")
             case .unverified(_, let error):
@@ -135,6 +137,7 @@ public final class EntitlementManager {
 
     /// Restores previous purchases by syncing with the App Store.
     public func restorePurchases() async {
+        TelemetryDeck.signal(AnalyticsEvent.restoreTapped)
         do {
             try await AppStore.sync()
             await checkEntitlement()

@@ -2,11 +2,17 @@
 // FretShed — App Entry Point
 
 import SwiftUI
+import TelemetryDeck
 
 @main
 struct FretShedApp: App {
 
     @State private var container: AppContainer?
+
+    init() {
+        let config = TelemetryDeck.Config(appID: "A538B6A2-0A38-4CC8-8522-12AE1AED7EBF")
+        TelemetryDeck.initialize(config: config)
+    }
     @AppStorage(LocalUserPreferences.Key.colorScheme) private var colorSchemeRaw: String = LocalUserPreferences.Default.colorScheme
     @AppStorage(LocalUserPreferences.Key.hasCompletedOnboarding) private var hasCompletedOnboarding: Bool = LocalUserPreferences.Default.hasCompletedOnboarding
 

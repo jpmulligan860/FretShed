@@ -23,6 +23,7 @@
 		1F77E73603842F4D09233F97 /* TunerDiagnosticView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D9157A256A8926ABBDA38C8 /* TunerDiagnosticView.swift */; };
 		225F3385FA2C0E8621F17393 /* MasteryScore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFF9E8822A71F3321284E3E8 /* MasteryScore.swift */; };
 		2A150C28DE7C57576FDEF755 /* QuizViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A49C34D79598F0C40D67A54 /* QuizViewModelTests.swift */; };
+		2F35A0473CC97FDE3F78BC33 /* TelemetryDeck in Frameworks */ = {isa = PBXBuildFile; productRef = A6FD6E19094B6110ACED2D1F /* TelemetryDeck */; };
 		30C2EE463A173A27E3FA798A /* BaselinePrior.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C1C67B5F1AE9FCAF179EC97 /* BaselinePrior.swift */; };
 		3439B77E8E93ABF8F336E375 /* SubscriptionLegalText.swift in Sources */ = {isa = PBXBuildFile; fileRef = 502CB6D8E6413987C33A9AF8 /* SubscriptionLegalText.swift */; };
 		3470A23746D132A548868F5F /* LearningPhaseManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1087945B55FC59E7A6B48472 /* LearningPhaseManager.swift */; };
@@ -211,6 +212,17 @@
 		FD139E6B657D0E39796CC232 /* FretShedTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = FretShedTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		FF830EB86FB19BE84235BC01 /* Attempt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Attempt.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		BA905BECA9B809AA66D28905 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2F35A0473CC97FDE3F78BC33 /* TelemetryDeck in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
 		048F14BFF7B3F6CDF335910A /* Calibration */ = {
@@ -485,7 +497,7 @@
 			path = Repositories;
 			sourceTree = "<group>";
 		};
-		"TEMP_D39D3A88-BD50-4476-B9D6-C8C3EAAC4C1A" /* SnapshotTests */ = {
+		"TEMP_F0D61E6B-C35F-4993-98FA-708D3610D24F" /* SnapshotTests */ = {
 			isa = PBXGroup;
 			children = (
 			);
@@ -501,6 +513,7 @@
 			buildPhases = (
 				2BFEA5833D0236F70709655D /* Sources */,
 				B38A3E515EE8F7AE65E0EF2F /* Resources */,
+				BA905BECA9B809AA66D28905 /* Frameworks */,
 			);
 			buildRules = (
 			);
@@ -508,6 +521,7 @@
 			);
 			name = FretShed;
 			packageProductDependencies = (
+				A6FD6E19094B6110ACED2D1F /* TelemetryDeck */,
 			);
 			productName = FretShed;
 			productReference = 11D3BDBDA01662AE732E4282 /* FretShed.app */;
@@ -555,6 +569,9 @@
 			);
 			mainGroup = 506BA9E636029B910BF8FF46;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				6A44095CF89ED42D6429429F /* XCRemoteSwiftPackageReference "SwiftSDK" */,
+			);
 			preferredProjectObjectVersion = 77;
 			projectDirPath = "";
 			projectRoot = "";
@@ -932,6 +949,25 @@
 			defaultConfigurationName = Debug;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		6A44095CF89ED42D6429429F /* XCRemoteSwiftPackageReference "SwiftSDK" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/TelemetryDeck/SwiftSDK";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		A6FD6E19094B6110ACED2D1F /* TelemetryDeck */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 6A44095CF89ED42D6429429F /* XCRemoteSwiftPackageReference "SwiftSDK" */;
+			productName = TelemetryDeck;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 26CA88E02FB5F0BF6BFDC08C /* Project object */;
 }

@@ -3,6 +3,7 @@
 
 import Foundation
 import OSLog
+import TelemetryDeck
 import UIKit
 
 private let logger = Logger(subsystem: "com.jpm.fretshed", category: "QuizViewModel")
@@ -241,6 +242,7 @@ public final class QuizViewModel: Identifiable {
             logger.error("Failed to load mastery scores: \(error)")
             allScores = []
         }
+        TelemetryDeck.signal(AnalyticsEvent.sessionStarted)
         // Build warmup block if 1+ calendar days since last session.
         buildWarmupBlockIfNeeded()
         // Start session countdown timer if a time limit is set.
@@ -821,6 +823,7 @@ public final class QuizViewModel: Identifiable {
     private func finaliseSession() {
         session.overallMasteryAtEnd = MasteryCalculator.overallScore(from: allScores)
         session.isCompleted = true
+        TelemetryDeck.signal(AnalyticsEvent.sessionCompleted)
         session.endTime = Date()
         do { try sessionRepository.complete(session) } catch {
             logger.error("Failed to complete session: \(error)")

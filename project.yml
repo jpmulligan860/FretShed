@@ -6,11 +6,31 @@ options:
   xcodeVersion: "16.0"
   swift: "6.0"
 
+packages:
+  TelemetryDeck:
+    url: https://github.com/TelemetryDeck/SwiftSDK
+    from: "2.0.0"
+
+schemes:
+  FretShed:
+    build:
+      targets:
+        FretShed: all
+        FretShedTests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - FretShedTests
+
 targets:
   FretShed:
     type: application
     platform: iOS
     deploymentTarget: "17.0"
+    dependencies:
+      - package: TelemetryDeck
     sources:
       - path: FretShed
     configFiles:

@@ -14,6 +14,7 @@
 // Presented as .fullScreenCover from ContentView or SettingsView.
 
 import SwiftUI
+import TelemetryDeck
 import OSLog
 
 private let logger = Logger(subsystem: "com.jpm.fretshed", category: "CalibrationView")
@@ -680,6 +681,7 @@ struct CalibrationView: View {
             UserDefaults.standard.set(profile.id.uuidString, forKey: LocalUserPreferences.Key.activeCalibrationProfileID)
         }
 
+        TelemetryDeck.signal(AnalyticsEvent.calibrationCompleted)
         UserDefaults.standard.set(true, forKey: LocalUserPreferences.Key.hasCompletedCalibration)
 
         do {

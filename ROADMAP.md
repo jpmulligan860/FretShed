@@ -292,8 +292,8 @@ Estimated: 10–13 hours
 
 | # | Task | Est. | Status |
 |---|---|---|---|
-| 4.12 | Add TelemetryDeck SDK via SPM — privacy-focused analytics, no PII collection | 30 min | 🔲 |
-| 4.13 | Define key events — session_started, session_completed, paywall_shown, subscription_started, calibration_completed, onboarding_completed, quiz_first_completed | 30 min | 🔲 |
+| 4.12 | Add TelemetryDeck SDK via SPM — App ID `A538B6A2-0A38-4CC8-8522-12AE1AED7EBF`, initialized in FretShedApp.init() | 30 min | ✅ |
+| 4.13 | Wire analytics events — session.started, session.completed, paywall.shown, subscription.started, paywall.restoreTapped, onboarding.completed, calibration.completed across 5 files | 30 min | ✅ |
 
 ---
 

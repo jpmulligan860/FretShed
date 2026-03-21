@@ -400,11 +400,26 @@ Full analysis: `FretShed_Competitive_Analysis.md` in Claude.ai project files.
 
 10. **Run sync check** — Scan the Sync Ledger in CLAUDE.md and ROADMAP.md.
     - **Outbound:** If there are any 🔲 Pending outbound items, generate a sync report and a paste-ready prompt for Claude.ai.
-    - **Re-upload reminder:** If any of these files were changed this session — CLAUDE.md, ROADMAP.md, BUGLOG.md — list them and remind the user to re-upload to Claude.ai Project Knowledge.
-    - **Strategy flag:** If strategy-relevant changes were made (e.g., business model decisions, positioning updates), note: "This change may need to be reflected in CLAUDE_STRATEGY.md — update it during your next Claude.ai session."
     - **Inbound:** If there are any 🔲 Pending inbound items that weren't addressed this session, flag them for the next session.
+    - **Strategy flag:** If strategy-relevant changes were made (e.g., business model decisions, positioning updates, new architecture decisions), log them as 🔲 Pending outbound in the Sync Ledger so Claude.ai can absorb them next session.
 
-11. **Update "What Did I Learn.md"** — Add up to 5 process lessons from this session (not technical details — lessons about the development process, using AI tools, project management, etc.). Keep it conversational. Then rewrite the executive summary at the top to reflect cumulative learnings across all sessions.
+11. **Generate John's explicit action list** — Always end every session with this block, even if nothing is needed:
+
+    ```
+    📋 WHAT YOU NEED TO DO:
+
+    UPLOAD TO CLAUDE.AI PROJECT (replace existing):
+    - [list changed files: CLAUDE.md, ROADMAP.md, BUGLOG.md — or "nothing"]
+
+    PASTE INTO CLAUDE.AI NEXT SESSION (if needed):
+    - [paste-ready summary of outbound sync items, or "nothing"]
+
+    NOTHING ELSE NEEDED.
+    ```
+
+    > **Rule:** Never leave a session without generating this block. John should never have to guess what to do or which files to upload.
+
+12. **Update "What Did I Learn.md"** — Add up to 5 process lessons from this session (not technical details — lessons about the development process, using AI tools, project management, etc.). Keep it conversational. Then rewrite the executive summary at the top to reflect cumulative learnings across all sessions.
 
 ---
 

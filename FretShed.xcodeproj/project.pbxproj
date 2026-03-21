@@ -68,6 +68,7 @@
 		993B1B1E58774A2F966F9502 /* MetroDroneModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2406449DF0972C37B03AE40 /* MetroDroneModels.swift */; };
 		9AFABDB250633BB30E539BC8 /* BackupManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6D3E922712A2CF7A4E012C2 /* BackupManagerTests.swift */; };
 		A0251989488DE8BCDA4D42C2 /* QuizViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE39FECC070CD929CC8445FD /* QuizViewModel.swift */; };
+		A1A6A3079EEEE47849E0749F /* PaywallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D746FB5AD2E1818B84F3B21B /* PaywallView.swift */; };
 		A2A697C4D84CD6AA4BE685BF /* CrimsonPro-Italic.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 168F76601FE00EB5976E8C9C /* CrimsonPro-Italic.ttf */; };
 		A30A9F3E0E07877AF42A8560 /* ProgressViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5103ABD65D82C3BE8DF79C93 /* ProgressViewModel.swift */; };
 		A88252FEDB845EF461F7EE69 /* FretShedApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B55D5F37496FC09E7CADD12 /* FretShedApp.swift */; };
@@ -197,6 +198,7 @@
 		CC51F46F493695C683DED3DB /* SessionSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionSetupView.swift; sourceTree = "<group>"; };
 		CD0E31FD3845D723FEDA3B7B /* Montserrat-ExtraBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Montserrat-ExtraBold.ttf"; sourceTree = "<group>"; };
 		D08375D0D742EB497DA8C1B5 /* MusicalNoteTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicalNoteTests.swift; sourceTree = "<group>"; };
+		D746FB5AD2E1818B84F3B21B /* PaywallView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallView.swift; sourceTree = "<group>"; };
 		E07F73F417C7E5C3CF0BE884 /* Montserrat-SemiBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Montserrat-SemiBold.ttf"; sourceTree = "<group>"; };
 		E480E603506C7DBEC841A2A5 /* NoteGroupingEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteGroupingEngine.swift; sourceTree = "<group>"; };
 		EA3068AF5B92B465B06046F8 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
@@ -271,6 +273,7 @@
 			children = (
 				85E45D01F2E9B1814F1CF0E4 /* AnalyticsEvents.swift */,
 				52332DCAAB016BCCEDF48907 /* EntitlementManager.swift */,
+				D746FB5AD2E1818B84F3B21B /* PaywallView.swift */,
 				502CB6D8E6413987C33A9AF8 /* SubscriptionLegalText.swift */,
 			);
 			path = Monetization;
@@ -482,7 +485,7 @@
 			path = Repositories;
 			sourceTree = "<group>";
 		};
-		"TEMP_97FC1044-7255-45CD-880C-B086717302D2" /* SnapshotTests */ = {
+		"TEMP_D39D3A88-BD50-4476-B9D6-C8C3EAAC4C1A" /* SnapshotTests */ = {
 			isa = PBXGroup;
 			children = (
 			);
@@ -623,6 +626,7 @@
 				0ED47C8599C45EBD4037907C /* MusicalNote.swift in Sources */,
 				CCEB970E3E1C441046DD039C /* NoteGroupingEngine.swift in Sources */,
 				7BC1FC21CCA1EAF1B325D5CC /* OnboardingView.swift in Sources */,
+				A1A6A3079EEEE47849E0749F /* PaywallView.swift in Sources */,
 				7F49A40146EB14E568018DC1 /* PhaseInsightLibrary.swift in Sources */,
 				08B8817C3BE516E8137AD070 /* PhaseRoadmapSection.swift in Sources */,
 				F42692AFF7D645247CCBD61F /* PitchDetector.swift in Sources */,

@@ -13,6 +13,7 @@ public struct SessionSetupView: View {
     @Environment(\.horizontalSizeClass) private var hSizeClass
     @Environment(\.verticalSizeClass) private var vSizeClass
 
+    @State private var showPaywall = false
     @State private var selectedFocusMode: FocusMode = .fullFretboard
     @State private var selectedGameMode: GameMode = .untimed
     @State private var selectedStrings: Set<Int> = [6]
@@ -83,6 +84,9 @@ public struct SessionSetupView: View {
             }
             .sheet(isPresented: $showChordProgressionInfo) {
                 ChordProgressionInfoSheet()
+            }
+            .sheet(isPresented: $showPaywall) {
+                PaywallView(entitlementManager: container.entitlementManager)
             }
             .task {
                 // Initialise UI from persisted default settings so the user sees
@@ -283,11 +287,10 @@ public struct SessionSetupView: View {
                         isSelected: selectedFocusMode == mode,
                         isPremium: !mode.isFreeMode
                     ) {
-                        if mode.isFreeMode {
+                        if mode.isFreeMode || container.entitlementManager.isPremium {
                             selectedFocusMode = mode
                         } else {
-                            // Premium modes — visual-only lock until Phase 4 paywall
-                            selectedFocusMode = mode
+                            showPaywall = true
                         }
                         if isCircleMode {
                             circleConstraint = .fullFretboard

@@ -283,9 +283,9 @@ Estimated: 10–13 hours
 
 | # | Task | Est. | Status |
 |---|---|---|---|
-| 4.8 | Build `PaywallView.swift` — 3 value prop bullets, monthly/annual/lifetime toggle, 14-day trial callout, Subscribe + Restore buttons, legal text | 2–3 hrs | 🔲 |
-| 4.9 | Add required legal text — trial length, price after trial, auto-renewal terms, cancellation instructions (required to avoid App Store rejection) | 30 min | 🔲 |
-| 4.10 | Add paywall triggers — show when user taps a locked mode or a locked fret/string range | 1 hr | 🔲 |
+| 4.8 | Build `PaywallView.swift` — Phase-aware headline, 3 value prop bullets, annual/monthly/lifetime pricing cards with StoreKit displayPrice, "Try Free for 14 Days" CTA, restore purchases, dismiss button | 2–3 hrs | ✅ |
+| 4.9 | Add required legal text — trial disclosure, auto-renewal, cancellation instructions, privacy policy link. URLs updated to fretshed.com | 30 min | ✅ |
+| 4.10 | Add paywall triggers — show when user taps a locked focus mode in SessionSetupView. Checks `entitlementManager.isPremium` before showing | 1 hr | ✅ |
 | 4.11 | Test purchases with sandbox account — complete test purchase, confirm `isPremium` flips, test restore | 1 hr | 🔲 |
 
 ### 4D — Analytics

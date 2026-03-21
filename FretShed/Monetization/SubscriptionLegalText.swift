@@ -73,8 +73,8 @@ enum SubscriptionLegalText {
     // MARK: - Legal Links
 
     /// Privacy Policy URL — hosted on the FretShed Carrd site.
-    static let privacyPolicyURL = "https://fretshed.carrd.co/privacy"
+    static let privacyPolicyURL = "https://fretshed.com/privacy"
 
-    /// Terms of Service URL — hosted on the FretShed Carrd site.
-    static let termsOfServiceURL = "https://fretshed.carrd.co/terms"
+    /// Terms of Service URL — hosted on fretshed.com.
+    static let termsOfServiceURL = "https://fretshed.com/terms"
 }

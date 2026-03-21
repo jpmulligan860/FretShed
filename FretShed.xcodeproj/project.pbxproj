@@ -27,6 +27,7 @@
 		30C2EE463A173A27E3FA798A /* BaselinePrior.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C1C67B5F1AE9FCAF179EC97 /* BaselinePrior.swift */; };
 		3439B77E8E93ABF8F336E375 /* SubscriptionLegalText.swift in Sources */ = {isa = PBXBuildFile; fileRef = 502CB6D8E6413987C33A9AF8 /* SubscriptionLegalText.swift */; };
 		3470A23746D132A548868F5F /* LearningPhaseManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1087945B55FC59E7A6B48472 /* LearningPhaseManager.swift */; };
+		3560A085A1A15ECA3927110F /* EntitlementPhaseGateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAD731702CE7A007E1F77F9F /* EntitlementPhaseGateTests.swift */; };
 		3679E6E6C395D4CF33C3B179 /* FretboardMap.swift in Sources */ = {isa = PBXBuildFile; fileRef = C97A5E570DD542CE6BE2A7DE /* FretboardMap.swift */; };
 		36BCCA1B8B87283B111D8EB0 /* TestDataSeeder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68C33C07ADE9FD3D4C40C568 /* TestDataSeeder.swift */; };
 		39AD25909A0A7C8465961526 /* MusicalNoteTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D08375D0D742EB497DA8C1B5 /* MusicalNoteTests.swift */; };
@@ -195,6 +196,7 @@
 		C2A41CF0B30565F2D2FE92A7 /* MasteryAlgorithmTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MasteryAlgorithmTests.swift; sourceTree = "<group>"; };
 		C97A5E570DD542CE6BE2A7DE /* FretboardMap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FretboardMap.swift; sourceTree = "<group>"; };
 		CA84B9D839FA48BA14A1A20C /* Session.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Session.swift; sourceTree = "<group>"; };
+		CAD731702CE7A007E1F77F9F /* EntitlementPhaseGateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EntitlementPhaseGateTests.swift; sourceTree = "<group>"; };
 		CBA577A659DD4B654B8F0FC8 /* AppContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppContainer.swift; sourceTree = "<group>"; };
 		CC51F46F493695C683DED3DB /* SessionSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionSetupView.swift; sourceTree = "<group>"; };
 		CD0E31FD3845D723FEDA3B7B /* Montserrat-ExtraBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Montserrat-ExtraBold.ttf"; sourceTree = "<group>"; };
@@ -252,6 +254,7 @@
 				F6D3E922712A2CF7A4E012C2 /* BackupManagerTests.swift */,
 				42F1F112D2CDF40982DCB83D /* CalibrationEngineTests.swift */,
 				3409FE657D2975DA48C4D978 /* ChordProgressionTests.swift */,
+				CAD731702CE7A007E1F77F9F /* EntitlementPhaseGateTests.swift */,
 				1DE95D278240B6AAD1413451 /* FretboardMapTests.swift */,
 				9D8806FD352A0DEE58739125 /* GoertzelTrackerTests.swift */,
 				1874C200EA04E5B6BD3D315D /* LearningPhaseManagerTests.swift */,
@@ -497,7 +500,7 @@
 			path = Repositories;
 			sourceTree = "<group>";
 		};
-		"TEMP_F0D61E6B-C35F-4993-98FA-708D3610D24F" /* SnapshotTests */ = {
+		"TEMP_064CEB23-15BC-4AE9-A3F2-68705AA655BB" /* SnapshotTests */ = {
 			isa = PBXGroup;
 			children = (
 			);
@@ -682,6 +685,7 @@
 				9AFABDB250633BB30E539BC8 /* BackupManagerTests.swift in Sources */,
 				EF698A8C950C702FAF68A1F6 /* CalibrationEngineTests.swift in Sources */,
 				E407C544B041E87FCB8059C5 /* ChordProgressionTests.swift in Sources */,
+				3560A085A1A15ECA3927110F /* EntitlementPhaseGateTests.swift in Sources */,
 				60927EE7E18F6D291911D9A0 /* FretboardMapTests.swift in Sources */,
 				7AEBB10B5EBC1324684332EF /* GoertzelTrackerTests.swift in Sources */,
 				FFD3D745462608773A987AC2 /* LearningPhaseManagerTests.swift in Sources */,

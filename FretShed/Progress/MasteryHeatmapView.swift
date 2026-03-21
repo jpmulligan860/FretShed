@@ -23,6 +23,9 @@ struct MasteryHeatmapView: View {
     /// When true, shows a subtle focus indicator around the current learning target region.
     var showFocusIndicator: Bool = true
 
+    @Environment(\.appContainer) private var container
+    @State private var showPaywall = false
+
     @AppStorage(LocalUserPreferences.Key.noteNameFormat)
     private var noteFormatRaw: String = LocalUserPreferences.Default.noteNameFormat
 
@@ -39,6 +42,12 @@ struct MasteryHeatmapView: View {
     ]
     private var fretRange: ClosedRange<Int> {
         0...max(defaultFretCount, 5)
+    }
+
+    /// Free tier: strings 4–6, frets 0–12. Returns true if this cell is locked.
+    private func isCellLocked(string: Int, fret: Int) -> Bool {
+        guard !container.entitlementManager.isPremium else { return false }
+        return string <= 3 || fret > 12
     }
 
     /// The set of (string, fret) positions in the current learning focus.
@@ -118,6 +127,7 @@ struct MasteryHeatmapView: View {
                         let level = note.map { vm.masteryLevel(note: $0, string: string) } ?? .struggling
                         let attempted = scoreObj != nil
                         let inFocus = focusCells.contains(CellPosition(string: string, fret: fret))
+                        let locked = isCellLocked(string: string, fret: fret)
                         HeatCell(
                             level: level,
                             isAttempted: attempted,
@@ -130,8 +140,17 @@ struct MasteryHeatmapView: View {
                                     .stroke(DesignSystem.Colors.cherry.opacity(0.4), lineWidth: 1.5)
                                 : nil
                         )
+                        .overlay(
+                            locked
+                                ? Image(systemName: "lock.fill")
+                                    .font(.system(size: max(cellSize * 0.35, 5)))
+                                    .foregroundStyle(.white.opacity(0.3))
+                                : nil
+                        )
                         .onTapGesture {
-                            if let note {
+                            if locked {
+                                showPaywall = true
+                            } else if let note {
                                 Task { await vm.selectCell(note: note, string: string) }
                             }
                         }
@@ -142,6 +161,9 @@ struct MasteryHeatmapView: View {
         .padding(12)
         .background(DesignSystem.Colors.surface,
                     in: RoundedRectangle(cornerRadius: DesignSystem.Radius.lg))
+        .sheet(isPresented: $showPaywall) {
+            PaywallView(entitlementManager: container.entitlementManager)
+        }
     }
 }
 

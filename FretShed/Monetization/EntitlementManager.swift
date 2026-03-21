@@ -53,6 +53,14 @@ public final class EntitlementManager {
     /// User-facing error message from the last failed purchase attempt.
     public private(set) var purchaseError: String?
 
+    /// Returns true if the given learning phase requires premium.
+    /// Free tier: Phases 1 (Foundation) and 2 (Expansion) only.
+    /// Premium: Phases 3 (Connection) and 4 (Fluency).
+    func requiresPremium(for phase: LearningPhase) -> Bool {
+        guard !isPremium else { return false }
+        return phase == .connection || phase == .fluency
+    }
+
     // MARK: Private
 
     private nonisolated(unsafe) var updateTask: Task<Void, Never>?

@@ -294,6 +294,7 @@ Estimated: 10–13 hours
 |---|---|---|---|
 | 4.12 | Add TelemetryDeck SDK via SPM — App ID `A538B6A2-0A38-4CC8-8522-12AE1AED7EBF`, initialized in FretShedApp.init() | 30 min | ✅ |
 | 4.13 | Wire analytics events — session.started, session.completed, paywall.shown, subscription.started, paywall.restoreTapped, onboarding.completed, calibration.completed across 5 files | 30 min | ✅ |
+| 4.14 | Add phase gate — Phase 3 (Connection) and Phase 4 (Fluency) trigger PaywallView for free users. `requiresPremium(for:)` on EntitlementManager. Gate in SmartPractice launch + Journey phase roadmap lock icons | 1–2 hrs | ✅ |
 
 ---
 

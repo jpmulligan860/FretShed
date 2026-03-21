@@ -68,8 +68,10 @@ struct PhaseRoadmapSection: View {
     let phaseManager: LearningPhaseManager
     let sessionAccuracy: Double
 
+    @Environment(\.appContainer) private var container
     @State private var isExpanded = false
     @State private var showInfo = false
+    @State private var showPhasePaywall = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -115,7 +117,9 @@ struct PhaseRoadmapSection: View {
                             completedStrings: completedStrings(for: phase),
                             currentString: currentString(for: phase),
                             sessionAccuracy: sessionAccuracy,
-                            initiallyExpanded: phase == phaseManager.currentPhase
+                            initiallyExpanded: phase == phaseManager.currentPhase,
+                            isPremiumLocked: container.entitlementManager.requiresPremium(for: phase),
+                            onPremiumTap: { showPhasePaywall = true }
                         )
                     }
                 }
@@ -133,6 +137,9 @@ struct PhaseRoadmapSection: View {
         .animation(.easeInOut(duration: 0.3), value: isExpanded)
         .sheet(isPresented: $showInfo) {
             PhaseRoadmapInfoSheet()
+        }
+        .sheet(isPresented: $showPhasePaywall) {
+            PaywallView(entitlementManager: container.entitlementManager)
         }
     }
 
@@ -241,21 +248,27 @@ private struct PhaseRoadmapRow: View {
     let currentString: Int?
     let sessionAccuracy: Double
     let initiallyExpanded: Bool
+    let isPremiumLocked: Bool
+    var onPremiumTap: (() -> Void)?
 
     @State private var isExpanded: Bool
 
     init(phase: LearningPhase, currentPhase: LearningPhase, completedStrings: Int,
-         currentString: Int?, sessionAccuracy: Double, initiallyExpanded: Bool) {
+         currentString: Int?, sessionAccuracy: Double, initiallyExpanded: Bool,
+         isPremiumLocked: Bool = false, onPremiumTap: (() -> Void)? = nil) {
         self.phase = phase
         self.currentPhase = currentPhase
         self.completedStrings = completedStrings
         self.currentString = currentString
         self.sessionAccuracy = sessionAccuracy
         self.initiallyExpanded = initiallyExpanded
+        self.isPremiumLocked = isPremiumLocked
+        self.onPremiumTap = onPremiumTap
         _isExpanded = State(initialValue: initiallyExpanded)
     }
 
     private var status: PhaseStatus {
+        if isPremiumLocked { return .locked }
         if phase.rawValue < currentPhase.rawValue { return .complete }
         if phase == currentPhase { return .active }
         return .locked
@@ -324,8 +337,12 @@ private struct PhaseRoadmapRow: View {
             .padding(.vertical, 10)
             .contentShape(Rectangle())
             .onTapGesture {
-                withAnimation(.easeInOut(duration: 0.25)) {
-                    isExpanded.toggle()
+                if isPremiumLocked {
+                    onPremiumTap?()
+                } else {
+                    withAnimation(.easeInOut(duration: 0.25)) {
+                        isExpanded.toggle()
+                    }
                 }
             }
 

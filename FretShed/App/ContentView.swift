@@ -224,6 +224,7 @@ struct PracticeHomeView: View {
     @State private var weakSpots: Int = 0
     @State private var alternativeTiles: [(session: Session, title: String, subtitle: String, icon: String)] = []
     @State private var showTimedPicker = false
+    @State private var showPhasePaywall = false
     @State private var selectedTimedMinutes: Int = 5
     @State private var allProfiles: [AudioCalibrationProfile] = []
     @State private var rigPickerExpanded = false
@@ -611,6 +612,9 @@ struct PracticeHomeView: View {
                 .presentationDetents([.height(200)])
                 .presentationDragIndicator(.visible)
         }
+        .sheet(isPresented: $showPhasePaywall) {
+            PaywallView(entitlementManager: container.entitlementManager)
+        }
     }
 
     @ViewBuilder
@@ -835,6 +839,12 @@ struct PracticeHomeView: View {
     }
 
     private func launchSmartPractice() {
+        // Phase gate: block Phase 3/4 for free users
+        let currentPhase = LearningPhaseManager().currentPhase
+        if container.entitlementManager.requiresPremium(for: currentPhase) {
+            showPhasePaywall = true
+            return
+        }
         guard let engine = smartEngine else { return }
         // Snapshot phase before quiz for advancement detection
         coordinator.phaseBeforeQuiz = LearningPhase(rawValue: phaseNumber)

@@ -192,8 +192,8 @@ enum DesignSystem {
         static let smallLabel:    Font = .custom("Montserrat-SemiBold", size: 11)
 
         // --- Crimson Pro (accent / descriptive text) ---
-        static let tagline:          Font = .custom("CrimsonPro-Italic", size: 15)
-        static let accentDescription: Font = .custom("CrimsonPro-Italic", size: 14)
+        static let tagline:          Font = .custom("CrimsonPro-Italic", fixedSize: 15)
+        static let accentDescription: Font = .custom("CrimsonPro-Italic", fixedSize: 14)
 
         // --- JetBrains Mono (data readouts) ---
         static let dataDisplay:  Font = .custom("JetBrainsMono-Bold", size: 18)
@@ -209,8 +209,8 @@ enum DesignSystem {
 
         // --- Crimson Pro extended sizes ---
         static let accentBody:   Font = .custom("CrimsonPro-Italic", fixedSize: 20)
-        static let accentLarge:  Font = .custom("CrimsonPro-Italic", size: 18)
-        static let bodyText:     Font = .custom("CrimsonPro-Regular", size: 14)
+        static let accentLarge:  Font = .custom("CrimsonPro-Italic", fixedSize: 18)
+        static let bodyText:     Font = .custom("CrimsonPro-Regular", fixedSize: 14)
 
         // --- JetBrains Mono extended sizes ---
         static let dataMicro:    Font = .custom("JetBrainsMono-Bold", size: 13)

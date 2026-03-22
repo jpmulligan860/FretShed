@@ -652,7 +652,7 @@ struct PracticeHomeView: View {
                         .lineLimit(2)
                 }
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
             .padding(10)
             .background(DesignSystem.Colors.surface, in: RoundedRectangle(cornerRadius: 12))
             .overlay(

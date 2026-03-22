@@ -248,7 +248,7 @@ enum TestDataSeeder {
     private static func setPhaseState() {
         let ud = UserDefaults.standard
         // Phase 3 = Connection (rawValue 3)
-        ud.set(3, forKey: "learningPhase_currentPhase")
+        ud.set(3, forKey: "learningPhase_current")
         // All 6 Phase 1 strings completed
         if let data = try? JSONEncoder().encode(Set(1...6)) {
             ud.set(data, forKey: "learningPhase_completedStrings")
@@ -261,7 +261,7 @@ enum TestDataSeeder {
         ud.set(0, forKey: "learningPhase_targetString")
         ud.set(0, forKey: "learningPhase_phaseTwoTargetString")
         // Sessions in current phase
-        ud.set(5, forKey: "learningPhase_sessionsInCurrentPhase")
+        ud.set(5, forKey: "learningPhase_sessionsInPhase")
         // v2 migration done
         ud.set(true, forKey: "learningPhase_v2Migrated")
     }

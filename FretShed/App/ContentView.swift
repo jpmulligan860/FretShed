@@ -297,35 +297,25 @@ struct PracticeHomeView: View {
             Text("The Shed")
                 .font(DesignSystem.Typography.screenTitle)
                 .foregroundStyle(DesignSystem.Colors.text)
-            Text(isNewUser ? "Welcome to the Woodshed — let's get to work." : "Welcome back to the Shed.")
-                .font(DesignSystem.Typography.accentBody)
-                .foregroundStyle(DesignSystem.Colors.muted)
             if !isNewUser {
-                Group {
-                    if !showTimeStat && currentStreak > 0 {
-                        HStack(spacing: 4) {
-                            Text("You've got a")
+                HStack(spacing: 8) {
+                    if currentStreak > 0 {
+                        HStack(spacing: 3) {
                             Image(systemName: "flame.fill")
                                 .foregroundStyle(DesignSystem.Colors.amber)
                             Text("\(currentStreak) day streak")
                                 .fontWeight(.semibold)
-                            Text("going!")
-                        }
-                    } else if totalTimePracticed > 0 {
-                        HStack(spacing: 4) {
-                            Text("You've spent")
-                            Text(formattedTimePracticed)
-                                .fontWeight(.semibold)
-                            Text("in the Shed!")
                         }
                     }
+                    if currentStreak > 0 && totalTimePracticed > 0 {
+                        Text("·")
+                    }
+                    if totalTimePracticed > 0 {
+                        Text("\(formattedTimePracticed) practiced")
+                    }
                 }
-                .font(DesignSystem.Typography.accentBody)
+                .font(DesignSystem.Typography.smallLabel)
                 .foregroundStyle(DesignSystem.Colors.muted)
-                .animation(.easeInOut(duration: 0.4), value: showTimeStat)
-                .onAppear {
-                    showTimeStat = Bool.random()
-                }
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -355,10 +345,10 @@ struct PracticeHomeView: View {
                             HStack(spacing: 6) {
                                 Text("STEP 1")
                                     .font(DesignSystem.Typography.dataChip)
-                                    .foregroundStyle(DesignSystem.Colors.cherry)
+                                    .foregroundStyle(.white)
                                     .padding(.horizontal, 6)
                                     .padding(.vertical, 2)
-                                    .background(DesignSystem.Colors.cherry.opacity(0.12), in: RoundedRectangle(cornerRadius: 4))
+                                    .background(DesignSystem.Colors.amber, in: RoundedRectangle(cornerRadius: 4))
                                 Text("Calibrate Your Guitar")
                                     .font(DesignSystem.Typography.bodyLabel)
                                     .foregroundStyle(DesignSystem.Colors.text)

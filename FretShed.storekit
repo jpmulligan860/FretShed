@@ -1,0 +1,126 @@
+{
+  "appPolicies" : {
+    "eula" : "",
+    "policies" : [
+      {
+        "locale" : "en_US",
+        "policyText" : "",
+        "policyURL" : ""
+      }
+    ]
+  },
+  "identifier" : "B6B2B1E2",
+  "nonRenewingSubscriptions" : [
+
+  ],
+  "products" : [
+    {
+      "displayPrice" : "49.99",
+      "familyShareable" : false,
+      "internalID" : "ADF8AC32",
+      "localizations" : [
+        {
+          "description" : "FretShed Premium Lifetime",
+          "displayName" : "FretShed Premium Lifetime",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "com.jpm.fretshed.lifetime",
+      "referenceName" : "FretShed Premium Lifetime",
+      "type" : "NonConsumable"
+    }
+  ],
+  "settings" : {
+    "_askToBuyEnabled" : false,
+    "_billingGracePeriodEnabled" : false,
+    "_billingIssuesEnabled" : false,
+    "_disableDialogs" : false,
+    "_failTransactionsEnabled" : false,
+    "_locale" : "en_US",
+    "_renewalBillingIssuesEnabled" : false,
+    "_storefront" : "USA",
+    "_storeKitErrors" : [
+
+    ],
+    "_timeRate" : 0
+  },
+  "subscriptionGroups" : [
+    {
+      "id" : "C35AA9CC",
+      "localizations" : [
+
+      ],
+      "name" : "FretShed Premium",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "4.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "B6CE5474",
+          "introductoryOffer" : {
+            "internalID" : "DDA44347",
+            "paymentMode" : "free",
+            "subscriptionPeriod" : "P2W"
+          },
+          "localizations" : [
+            {
+              "description" : "FretShed Premium Monthly",
+              "displayName" : "FretShed Premium Monthly",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "com.jpm.fretshed.subscription.monthly",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "FretShed Premium Monthly",
+          "subscriptionGroupID" : "C35AA9CC",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "29.99",
+          "familyShareable" : false,
+          "groupNumber" : 2,
+          "internalID" : "5DB64DF4",
+          "introductoryOffer" : {
+            "internalID" : "11EF283F",
+            "paymentMode" : "free",
+            "subscriptionPeriod" : "P2W"
+          },
+          "localizations" : [
+            {
+              "description" : "FretShed Premium Annual",
+              "displayName" : "FretShed Premium Annual",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "com.jpm.fretshed.subscription.annual",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "FretShed Premium Annual",
+          "subscriptionGroupID" : "C35AA9CC",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        }
+      ]
+    }
+  ],
+  "version" : {
+    "major" : 4,
+    "minor" : 0
+  }
+}

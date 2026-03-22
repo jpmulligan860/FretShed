@@ -261,23 +261,29 @@ struct HeatmapLegend: View {
 
     var body: some View {
         let counts = tierCounts
-        HStack(spacing: 5) {
-            legendItem(color: DesignSystem.Colors.surface2,           label: "Untried", count: counts.untried)
-            legendItem(color: DesignSystem.Colors.heatmapStruggling,  label: "Struggling", count: counts.struggling)
-            legendItem(color: DesignSystem.Colors.heatmapLearning,    label: "Learning", count: counts.learning)
-            legendItem(color: DesignSystem.Colors.heatmapProficient,  label: "Proficient", count: counts.proficient)
-            legendItem(color: DesignSystem.Colors.heatmapMastered,    label: "Mastered", count: counts.mastered)
+        VStack(spacing: 4) {
+            HStack(spacing: 12) {
+                legendItem(color: DesignSystem.Colors.surface2,           count: counts.untried, label: "Untried")
+                legendItem(color: DesignSystem.Colors.heatmapStruggling,  count: counts.struggling, label: "Struggling")
+                legendItem(color: DesignSystem.Colors.heatmapLearning,    count: counts.learning, label: "Learning")
+            }
+            HStack(spacing: 12) {
+                legendItem(color: DesignSystem.Colors.heatmapProficient,  count: counts.proficient, label: "Proficient")
+                legendItem(color: DesignSystem.Colors.heatmapMastered,    count: counts.mastered, label: "Mastered")
+            }
         }
         .font(DesignSystem.Typography.sectionLabel)
         .foregroundStyle(DesignSystem.Colors.text2)
     }
 
-    private func legendItem(color: Color, label: String, count: Int) -> some View {
+    private func legendItem(color: Color, count: Int, label: String) -> some View {
         HStack(spacing: 3) {
             RoundedRectangle(cornerRadius: 2)
                 .fill(color)
                 .frame(width: 10, height: 10)
-            Text("\(label) (\(count))")
+            Text("\(count)")
+                .fontWeight(.bold)
+            Text(label)
         }
     }
 }

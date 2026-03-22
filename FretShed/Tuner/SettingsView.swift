@@ -93,14 +93,6 @@ public struct SettingsView: View {
     @ViewBuilder
     private func form(settings: UserSettings) -> some View {
         VStack(spacing: 0) {
-            Text("Settings")
-                .font(DesignSystem.Typography.screenTitle)
-                .foregroundStyle(DesignSystem.Colors.text)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 20)
-                .padding(.top, 16)
-                .padding(.bottom, 12)
-
             Form {
             audioSetupSection
             quizSection(settings: settings)

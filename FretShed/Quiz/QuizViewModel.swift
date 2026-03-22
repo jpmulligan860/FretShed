@@ -181,18 +181,24 @@ public final class QuizViewModel: Identifiable {
 
     // MARK: - Warmup Block State
 
-    // MARK: - Review Tail State
+    // MARK: - Review State
 
-    /// Pre-built review questions appended after focus notes.
+    /// Pre-built review questions.
     private var reviewQuestions: [QuizQuestion] = []
     /// Number of review questions (set once at start, does not change).
     private(set) var reviewQuestionCount: Int = 0
-    /// Index where review notes begin in the session. Nil if no review tail.
+    /// True when review notes are placed at the tail (Phase 1/2). False = interleaved (Phase 3/4).
+    private var useReviewTail: Bool = true
+    /// For interleaved mode: maps attemptIndex → reviewQuestion index.
+    private var interleavedReviewMap: [Int: Int] = [:]
+    /// Tracks how many interleaved review notes have been served.
+    private var interleavedReviewServed: Int = 0
+    /// Index where review notes begin in the session. Nil if interleaved or no review.
     public var reviewStartIndex: Int? {
-        guard reviewQuestionCount > 0 else { return nil }
+        guard reviewQuestionCount > 0, useReviewTail else { return nil }
         return settings.defaultSessionLength - reviewQuestionCount
     }
-    /// True while the quiz is serving review notes (at the tail end of the session).
+    /// True while the quiz is serving review notes (tail mode only).
     public var isInReviewSection: Bool {
         guard let start = reviewStartIndex else { return false }
         return attemptCount >= start
@@ -418,12 +424,16 @@ public final class QuizViewModel: Identifiable {
         }
         // Dismiss warmup intro after first question starts.
         if showWarmupIntro { showWarmupIntro = false }
-        // Focus notes first, review tail at the end.
+        // Serve review notes: tail mode (Phase 1/2) or interleaved (Phase 3/4).
         let question: QuizQuestion
-        if let reviewStart = reviewStartIndex,
+        if useReviewTail, let reviewStart = reviewStartIndex,
            attemptCount >= reviewStart,
            (attemptCount - reviewStart) < reviewQuestions.count {
+            // Tail mode: review notes at end
             question = reviewQuestions[attemptCount - reviewStart]
+        } else if let reviewIdx = interleavedReviewMap[attemptCount] {
+            // Interleaved mode: review note at this position
+            question = reviewQuestions[reviewIdx]
         } else {
             question = selectQuestion()
         }
@@ -891,6 +901,21 @@ public final class QuizViewModel: Identifiable {
 
         reviewQuestions = notes
         reviewQuestionCount = notes.count
+
+        // Phase-aware placement: tail for Phase 1/2, interleaved for Phase 3/4.
+        let currentPhase = LearningPhaseManager().currentPhase
+        if currentPhase == .connection || currentPhase == .fluency {
+            useReviewTail = false
+            // Distribute review notes evenly across the session
+            let focusCount = sessionLength - notes.count
+            let step = max(1, focusCount / (notes.count + 1))
+            for (i, _) in notes.enumerated() {
+                let position = min(step * (i + 1) + i, sessionLength - 1)
+                interleavedReviewMap[position] = i
+            }
+        } else {
+            useReviewTail = true
+        }
 
         // Show intro card only after 1+ calendar day away.
         if let lastDate = mostRecentCompletedSessionDate() {

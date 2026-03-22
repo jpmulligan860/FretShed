@@ -160,17 +160,10 @@ struct OnboardingView: View {
             }
         } label: {
             HStack(spacing: DesignSystem.Spacing.sm) {
-                Group {
-                    if level == .rustyEverywhere {
-                        Image(systemName: "guitars.fill")
-                            .font(.title3)
-                            .foregroundStyle(DesignSystem.Colors.cherry)
-                    } else {
-                        Text(level.emoji)
-                            .font(DesignSystem.Typography.screenTitle)
-                    }
-                }
-                .frame(width: 36)
+                Image(systemName: baselineIcon(level))
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(baselineIconColor(level))
+                    .frame(width: 28, height: 28)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(level.title)
                         .font(DesignSystem.Typography.bodyLabel)
@@ -219,6 +212,28 @@ struct OnboardingView: View {
         .buttonStyle(.plain)
         .disabled(disabled)
         .padding(.horizontal, 24)
+    }
+
+    // MARK: - Baseline Icons
+
+    private func baselineIcon(_ level: BaselineLevel) -> String {
+        switch level {
+        case .startingFresh:    return "leaf.fill"
+        case .chordPlayer:      return "music.note"
+        case .openPosition:     return "hand.point.up.left.fill"
+        case .lowStringsSolid:  return "waveform"
+        case .rustyEverywhere:  return "guitars.fill"
+        }
+    }
+
+    private func baselineIconColor(_ level: BaselineLevel) -> Color {
+        switch level {
+        case .startingFresh:    return DesignSystem.Colors.amber
+        case .chordPlayer:      return DesignSystem.Colors.cherry
+        case .openPosition:     return DesignSystem.Colors.cherry
+        case .lowStringsSolid:  return DesignSystem.Colors.amber
+        case .rustyEverywhere:  return DesignSystem.Colors.cherry
+        }
     }
 
     // MARK: - Actions

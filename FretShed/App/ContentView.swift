@@ -649,7 +649,7 @@ struct PracticeHomeView: View {
                     Text(subtitle)
                         .font(DesignSystem.Typography.smallLabel)
                         .foregroundStyle(DesignSystem.Colors.muted)
-                        .lineLimit(1)
+                        .lineLimit(2)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)

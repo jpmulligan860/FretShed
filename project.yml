@@ -19,6 +19,7 @@ schemes:
         FretShedTests: [test]
     run:
       config: Debug
+      storeKitConfiguration: FretShed.storekit
     test:
       config: Debug
       targets:

@@ -21,9 +21,9 @@ public enum BaselineLevel: String, CaseIterable, Codable, Sendable {
         switch self {
         case .startingFresh:    return "Starting Fresh"
         case .chordPlayer:      return "Chord Player"
-        case .openPosition:     return "Open Position"
+        case .openPosition:     return "First Few Frets"
         case .lowStringsSolid:  return "Low Strings Solid"
-        case .rustyEverywhere:  return "Rusty Everywhere"
+        case .rustyEverywhere:  return "Back in the Shed"
         }
     }
 
@@ -33,7 +33,7 @@ public enum BaselineLevel: String, CaseIterable, Codable, Sendable {
         case .chordPlayer:      return "I can play songs but couldn't name the notes if you asked me"
         case .openPosition:     return "I know my way around the first few frets"
         case .lowStringsSolid:  return "I know the E and A strings — like finding root notes for barre chords"
-        case .rustyEverywhere:  return "I used to know more of this stuff, but it's been a while"
+        case .rustyEverywhere:  return "I've been away for a while — time to get back into it"
         }
     }
 

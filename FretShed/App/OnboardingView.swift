@@ -1,10 +1,9 @@
 // OnboardingView.swift
 // FretShed — App Layer
 //
-// First-launch onboarding: 3 screens.
+// First-launch onboarding: 2 screens.
 //   0 — Welcome
-//   1 — How it works
-//   2 — Baseline selection ("Where are you at?")
+//   1 — Baseline selection ("Where are you?")
 //
 // Microphone permission is deferred to calibration (when the mic is first needed).
 // Notification permission is deferred to a future release.
@@ -23,7 +22,7 @@ struct OnboardingView: View {
     @State private var currentPage = 0
     @State private var selectedBaseline: BaselineLevel?
 
-    private let pageCount = 3
+    private let pageCount = 2
 
     var body: some View {
         ZStack {
@@ -31,8 +30,7 @@ struct OnboardingView: View {
 
             TabView(selection: $currentPage) {
                 welcomePage.tag(0)
-                howItWorksPage.tag(1)
-                baselinePage.tag(2)
+                baselinePage.tag(1)
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
             .animation(.easeInOut(duration: 0.3), value: currentPage)
@@ -76,6 +74,14 @@ struct OnboardingView: View {
         VStack(spacing: 0) {
             Spacer()
 
+            // App icon
+            Image("AppIcon")
+                .resizable()
+                .frame(width: 80, height: 80)
+                .clipShape(RoundedRectangle(cornerRadius: 18))
+                .shadow(radius: 4)
+                .padding(.bottom, DesignSystem.Spacing.lg)
+
             VStack(spacing: DesignSystem.Spacing.lg) {
                 Text("FretShed")
                     .font(DesignSystem.Typography.quizNote)
@@ -104,75 +110,7 @@ struct OnboardingView: View {
         }
     }
 
-    // MARK: - Screen 1: How it works
-
-    private var howItWorksPage: some View {
-        VStack(spacing: 0) {
-            Spacer().frame(height: 90)
-
-            Text("How it works")
-                .font(DesignSystem.Typography.subDisplay)
-                .foregroundStyle(DesignSystem.Colors.text)
-                .padding(.bottom, DesignSystem.Spacing.lg)
-
-            VStack(spacing: 0) {
-                featureRow(
-                    icon: "brain",
-                    color: DesignSystem.Colors.cherry,
-                    title: "Smart Practice",
-                    subtitle: "A structured path from your first note to full fretboard fluency, adapted to your pace."
-                )
-
-                Divider()
-                    .overlay(DesignSystem.Colors.border)
-                    .padding(.horizontal, DesignSystem.Spacing.md)
-
-                featureRow(
-                    icon: "tuningfork",
-                    color: DesignSystem.Colors.amber,
-                    title: "Flexible Fretboard Trainer",
-                    subtitle: "FretShed listens to your guitar and tells you instantly if you nailed it."
-                )
-
-                Divider()
-                    .overlay(DesignSystem.Colors.border)
-                    .padding(.horizontal, DesignSystem.Spacing.md)
-
-                featureRow(
-                    icon: "slider.horizontal.3",
-                    color: DesignSystem.Colors.honey,
-                    title: "Great Practice Tools",
-                    subtitle: "Tuner, Metronome, Speed Trainer, and Drone keep practice interesting."
-                )
-
-                Divider()
-                    .overlay(DesignSystem.Colors.border)
-                    .padding(.horizontal, DesignSystem.Spacing.md)
-
-                featureRow(
-                    icon: "chart.bar.fill",
-                    color: DesignSystem.Colors.gold,
-                    title: "Track Your Progress",
-                    subtitle: "Stats, heatmaps and graphs show your mastery across the entire fretboard."
-                )
-            }
-            .background(DesignSystem.Colors.surface, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.lg))
-            .overlay(
-                RoundedRectangle(cornerRadius: DesignSystem.Radius.lg)
-                    .stroke(DesignSystem.Colors.border, lineWidth: 1)
-            )
-            .padding(.horizontal, 24)
-
-            Spacer()
-
-            onboardingButton("Next") {
-                withAnimation { currentPage = 2 }
-            }
-            .padding(.bottom, 48)
-        }
-    }
-
-    // MARK: - Screen 2: Baseline selection
+    // MARK: - Screen 1: Baseline selection
 
     private var baselinePage: some View {
         VStack(spacing: 0) {
@@ -183,7 +121,7 @@ struct OnboardingView: View {
                 .foregroundStyle(DesignSystem.Colors.text)
                 .padding(.bottom, DesignSystem.Spacing.xs)
 
-            Text("Select the category that best reflects\nyour current fretboard knowledge.")
+            Text("Pick the one that sounds most like you.")
                 .font(DesignSystem.Typography.tagline)
                 .foregroundStyle(DesignSystem.Colors.text2)
                 .multilineTextAlignment(.center)
@@ -222,9 +160,17 @@ struct OnboardingView: View {
             }
         } label: {
             HStack(spacing: DesignSystem.Spacing.sm) {
-                Text(level.emoji)
-                    .font(DesignSystem.Typography.screenTitle)
-                    .frame(width: 36)
+                Group {
+                    if level == .rustyEverywhere {
+                        Image(systemName: "guitars.fill")
+                            .font(.title3)
+                            .foregroundStyle(DesignSystem.Colors.cherry)
+                    } else {
+                        Text(level.emoji)
+                            .font(DesignSystem.Typography.screenTitle)
+                    }
+                }
+                .frame(width: 36)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(level.title)
                         .font(DesignSystem.Typography.bodyLabel)
@@ -273,31 +219,6 @@ struct OnboardingView: View {
         .buttonStyle(.plain)
         .disabled(disabled)
         .padding(.horizontal, 24)
-    }
-
-    private func featureRow(icon: String, color: Color,
-                            title: String, subtitle: String) -> some View {
-        HStack(alignment: .top, spacing: DesignSystem.Spacing.md) {
-            ZStack {
-                Circle()
-                    .fill(color.opacity(0.12))
-                    .frame(width: 40, height: 40)
-                Image(systemName: icon)
-                    .font(DesignSystem.Typography.bodyLabel)
-                    .foregroundStyle(color)
-            }
-            VStack(alignment: .leading, spacing: DesignSystem.Spacing.xs) {
-                Text(title)
-                    .font(DesignSystem.Typography.bodyLabel)
-                    .foregroundStyle(DesignSystem.Colors.text)
-                Text(subtitle)
-                    .font(DesignSystem.Typography.accentDescription)
-                    .foregroundStyle(DesignSystem.Colors.text2)
-            }
-            Spacer(minLength: 0)
-        }
-        .padding(.horizontal, DesignSystem.Spacing.md)
-        .padding(.vertical, DesignSystem.Spacing.md)
     }
 
     // MARK: - Actions

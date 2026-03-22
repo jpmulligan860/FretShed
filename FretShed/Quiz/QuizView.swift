@@ -147,6 +147,9 @@ struct QuizView: View {
                     if vSizeClass == .compact {
                         // Landscape iPhone: prompt+actions top, fretboard bottom (full width)
                         VStack(spacing: 0) {
+                            if vm.isInReviewSection {
+                                reviewTailBanner
+                            }
                             HStack(alignment: .center, spacing: 0) {
                                 compactPromptView
                                     .frame(maxWidth: .infinity)
@@ -166,6 +169,9 @@ struct QuizView: View {
                         }
                     } else {
                         // Portrait: prompt first, then fretboard below
+                        if vm.isInReviewSection {
+                            reviewTailBanner
+                        }
                         promptView
                             .padding(.top, 10)
 
@@ -463,6 +469,28 @@ struct QuizView: View {
         .frame(height: 22 * CGFloat(6 + 1))
     }
 
+    /// Amber banner shown during the review tail section of the quiz.
+    private var reviewTailBanner: some View {
+        HStack {
+            HStack(spacing: 5) {
+                Image(systemName: "square.3.layers.3d")
+                Text("QUICK REVIEW")
+                    .tracking(0.5)
+            }
+            .font(DesignSystem.Typography.sectionLabel)
+            .foregroundStyle(Color(red: 0.078, green: 0.071, blue: 0.063)) // #141210
+
+            Spacer()
+
+            Text(vm.reviewStringSummary)
+                .font(DesignSystem.Typography.sectionLabel)
+                .foregroundStyle(Color(red: 0.239, green: 0.169, blue: 0.133)) // #3D2B22
+        }
+        .padding(.horizontal, 12)
+        .frame(height: 32)
+        .background(DesignSystem.Colors.amber)
+    }
+
     /// Brief intro card shown before the first warmup note.
     private var warmupIntroCard: some View {
         VStack(spacing: 12) {
@@ -497,13 +525,7 @@ struct QuizView: View {
 
     private var promptView: some View {
         VStack(spacing: 2) {
-            // Smart Warmup: "Quick Review" label during warmup block.
-            if vm.isInWarmup {
-                Text("QUICK REVIEW")
-                    .font(DesignSystem.Typography.smallLabel)
-                    .foregroundStyle(DesignSystem.Colors.muted)
-                    .padding(.bottom, 4)
-            }
+            // Review banner is handled separately — not in the prompt view.
 
             // Chord progression: show the chord name and tone role above the note.
             if vm.session.focusMode == .chordProgression,
@@ -639,12 +661,6 @@ struct QuizView: View {
     /// Compact prompt for landscape — note name, string, and fret hint in a single horizontal row.
     private var compactPromptView: some View {
         HStack(spacing: 12) {
-            if vm.isInWarmup {
-                Text("REVIEW")
-                    .font(DesignSystem.Typography.smallLabel)
-                    .foregroundStyle(DesignSystem.Colors.muted)
-            }
-
             if vm.session.focusMode == .chordProgression,
                let chord = vm.currentChord {
                 VStack(spacing: 2) {

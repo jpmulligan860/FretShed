@@ -836,7 +836,10 @@ struct PracticeHomeView: View {
         if let info = try? engine.phaseDisplayInfo() {
             phaseDisplayName = info.phaseName
             phaseNumber = info.phaseNumber
-            phaseTarget = info.target
+            // Append review tail indicator if completed strings exist
+            let pm = LearningPhaseManager()
+            let hasReviewTail = !pm.phaseOneCompletedStrings.isEmpty
+            phaseTarget = hasReviewTail ? "\(info.target) + Quick Review" : info.target
             phaseProgress = info.progress
             phaseProximity = info.proximity
         }

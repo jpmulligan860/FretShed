@@ -181,13 +181,36 @@ public final class QuizViewModel: Identifiable {
 
     // MARK: - Warmup Block State
 
-    /// Pre-built warmup questions served before new content.
-    private var warmupQuestions: [QuizQuestion] = []
-    /// Number of warmup questions (set once at start, does not change).
-    private(set) var warmupQuestionCount: Int = 0
-    /// True while the quiz is serving warmup questions (attemptCount < warmupQuestionCount).
-    public var isInWarmup: Bool { warmupQuestionCount > 0 && attemptCount < warmupQuestionCount }
-    /// True only before the very first warmup question is presented.
+    // MARK: - Review Tail State
+
+    /// Pre-built review questions appended after focus notes.
+    private var reviewQuestions: [QuizQuestion] = []
+    /// Number of review questions (set once at start, does not change).
+    private(set) var reviewQuestionCount: Int = 0
+    /// Index where review notes begin in the session. Nil if no review tail.
+    public var reviewStartIndex: Int? {
+        guard reviewQuestionCount > 0 else { return nil }
+        return settings.defaultSessionLength - reviewQuestionCount
+    }
+    /// True while the quiz is serving review notes (at the tail end of the session).
+    public var isInReviewSection: Bool {
+        guard let start = reviewStartIndex else { return false }
+        return attemptCount >= start
+    }
+    /// Summary of strings in the review tail for the banner display.
+    public var reviewStringSummary: String {
+        let strings = Set(reviewQuestions.map(\.string)).sorted()
+        let count = reviewQuestions.count
+        let stringsPart: String
+        switch strings.count {
+        case 0: return ""
+        case 1: stringsPart = "String \(strings[0])"
+        case 2: stringsPart = "Strings \(strings[0]) & \(strings[1])"
+        default: stringsPart = "\(strings.count) strings"
+        }
+        return "\(stringsPart) · \(count) note\(count == 1 ? "" : "s")"
+    }
+    /// True only before the very first question is presented (after 1+ day away).
     public private(set) var showWarmupIntro: Bool = false
 
     /// Set of (noteRaw, stringNumber) pairs quizzed in this session, for spacing gate advancement.
@@ -395,10 +418,12 @@ public final class QuizViewModel: Identifiable {
         }
         // Dismiss warmup intro after first question starts.
         if showWarmupIntro { showWarmupIntro = false }
-        // Serve warmup questions before falling back to normal selection.
+        // Focus notes first, review tail at the end.
         let question: QuizQuestion
-        if attemptCount < warmupQuestions.count {
-            question = warmupQuestions[attemptCount]
+        if let reviewStart = reviewStartIndex,
+           attemptCount >= reviewStart,
+           (attemptCount - reviewStart) < reviewQuestions.count {
+            question = reviewQuestions[attemptCount - reviewStart]
         } else {
             question = selectQuestion()
         }
@@ -864,8 +889,8 @@ public final class QuizViewModel: Identifiable {
         let notes = selectWarmupNotes(count: reviewCount)
         guard !notes.isEmpty else { return }
 
-        warmupQuestions = notes
-        warmupQuestionCount = notes.count
+        reviewQuestions = notes
+        reviewQuestionCount = notes.count
 
         // Show intro card only after 1+ calendar day away.
         if let lastDate = mostRecentCompletedSessionDate() {

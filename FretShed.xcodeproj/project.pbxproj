@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 77;
+	objectVersion = 63;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -50,6 +50,7 @@
 		654D659635A6043E21B4FDAE /* Repositories.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4EA4F280C0FC2E577EFC3D4 /* Repositories.swift */; };
 		66C279472014C1E960E786AD /* BackupPayload.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B8C00EDBC8AED4D977595A /* BackupPayload.swift */; };
 		6710A90CC35D66AE87B9B2DC /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BD97CC80B02ADF5F5BAE2DAE /* Assets.xcassets */; };
+		6E2FDCFA2F6F864600F012FD /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6E2FDCF92F6F864500F012FD /* StoreKit.framework */; };
 		721F80E6AEB10D3E83D48022 /* AppContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBA577A659DD4B654B8F0FC8 /* AppContainer.swift */; };
 		732F3144469B6E61C870621D /* JetBrainsMono-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 83169F0C3EF8AF1E5C2EC0C0 /* JetBrainsMono-Bold.ttf */; };
 		79B39BD08C62CD432F8B3600 /* EntitlementManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52332DCAAB016BCCEDF48907 /* EntitlementManager.swift */; };
@@ -121,7 +122,7 @@
 		0C1C67B5F1AE9FCAF179EC97 /* BaselinePrior.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BaselinePrior.swift; sourceTree = "<group>"; };
 		0E09B79F825D97199C8FD5CE /* MusicalNote.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicalNote.swift; sourceTree = "<group>"; };
 		1087945B55FC59E7A6B48472 /* LearningPhaseManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LearningPhaseManager.swift; sourceTree = "<group>"; };
-		11D3BDBDA01662AE732E4282 /* FretShed.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = FretShed.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		11D3BDBDA01662AE732E4282 /* FretShed.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FretShed.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		159B7078DE77C8EA0D639CDC /* AccelerateYINTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccelerateYINTests.swift; sourceTree = "<group>"; };
 		168F76601FE00EB5976E8C9C /* CrimsonPro-Italic.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "CrimsonPro-Italic.ttf"; sourceTree = "<group>"; };
 		1874C200EA04E5B6BD3D315D /* LearningPhaseManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LearningPhaseManagerTests.swift; sourceTree = "<group>"; };
@@ -153,6 +154,8 @@
 		68C33C07ADE9FD3D4C40C568 /* TestDataSeeder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestDataSeeder.swift; sourceTree = "<group>"; };
 		6A63453B107DF05C73057A89 /* PhaseRoadmapSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhaseRoadmapSection.swift; sourceTree = "<group>"; };
 		6BFA7C97D6BCC3CC6978867E /* SessionSummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionSummaryView.swift; sourceTree = "<group>"; };
+		6E2FDCF72F6F585C00F012FD /* FretShed.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = FretShed.storekit; sourceTree = "<group>"; };
+		6E2FDCF92F6F864500F012FD /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
 		6E3FF02A66FF10C9470B4575 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		70426D5C5D84EF2F803B017D /* LaunchScreen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = LaunchScreen.storyboard; sourceTree = "<group>"; };
 		712A49EB16F90D326925F1C7 /* TunerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TunerView.swift; sourceTree = "<group>"; };
@@ -206,12 +209,12 @@
 		E480E603506C7DBEC841A2A5 /* NoteGroupingEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteGroupingEngine.swift; sourceTree = "<group>"; };
 		EA3068AF5B92B465B06046F8 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		EE39FECC070CD929CC8445FD /* QuizViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuizViewModel.swift; sourceTree = "<group>"; };
-		EEB0A56932E63DEDBC7953DC /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		EEB0A56932E63DEDBC7953DC /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		F2406449DF0972C37B03AE40 /* MetroDroneModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetroDroneModels.swift; sourceTree = "<group>"; };
 		F4A56A5807EDBEDFF6EC3BBB /* CalibrationEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalibrationEngine.swift; sourceTree = "<group>"; };
 		F6D3E922712A2CF7A4E012C2 /* BackupManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupManagerTests.swift; sourceTree = "<group>"; };
 		F9CB4F189B39F5AF82301695 /* InsightPhraseLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InsightPhraseLibrary.swift; sourceTree = "<group>"; };
-		FD139E6B657D0E39796CC232 /* FretShedTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = FretShedTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		FD139E6B657D0E39796CC232 /* FretShedTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FretShedTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		FF830EB86FB19BE84235BC01 /* Attempt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Attempt.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -221,6 +224,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				2F35A0473CC97FDE3F78BC33 /* TelemetryDeck in Frameworks */,
+				6E2FDCFA2F6F864600F012FD /* StoreKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -314,10 +318,12 @@
 		506BA9E636029B910BF8FF46 = {
 			isa = PBXGroup;
 			children = (
+				6E2FDCF72F6F585C00F012FD /* FretShed.storekit */,
 				5773D0A6622D273623BE9DF8 /* FretShed */,
 				28F354A992ECFC3E26A370E7 /* FretShed */,
 				4A5749E5E3EE724458EEB270 /* FretShedTests */,
 				7CA537042F0A55611E30B4D7 /* Products */,
+				6E2FDCF82F6F864500F012FD /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -383,6 +389,14 @@
 				712A49EB16F90D326925F1C7 /* TunerView.swift */,
 			);
 			path = Tuner;
+			sourceTree = "<group>";
+		};
+		6E2FDCF82F6F864500F012FD /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				6E2FDCF92F6F864500F012FD /* StoreKit.framework */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 		71D388ABC05CF10ACBDE9C19 /* Progress */ = {
@@ -500,13 +514,6 @@
 			path = Repositories;
 			sourceTree = "<group>";
 		};
-		"TEMP_064CEB23-15BC-4AE9-A3F2-68705AA655BB" /* SnapshotTests */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = SnapshotTests;
-			sourceTree = "<group>";
-		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -555,7 +562,7 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
-				LastUpgradeCheck = 1600;
+				LastUpgradeCheck = 2630;
 				TargetAttributes = {
 					5F88877F67F73744122AA111 = {
 						DevelopmentTeam = W86YKV677Z;
@@ -575,7 +582,6 @@
 			packageReferences = (
 				6A44095CF89ED42D6429429F /* XCRemoteSwiftPackageReference "SwiftSDK" */,
 			);
-			preferredProjectObjectVersion = 77;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
@@ -744,6 +750,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
+				DEVELOPMENT_TEAM = W86YKV677Z;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -788,6 +795,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
+				DEVELOPMENT_TEAM = W86YKV677Z;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -840,6 +848,7 @@
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -860,6 +869,7 @@
 				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
@@ -903,6 +913,7 @@
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
@@ -916,6 +927,7 @@
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_VERSION = 5.0;

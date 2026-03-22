@@ -576,7 +576,7 @@ public struct ProgressTabView: View {
                 }
             }
             .chartXAxis {
-                AxisMarks(values: .stride(by: .day, count: max(1, vm.responseTimeTrend.count / 4))) { value in
+                AxisMarks(values: .stride(by: .day, count: max(4, vm.responseTimeTrend.count / 5))) { value in
                     AxisGridLine()
                     AxisValueLabel {
                         if let date = value.as(Date.self) {

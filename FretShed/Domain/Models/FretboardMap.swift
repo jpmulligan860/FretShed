@@ -101,7 +101,6 @@ public struct FretboardMap: Sendable {
         }
 
         self.map = result
-        logger.debug("FretboardMap built: \(kStringCount) strings × \(kMaxFrets + 1) frets")
     }
 
     // MARK: - Lookup

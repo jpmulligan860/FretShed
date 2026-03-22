@@ -1,10 +1,9 @@
 // TestDataSeeder.swift
 // FretShed — App Layer
 //
-// Seeds realistic test data for UI testing (heatmap, journey, adaptive).
-// 30 sessions over 21 days showing upward accuracy trend with sawtoothing.
-// Mastery ~75%, heatmap shows all 4 tiers. 5 sessions per focus mode.
-// Tagged with a sentinel calibrationProfileID for easy removal.
+// Seeds realistic test data for App Store screenshots.
+// Simulates a Phase 3 user with ~35 sessions over 28 days.
+// Heatmap shows all 5 tiers. Accuracy trending up, response time down.
 //
 // ⚠️ DELETE THIS FILE BEFORE TESTFLIGHT BETA (Task 5.16).
 
@@ -30,7 +29,7 @@ enum TestDataSeeder {
 
     static let sentinelProfileID = UUID(uuidString: "DEADBEEF-0000-0000-0000-000000000000")!
     static let isSeededKey = "testDataSeeded"
-    static let sessionCount = 30
+    static let sessionCount = 35
 
     static var isSeeded: Bool {
         UserDefaults.standard.bool(forKey: isSeededKey)
@@ -43,8 +42,8 @@ enum TestDataSeeder {
         let gameMode: GameMode
         let daysAgo: Int
         let hourOffset: Double
-        let targetAccuracy: Double   // 0–1
-        let targetResponseMs: Int    // average response time
+        let targetAccuracy: Double
+        let targetResponseMs: Int
         let attemptCount: Int
         let sessionTimeLimitSeconds: Int
     }
@@ -56,7 +55,7 @@ enum TestDataSeeder {
         let context = container.modelContainer.mainContext
         var rng = SeededRNG(seed: 42)
 
-        // Build cell map
+        // Build cell map (all 6 strings for premium screenshots)
         var allCells: [(string: Int, fret: Int, note: MusicalNote)] = []
         for string in 1...6 {
             for fret in 0...12 {
@@ -75,20 +74,18 @@ enum TestDataSeeder {
             let startTime = calendar.date(byAdding: .day, value: -bp.daysAgo, to: now)!
                 .addingTimeInterval(bp.hourOffset)
 
-            // Filter cells by focus mode
             let candidates: [(string: Int, fret: Int, note: MusicalNote)]
             let targetStrings: [Int]
             let targetNotes: [MusicalNote]
 
             switch bp.focusMode {
             case .singleString:
-                // Alternate between strings 5, 6, 4 across sessions
-                let stringChoices = [5, 6, 4]
+                let stringChoices = [6, 5, 4, 3, 2, 1]
                 let pick = stringChoices[bp.daysAgo % stringChoices.count]
                 targetStrings = [pick]; targetNotes = []
                 candidates = allCells.filter { $0.string == pick }
             case .singleNote:
-                let noteChoices: [MusicalNote] = [.a, .e, .c, .g, .d]
+                let noteChoices: [MusicalNote] = [.a, .e, .c, .g, .d, .b]
                 let pick = noteChoices[bp.daysAgo % noteChoices.count]
                 targetStrings = []; targetNotes = [pick]
                 candidates = allCells.filter { $0.note == pick }
@@ -100,7 +97,7 @@ enum TestDataSeeder {
                 candidates = allCells.filter { !$0.note.isNatural }
             case .fretboardPosition:
                 targetStrings = []; targetNotes = []
-                candidates = allCells.filter { (3...7).contains($0.fret) }
+                candidates = allCells.filter { (3...8).contains($0.fret) }
             default:
                 targetStrings = []; targetNotes = []
                 candidates = allCells
@@ -116,7 +113,6 @@ enum TestDataSeeder {
                 let cell = shuffled[qi % shuffled.count]
                 let difficulty = cellDifficulty(note: cell.note, string: cell.string, fret: cell.fret)
 
-                // Probability of correct: base accuracy modulated by cell difficulty
                 let correctProb = bp.targetAccuracy * (1.0 - difficulty * 0.4)
                 let roll = Double.random(in: 0...1, using: &rng)
                 let wasCorrect = roll < correctProb
@@ -126,7 +122,6 @@ enum TestDataSeeder {
                     ? cell.note
                     : cell.note.transposed(by: Int.random(in: 1...3, using: &rng))
 
-                // Response time: base ± 30% jitter
                 let jitter = Double.random(in: 0.7...1.3, using: &rng)
                 let responseMs = Int(Double(bp.targetResponseMs) * jitter)
 
@@ -146,7 +141,6 @@ enum TestDataSeeder {
                 attempt.timestamp = attemptTime
                 context.insert(attempt)
 
-                // Accumulate mastery
                 let key = "\(cell.note.rawValue)-\(cell.string)"
                 var e = masteryMap[key] ?? (0, 0, attemptTime)
                 e.total += 1
@@ -176,23 +170,45 @@ enum TestDataSeeder {
             context.insert(session)
         }
 
-        // Force some cells into proficient tier (green): ≥75% score, <15 attempts.
-        // These are naturals on strings 5–6 at mid-frets — "known but not drilled."
-        // 8 correct / 8 total → Bayesian (10/11) = 0.909, well above 0.75 threshold.
+        // --- Force specific heatmap tiers ---
+
+        // MASTERED (green): strings 4-6 naturals with spacing gate complete
+        // These are notes the user has "proven" across multiple days
+        let masteredCells: [(MusicalNote, Int)] = [
+            (.d, 4), (.e, 4), (.f, 4), (.g, 4),           // D string naturals
+            (.a, 5), (.b, 5), (.c, 5), (.d, 5), (.e, 5),  // A string naturals
+            (.e, 6), (.f, 6), (.g, 6), (.a, 6), (.b, 6),  // low E string naturals
+        ]
+        for (note, string) in masteredCells {
+            let key = "\(note.rawValue)-\(string)"
+            masteryMap[key] = (total: 18, correct: 17, lastDate: now.addingTimeInterval(-3600))
+        }
+
+        // PROFICIENT (gold): some cells at 75%+ with 3+ attempts but no spacing gate
         let proficientCells: [(MusicalNote, Int)] = [
-            (.c, 5),   // C on A string, fret 3
-            (.g, 6),   // G on low E string, fret 3
-            (.a, 6),   // A on low E string, fret 5
-            (.d, 5),   // D on A string, fret 5
-            (.b, 5),   // B on A string, fret 2
-            (.f, 6),   // F on low E string, fret 1
+            (.a, 4), (.b, 4), (.c, 4),                    // D string remaining naturals
+            (.f, 5), (.g, 5),                              // A string remaining naturals
+            (.c, 6), (.d, 6),                              // low E remaining naturals
+            (.e, 3), (.a, 3), (.b, 3),                     // G string
+            (.e, 2), (.c, 2),                              // B string
+            (.e, 1), (.b, 1),                              // high E string
         ]
         for (note, string) in proficientCells {
             let key = "\(note.rawValue)-\(string)"
-            masteryMap[key] = (total: 8, correct: 8, lastDate: now.addingTimeInterval(-3600))
+            masteryMap[key] = (total: 8, correct: 7, lastDate: now.addingTimeInterval(-7200))
         }
 
-        // Build mastery scores
+        // STRUGGLING (red): some cells with low accuracy
+        let strugglingCells: [(MusicalNote, Int)] = [
+            (.gSharp, 3), (.dSharp, 2), (.fSharp, 1),
+            (.aSharp, 6), (.cSharp, 4),
+        ]
+        for (note, string) in strugglingCells {
+            let key = "\(note.rawValue)-\(string)"
+            masteryMap[key] = (total: 8, correct: 2, lastDate: now.addingTimeInterval(-86400))
+        }
+
+        // Build mastery scores with spacing gate checkpoints
         for (key, value) in masteryMap {
             let parts = key.split(separator: "-")
             guard let noteRaw = Int(parts[0]),
@@ -202,76 +218,107 @@ enum TestDataSeeder {
             score.totalAttempts = value.total
             score.correctAttempts = value.correct
             score.lastAttemptDate = value.lastDate
+
+            // Set spacing gate checkpoints for mastered cells
+            if masteredCells.contains(where: { $0.0 == note && $0.1 == stringNum }) {
+                score.spacingCheckpoint1Date = now.addingTimeInterval(-14 * 86400)
+                score.spacingCheckpoint2Date = now.addingTimeInterval(-10 * 86400)
+                score.spacingCheckpoint3Date = now.addingTimeInterval(-5 * 86400)
+            }
+
             context.insert(score)
         }
+
+        // --- Set LearningPhaseManager to Phase 3 (Connection) ---
+        setPhaseState()
 
         do {
             try context.save()
             UserDefaults.standard.set(true, forKey: isSeededKey)
             let totalAttempts = blueprints.reduce(0) { $0 + $1.attemptCount }
-            logger.info("Test data seeded: \(blueprints.count) sessions, \(totalAttempts) attempts")
+            logger.info("Test data seeded: \(blueprints.count) sessions, \(totalAttempts) attempts, Phase 3 state set")
         } catch {
             logger.error("Failed to seed: \(error)")
         }
     }
 
+    // MARK: - Phase State
+
+    /// Sets LearningPhaseManager to Phase 3 (Connection) with all Phase 1+2 strings completed.
+    private static func setPhaseState() {
+        let ud = UserDefaults.standard
+        // Phase 3 = Connection (rawValue 3)
+        ud.set(3, forKey: "learningPhase_currentPhase")
+        // All 6 Phase 1 strings completed
+        if let data = try? JSONEncoder().encode(Set(1...6)) {
+            ud.set(data, forKey: "learningPhase_completedStrings")
+        }
+        // All 6 Phase 2 strings completed
+        if let data = try? JSONEncoder().encode(Set(1...6)) {
+            ud.set(data, forKey: "learningPhase_phaseTwoCompletedStrings")
+        }
+        // No current target string (Connection is cross-string)
+        ud.set(0, forKey: "learningPhase_targetString")
+        ud.set(0, forKey: "learningPhase_phaseTwoTargetString")
+        // Sessions in current phase
+        ud.set(5, forKey: "learningPhase_sessionsInCurrentPhase")
+        // v2 migration done
+        ud.set(true, forKey: "learningPhase_v2Migrated")
+    }
+
     // MARK: - Blueprint Factory
 
-    /// 30 sessions: 5 per focus mode, spread over 21 days.
-    /// Accuracy trends upward ~48% → ~86% with sawtoothing.
-    /// Response times trend downward ~4000ms → ~1700ms.
+    /// 35 sessions over 28 days. Mix of modes, accuracy trending up, response time trending down.
     private static func makeBlueprints() -> [SessionBlueprint] {
-        // Focus modes cycled in this order
         let modes: [FocusMode] = [
             .fullFretboard, .singleString, .singleNote,
-            .fretboardPosition, .naturalNotes, .sharpsAndFlats
+            .fretboardPosition, .naturalNotes, .sharpsAndFlats, .fullFretboard
         ]
-        let gameModes: [GameMode] = [.untimed, .timed, .streak]
+        let gameModes: [GameMode] = [.untimed, .untimed, .timed, .untimed, .streak]
 
-        // Per-session targets: (accuracy, responseMs, attemptCount)
-        // Sawtoothing pattern: each "wave" peaks higher than the last
         let targets: [(acc: Double, ms: Int, count: Int)] = [
-            // Week 1 (days 21–16): beginner phase
-            (0.45, 4200, 10), (0.50, 4000, 10), (0.48, 3900, 12),
-            (0.55, 3700, 12), (0.52, 3800, 10), (0.58, 3500, 12),
-            // Week 2 (days 15–10): building confidence
-            (0.55, 3400, 12), (0.62, 3200, 14), (0.58, 3300, 12),
-            (0.65, 3000, 14), (0.62, 3100, 14), (0.68, 2900, 14),
-            // Week 3a (days 9–5): hitting stride
-            (0.65, 2800, 14), (0.72, 2500, 15), (0.68, 2600, 14),
-            (0.75, 2400, 15), (0.72, 2500, 15), (0.78, 2200, 16),
-            // Week 3b (days 4–0): recent strong sessions
-            (0.75, 2300, 15), (0.80, 2000, 16), (0.76, 2100, 15),
-            (0.82, 1900, 16), (0.78, 2000, 16), (0.85, 1800, 18),
-            // Recent sessions (days 3–0): peak performance
-            (0.80, 1900, 16), (0.86, 1700, 18), (0.82, 1800, 16),
-            (0.88, 1600, 18), (0.84, 1700, 18), (0.86, 1700, 18)
+            // Week 1 (days 28–22): early phase, finding footing
+            (0.42, 4500, 15), (0.48, 4200, 15), (0.45, 4300, 18),
+            (0.52, 4000, 18), (0.50, 4100, 15), (0.55, 3800, 18),
+            (0.53, 3900, 18),
+            // Week 2 (days 21–15): building confidence
+            (0.55, 3600, 18), (0.60, 3400, 20), (0.57, 3500, 18),
+            (0.63, 3200, 20), (0.60, 3300, 20), (0.66, 3000, 20),
+            (0.64, 3100, 20),
+            // Week 3 (days 14–8): hitting stride
+            (0.65, 2900, 20), (0.70, 2700, 20), (0.67, 2800, 20),
+            (0.73, 2500, 20), (0.70, 2600, 20), (0.76, 2300, 20),
+            (0.74, 2400, 20),
+            // Week 4 (days 7–0): strong recent performance
+            (0.75, 2200, 20), (0.80, 2000, 20), (0.77, 2100, 20),
+            (0.82, 1900, 20), (0.79, 2000, 20), (0.84, 1800, 20),
+            (0.81, 1900, 20), (0.86, 1700, 20), (0.83, 1800, 20),
+            (0.88, 1600, 20), (0.85, 1700, 20), (0.90, 1500, 20),
+            (0.87, 1600, 20), (0.88, 1550, 20),
         ]
 
-        // Day offsets from today (21 → 0, spread across 21 days)
         let daySchedule = [
-            21, 20, 19, 18, 17, 16,   // 6 sessions in first 6 days
-            15, 14, 13, 12, 11, 10,   // daily
-            9, 8, 7, 6, 5, 4,        // daily
-            3, 3, 2, 2, 1, 1,        // doubling up in recent days
-            0, 0, 0, 0, 0, 0         // today's sessions (for demo)
+            28, 27, 26, 25, 24, 23, 22,
+            21, 20, 19, 18, 17, 16, 15,
+            14, 13, 12, 11, 10, 9, 8,
+            7, 6, 5, 4, 3, 2, 2,
+            1, 1, 1, 0, 0, 0, 0,
         ]
 
-        // Hour offsets within each day (morning/evening variety)
         let hourOffsets: [Double] = [
-            7*3600, 19*3600, 8*3600, 20*3600, 9*3600, 18*3600,
-            7.5*3600, 20*3600, 8*3600, 19.5*3600, 9*3600, 18.5*3600,
-            8*3600, 19*3600, 7*3600, 20*3600, 9.5*3600, 18*3600,
-            8*3600, 19*3600, 7.5*3600, 20.5*3600, 9*3600, 18*3600,
-            8*3600, 10*3600, 12*3600, 14*3600, 16*3600, 18*3600
+            7*3600, 19*3600, 8*3600, 20*3600, 9*3600, 18*3600, 7.5*3600,
+            8*3600, 19*3600, 7*3600, 20*3600, 9*3600, 18.5*3600, 8*3600,
+            19*3600, 7*3600, 20*3600, 9.5*3600, 18*3600, 8*3600, 19*3600,
+            7.5*3600, 20*3600, 9*3600, 18*3600, 8*3600, 10*3600, 14*3600,
+            8*3600, 12*3600, 16*3600, 8*3600, 10*3600, 14*3600, 18*3600,
         ]
 
         var blueprints: [SessionBlueprint] = []
-        for i in 0..<30 {
+        for i in 0..<35 {
             let focusMode = modes[i % modes.count]
             let gameMode = gameModes[i % gameModes.count]
             let t = targets[i]
-            let timeLimit = (gameMode == .timed) ? [60, 90, 120][i % 3] : 0
+            let timeLimit = (gameMode == .timed) ? [120, 180, 300][i % 3] : 0
 
             blueprints.append(SessionBlueprint(
                 focusMode: focusMode,
@@ -289,27 +336,14 @@ enum TestDataSeeder {
 
     // MARK: - Cell Difficulty
 
-    /// Returns 0.0 (easy) to 1.0 (hard) for a fretboard cell.
-    /// Tuned so the heatmap shows all 4 mastery tiers with naturals on
-    /// strings 5–6 split between mastered (gold) and proficient (green).
     private static func cellDifficulty(note: MusicalNote, string: Int, fret: Int) -> Double {
         var d = 0.0
-
-        // Accidentals are harder
         if !note.isNatural { d += 0.30 }
-
-        // Higher frets are harder
         d += Double(fret) * 0.025
-
-        // Upper strings slightly harder for beginners
-        if string <= 2 { d += 0.10 }
-
-        // Open strings are easier
+        if string <= 2 { d += 0.15 }
+        if string == 3 { d += 0.08 }
         if fret == 0 { d -= 0.15 }
-
-        // Common landmark notes are easier (5th and 7th fret)
         if fret == 5 || fret == 7 { d -= 0.05 }
-
         return max(0, min(1, d))
     }
 

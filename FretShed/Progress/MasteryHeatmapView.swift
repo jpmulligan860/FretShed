@@ -212,8 +212,8 @@ private struct HeatCell: View {
         guard isAttempted else {
             return DesignSystem.Colors.muted.opacity(0.5)
         }
-        // Dark text on bright gold for readability
-        if level == .mastered { return Color(white: 0.15) }
+        // Dark text on bright gold/green for readability
+        if level == .proficient || level == .mastered { return Color(white: 0.15) }
         return .white
     }
 

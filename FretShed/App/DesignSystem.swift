@@ -189,7 +189,7 @@ enum DesignSystem {
         static let screenTitle:   Font = .custom("Montserrat-ExtraBold", size: 22)
         static let sectionHeader: Font = .custom("Montserrat-Bold", size: 15)
         static let bodyLabel:     Font = .custom("Montserrat-SemiBold", size: 14)
-        static let smallLabel:    Font = .custom("Montserrat-SemiBold", size: 11)
+        static let smallLabel:    Font = .custom("Montserrat-SemiBold", size: 12)
 
         // --- Crimson Pro (accent / descriptive text) ---
         static let tagline:          Font = .custom("CrimsonPro-Italic", fixedSize: 15)
@@ -197,13 +197,13 @@ enum DesignSystem {
 
         // --- JetBrains Mono (data readouts) ---
         static let dataDisplay:  Font = .custom("JetBrainsMono-Bold", size: 18)
-        static let dataSmall:    Font = .custom("JetBrainsMono-Medium", size: 11)
-        static let sectionLabel: Font = .custom("JetBrainsMono-SemiBold", size: 9.5)
+        static let dataSmall:    Font = .custom("JetBrainsMono-Medium", size: 12)
+        static let sectionLabel: Font = .custom("JetBrainsMono-SemiBold", size: 10)
 
         // --- Additional sizes ---
         static let microLabel:   Font = .custom("Montserrat-SemiBold", size: 10)
-        static let tinyLabel:    Font = .custom("Montserrat-SemiBold", size: 8)
-        static let heatmapLabel: Font = .custom("Montserrat-Bold", size: 7)
+        static let tinyLabel:    Font = .custom("Montserrat-SemiBold", size: 10)
+        static let heatmapLabel: Font = .custom("Montserrat-Bold", size: 8)
         static let dataLarge:    Font = .custom("JetBrainsMono-Bold", size: 20)
         static let quizStatValue: Font = .custom("JetBrainsMono-Bold", size: 14)
 
@@ -214,9 +214,9 @@ enum DesignSystem {
 
         // --- JetBrains Mono extended sizes ---
         static let dataMicro:    Font = .custom("JetBrainsMono-Bold", size: 13)
-        static let dataTiny:     Font = .custom("JetBrainsMono-Regular", size: 8)
+        static let dataTiny:     Font = .custom("JetBrainsMono-Regular", size: 10)
         static let dataPip:      Font = .custom("JetBrainsMono-Bold", size: 10)
-        static let dataChip:     Font = .custom("JetBrainsMono-SemiBold", size: 8)
+        static let dataChip:     Font = .custom("JetBrainsMono-SemiBold", size: 10)
 
         // --- Montserrat extended sizes ---
         static let promptLabel:  Font = .custom("Montserrat-SemiBold", size: 22)

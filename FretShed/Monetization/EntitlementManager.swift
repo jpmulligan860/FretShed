@@ -90,8 +90,13 @@ public final class EntitlementManager {
 
     /// Fetches the 3 IAP products from StoreKit.
     public func loadProducts() async {
+        logger.info("loadProducts() called — requesting IDs: \(Self.allProductIDs)")
         do {
             let storeProducts = try await Product.products(for: Self.allProductIDs)
+            logger.info("StoreKit returned \(storeProducts.count) products")
+            for p in storeProducts {
+                logger.info("  Product: \(p.id) — \(p.displayPrice) — \(p.displayName)")
+            }
             // Sort: monthly first, annual, lifetime last
             products = storeProducts.sorted { a, b in
                 let order: [String: Int] = [

@@ -167,18 +167,28 @@ public final class EntitlementManager {
         for await result in Transaction.currentEntitlements {
             guard case .verified(let transaction) = result else { continue }
 
+            // Skip revoked transactions
+            if transaction.revocationDate != nil { continue }
+
             // Check for active subscription
             if Self.subscriptionIDs.contains(transaction.productID) {
-                if transaction.revocationDate == nil {
+                // Check expiration — cancelled subs stay in currentEntitlements until expired
+                if let expirationDate = transaction.expirationDate {
+                    if expirationDate > Date() {
+                        hasEntitlement = true
+                        logger.info("Active subscription: \(transaction.productID), expires: \(expirationDate)")
+                    } else {
+                        logger.info("Expired subscription: \(transaction.productID), expired: \(expirationDate)")
+                    }
+                } else {
+                    // No expiration = active
                     hasEntitlement = true
                 }
             }
 
-            // Check for lifetime purchase (non-consumable)
+            // Check for lifetime purchase (non-consumable — no expiration)
             if transaction.productID == Self.lifetimeID {
-                if transaction.revocationDate == nil {
-                    hasEntitlement = true
-                }
+                hasEntitlement = true
             }
         }
 

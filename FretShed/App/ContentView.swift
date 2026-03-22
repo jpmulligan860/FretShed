@@ -313,7 +313,7 @@ struct PracticeHomeView: View {
                         }
                     } else if totalTimePracticed > 0 {
                         HStack(spacing: 4) {
-                            Text("Wow! You've spent")
+                            Text("You've spent")
                             Text(formattedTimePracticed)
                                 .fontWeight(.semibold)
                             Text("in the Shed!")

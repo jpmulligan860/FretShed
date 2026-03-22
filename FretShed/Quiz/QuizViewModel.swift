@@ -243,6 +243,7 @@ public final class QuizViewModel: Identifiable {
             allScores = []
         }
         TelemetryDeck.signal(AnalyticsEvent.sessionStarted)
+        logger.info("Quiz started — isPremium: \(self.isPremium), focusMode: \(self.session.focusModeRaw), strings in pool: \(Set(self.buildCandidates().map(\.string)).sorted())")
         // Build warmup block if 1+ calendar days since last session.
         buildWarmupBlockIfNeeded()
         // Start session countdown timer if a time limit is set.

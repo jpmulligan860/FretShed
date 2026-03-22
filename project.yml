@@ -55,16 +55,16 @@ targets:
         UILaunchStoryboardName: LaunchScreen
         UIRequiresFullScreen: true
         UIAppFonts:
-          - Fonts/Montserrat-Black.ttf
-          - Fonts/Montserrat-ExtraBold.ttf
-          - Fonts/Montserrat-Bold.ttf
-          - Fonts/Montserrat-SemiBold.ttf
-          - Fonts/Montserrat-Medium.ttf
-          - Fonts/CrimsonPro-Italic.ttf
-          - Fonts/CrimsonPro-Regular.ttf
-          - Fonts/JetBrainsMono-Bold.ttf
-          - Fonts/JetBrainsMono-SemiBold.ttf
-          - Fonts/JetBrainsMono-Medium.ttf
+          - Montserrat-Black.ttf
+          - Montserrat-ExtraBold.ttf
+          - Montserrat-Bold.ttf
+          - Montserrat-SemiBold.ttf
+          - Montserrat-Medium.ttf
+          - CrimsonPro-Italic.ttf
+          - CrimsonPro-Regular.ttf
+          - JetBrainsMono-Bold.ttf
+          - JetBrainsMono-SemiBold.ttf
+          - JetBrainsMono-Medium.ttf
 
   FretShedTests:
     type: bundle.unit-test

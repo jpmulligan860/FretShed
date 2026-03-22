@@ -74,10 +74,12 @@ struct OnboardingView: View {
         VStack(spacing: 0) {
             Spacer()
 
-            // Brand mark
-            Image(systemName: "guitars.fill")
-                .font(.system(size: 52))
-                .foregroundStyle(DesignSystem.Colors.cherry)
+            // App icon
+            Image("AppIconDisplay")
+                .resizable()
+                .frame(width: 80, height: 80)
+                .clipShape(RoundedRectangle(cornerRadius: 18))
+                .shadow(radius: 4)
                 .padding(.bottom, DesignSystem.Spacing.lg)
 
             VStack(spacing: DesignSystem.Spacing.lg) {

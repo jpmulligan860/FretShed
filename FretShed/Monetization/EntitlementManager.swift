@@ -63,7 +63,7 @@ public final class EntitlementManager {
 
     // MARK: Private
 
-    private nonisolated(unsafe) var updateTask: Task<Void, Never>?
+    private var updateTask: Task<Void, Never>?
 
     // MARK: Init
 
@@ -85,9 +85,6 @@ public final class EntitlementManager {
         }
     }
 
-    deinit {
-        updateTask?.cancel()  // Task.cancel() is safe to call from any context
-    }
 
     // MARK: - Load Products
 

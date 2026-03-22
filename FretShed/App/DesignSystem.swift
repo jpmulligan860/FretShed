@@ -208,7 +208,7 @@ enum DesignSystem {
         static let quizStatValue: Font = .custom("JetBrainsMono-Bold", size: 14)
 
         // --- Crimson Pro extended sizes ---
-        static let accentBody:   Font = .custom("CrimsonPro-Italic", size: 20)
+        static let accentBody:   Font = .custom("CrimsonPro-Italic", fixedSize: 20)
         static let accentLarge:  Font = .custom("CrimsonPro-Italic", size: 18)
         static let bodyText:     Font = .custom("CrimsonPro-Regular", size: 14)
 

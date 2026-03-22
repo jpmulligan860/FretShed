@@ -338,23 +338,31 @@ struct PracticeHomeView: View {
 
         return Group {
             if activeProfile == nil {
-                // Pre-calibration state
+                // Pre-calibration: prominent card with step number for new users
                 Button {
                     coordinator.handleSetupAudio()
                 } label: {
                     HStack(spacing: 12) {
                         ZStack {
                             Circle()
-                                .fill(DesignSystem.Colors.amber.opacity(0.12))
-                                .frame(width: 44, height: 44)
+                                .fill(DesignSystem.Colors.cherry.opacity(0.15))
+                                .frame(width: 48, height: 48)
                             Image(systemName: "waveform.badge.mic")
-                                .font(.body.weight(.semibold))
-                                .foregroundStyle(DesignSystem.Colors.amber)
+                                .font(.title3.weight(.semibold))
+                                .foregroundStyle(DesignSystem.Colors.cherry)
                         }
                         VStack(alignment: .leading, spacing: 3) {
-                            Text("Calibrate My Guitar First")
-                                .font(DesignSystem.Typography.bodyLabel)
-                                .foregroundStyle(DesignSystem.Colors.text)
+                            HStack(spacing: 6) {
+                                Text("STEP 1")
+                                    .font(DesignSystem.Typography.dataChip)
+                                    .foregroundStyle(DesignSystem.Colors.cherry)
+                                    .padding(.horizontal, 6)
+                                    .padding(.vertical, 2)
+                                    .background(DesignSystem.Colors.cherry.opacity(0.12), in: RoundedRectangle(cornerRadius: 4))
+                                Text("Calibrate Your Guitar")
+                                    .font(DesignSystem.Typography.bodyLabel)
+                                    .foregroundStyle(DesignSystem.Colors.text)
+                            }
                             Text("FretShed is most accurate when it knows your guitar and room.")
                                 .font(DesignSystem.Typography.smallLabel)
                                 .foregroundStyle(DesignSystem.Colors.muted)
@@ -365,13 +373,13 @@ struct PracticeHomeView: View {
                         Spacer(minLength: 0)
                         Image(systemName: "chevron.right")
                             .font(.caption.weight(.semibold))
-                            .foregroundStyle(DesignSystem.Colors.muted)
+                            .foregroundStyle(DesignSystem.Colors.cherry)
                     }
                     .padding(14)
                     .background(DesignSystem.Colors.surface, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md))
                     .overlay(
                         RoundedRectangle(cornerRadius: DesignSystem.Radius.md)
-                            .stroke(DesignSystem.Colors.border, lineWidth: 1)
+                            .stroke(DesignSystem.Colors.cherry.opacity(0.3), lineWidth: 1.5)
                     )
                 }
                 .buttonStyle(.plain)
@@ -495,13 +503,19 @@ struct PracticeHomeView: View {
         } label: {
             VStack(alignment: .leading, spacing: 6) {
                 if isNewUser {
-                    Text("Start Practice")
-                        .font(DesignSystem.Typography.screenTitle)
-                        .foregroundStyle(.white)
-                    Text("START HERE")
-                        .font(DesignSystem.Typography.sectionLabel)
-                        .tracking(1.5)
-                        .foregroundStyle(.white)
+                    HStack {
+                        Text("Smart Practice")
+                            .font(DesignSystem.Typography.screenTitle)
+                            .foregroundStyle(.white)
+                        Spacer()
+                        Text("FOUNDATION")
+                            .font(DesignSystem.Typography.sectionLabel)
+                            .tracking(1.5)
+                            .foregroundStyle(.white.opacity(0.7))
+                    }
+                    Text("Start Foundation Phase")
+                        .font(DesignSystem.Typography.bodyLabel)
+                        .foregroundStyle(.white.opacity(0.9))
                     Text("Adaptive session based on your level")
                         .font(DesignSystem.Typography.accentDescription)
                         .foregroundStyle(.white.opacity(0.85))

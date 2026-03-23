@@ -26,6 +26,8 @@
 	<string>LaunchScreen</string>
 	<key>UIRequiresFullScreen</key>
 	<true/>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>UIAppFonts</key>
 	<array>
 		<string>Montserrat-Black.ttf</string>

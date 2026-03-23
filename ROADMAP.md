@@ -319,7 +319,7 @@ Estimated: 18–25 hours
 | 5.5 | Privacy Policy — termly.io (free); specify mic use, local storage only, no third-party sharing | 1 hr | 🔲 |
 | 5.6 | Host Privacy Policy on WordPress — publish at `fretshed.com/privacy` (site is live on SiteGround GrowBig, Woodshop theme) | 30 min | 🔲 |
 | 5.7 | Support URL — `fretshed.com/support` with WPForms contact form (required by Apple) | 30 min | 🔲 |
-| 5.8 | Add `PrivacyInfo.xcprivacy` to project — declare microphone usage and `NSUserDefaults` access (missing = auto-rejection) | 1 hr | 🔲 |
+| 5.8 | Add `PrivacyInfo.xcprivacy` to project — declare UserDefaults + SystemBootTime access, add ITSAppUsesNonExemptEncryption to Info.plist | 1 hr | ✅ |
 | 5.9 | Complete App Store privacy nutrition label — data not collected (on-device only) | 30 min | 🔲 |
 
 ### 5C — App Store Metadata

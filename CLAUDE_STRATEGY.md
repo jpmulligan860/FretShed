@@ -76,7 +76,7 @@ NOTES:
 
 ## Current State (as of Mar 2026)
 
-**Phases 1–4 (code) are complete.** App Store submission (Phase 5) is next. One pre-submission code task added: phase gate for free tier (Phase 3/4 paywall triggers).
+**Phases 1–4 (code) are complete. Pre-submission review complete. App Store assets & metadata complete. TestFlight beta (Phase 5) is next.**
 
 | Layer | Status |
 |---|---|
@@ -84,11 +84,13 @@ NOTES:
 | Smart Practice Redesign (SP.1–SP.8) | ✅ Complete — 4-phase curriculum (Foundation→Expansion→Connection→Fluency), musical note grouping, phase-aware messaging |
 | Session Insight Engine (INS.1–INS.5) | ✅ Complete |
 | Spacing Gate & Smart Review (SG.1–SG.9) | ✅ Complete — 3-checkpoint spaced repetition, always-on review block |
-| Phase 4 Monetization (EntitlementManager, PaywallView, StoreKit 2) | ✅ Code complete — App Store Connect business setup (4.2–4.4) still pending |
-| Phase gate for free tier (Phase 3/4 triggers paywall) | 🔲 Not yet coded — pre-submission task |
-| App Store description | 🚧 v6 draft in progress |
-| Phase 5 (App Store Submission) | 🔲 Not started |
-| Test count | 448 (0 failures) |
+| Phase 4 Monetization (EntitlementManager, PaywallView, StoreKit 2) | ✅ Complete |
+| Phase gate for free tier (Phase 3/4 triggers paywall) | ✅ Complete — `requiresPremium(for:)` on EntitlementManager, Smart Practice launch gated, Journey lock icons |
+| Pre-submission codebase review | ✅ Complete |
+| App Store assets & metadata (5.1–5.14) | ✅ Complete |
+| App Store description | ✅ Complete |
+| Phase 5 (TestFlight Beta — 5.15+) | 🚧 In progress |
+| Test count | 462 (0 failures) |
 
 ---
 
@@ -103,8 +105,8 @@ FretShed is an iOS guitar fretboard training app that helps guitarists memorize 
 4. **Spacing Gate mastery model** — Notes must prove retention across multiple calendar days before earning "mastered" status; prevents the fluency illusion
 5. **All-in-one practice toolkit** — Tuner + metronome + drone built into the same app
 
-**App Store name:** FretShed: Guitar Fretboard
-**Subtitle:** Learn Every Fretboard Note
+**App Store name:** FretShed: Smart Practice
+**Subtitle:** Master the Guitar Fretboard
 **Pricing:** Freemium — $4.99/mo · $29.99/yr · $49.99 lifetime (14-day trial on monthly/annual)
 
 ---
@@ -190,7 +192,7 @@ Full analysis: `FretShed_Competitive_Analysis.md` in project files.
 | "Why Most Guitar Apps Get Detection Wrong" (article) | Competitor differentiation, calibration story | 🔲 |
 | "How FretShed Teaches Notes Differently" (article) | Phase system + stacked learning explained | 🔲 |
 | Pre-launch email sequence (4 emails) | Converts email list to downloads | 🔲 |
-| App Store description | ASO, conversion from browse to download | 🚧 v6 draft in progress |
+| App Store description | ASO, conversion from browse to download | ✅ Complete |
 | Explainer video scripts | App Store preview, social media, website | 🔲 |
 
 ---
@@ -214,7 +216,7 @@ Full analysis: `FretShed_Competitive_Analysis.md` in project files.
 
 ## Action Items from Competitive Analysis
 - [x] Update onboarding subtitle in code: "The guitar trainer that actually gets your notes right."
-- [ ] When writing App Store description: lead with Smart Practice + adaptive learning, NOT "only app that listens"
+- [x] When writing App Store description: lead with Smart Practice + adaptive learning, NOT "only app that listens"
 - [ ] When creating App Store screenshots: feature the calibration flow as a key differentiator
 
 ---

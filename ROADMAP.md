@@ -267,9 +267,9 @@ Estimated: 10–13 hours
 | # | Task | Est. | Status |
 |---|---|---|---|
 | 4.1 | Create Apple Developer account — developer.apple.com, $99/year, allow 24–48 hrs for approval | 30 min + wait | ✅ |
-| 4.2 | Create app in App Store Connect — choose and lock in Bundle ID | 30 min | 🔲 |
-| 4.3 | Create subscription products — monthly ($4.99/mo), annual ($29.99/yr), lifetime ($49.99), with 14-day free trials on monthly/annual | 1 hr | 🔲 |
-| 4.4 | Set up sandbox test account — App Store Connect > Users and Access > Sandbox Testers | 30 min | 🔲 |
+| 4.2 | Create app in App Store Connect — choose and lock in Bundle ID | 30 min | ✅ |
+| 4.3 | Create subscription products — monthly ($4.99/mo), annual ($29.99/yr), lifetime ($49.99), with 14-day free trials on monthly/annual | 1 hr | ✅ |
+| 4.4 | Set up sandbox test account — App Store Connect > Users and Access > Sandbox Testers | 30 min | ✅ |
 
 ### 4B — EntitlementManager
 
@@ -307,30 +307,30 @@ Estimated: 18–25 hours
 
 | # | Task | Est. | Status |
 |---|---|---|---|
-| 5.1 | App icon — 1024×1024 PNG, use Xcode asset catalog to generate all sizes | 2–4 hrs | 🔲 |
-| 5.2 | App Store screenshots — iPhone 6.9" (iPhone 16 Pro Max), at least 3, up to 10 | 2–3 hrs | 🔲 |
-| 5.3 | Add benefit text overlays to screenshots — use Canva for 1-line callout text per screen | 1–2 hrs | 🔲 |
-| 5.4 | App Preview video (optional) — 15–30 seconds, QuickTime via iPhone cable | 1–2 hrs | 🔲 |
+| 5.1 | App icon — 1024×1024 PNG, use Xcode asset catalog to generate all sizes | 2–4 hrs | ✅ |
+| 5.2 | App Store screenshots — iPhone 6.9" (iPhone 16 Pro Max), at least 3, up to 10 | 2–3 hrs | ✅ |
+| 5.3 | Add benefit text overlays to screenshots — use Canva for 1-line callout text per screen | 1–2 hrs | ✅ |
+| 5.4 | App Preview video (optional) — 15–30 seconds, QuickTime via iPhone cable | 1–2 hrs | ✅ |
 
 ### 5B — Legal & Privacy
 
 | # | Task | Est. | Status |
 |---|---|---|---|
-| 5.5 | Privacy Policy — termly.io (free); specify mic use, local storage only, no third-party sharing | 1 hr | 🔲 |
-| 5.6 | Host Privacy Policy on WordPress — publish at `fretshed.com/privacy` (site is live on SiteGround GrowBig, Woodshop theme) | 30 min | 🔲 |
-| 5.7 | Support URL — `fretshed.com/support` with WPForms contact form (required by Apple) | 30 min | 🔲 |
+| 5.5 | Privacy Policy — termly.io (free); specify mic use, local storage only, no third-party sharing | 1 hr | ✅ |
+| 5.6 | Host Privacy Policy on WordPress — publish at `fretshed.com/privacy` (site is live on SiteGround GrowBig, Woodshop theme) | 30 min | ✅ |
+| 5.7 | Support URL — `fretshed.com/support` with WPForms contact form (required by Apple) | 30 min | ✅ |
 | 5.8 | Add `PrivacyInfo.xcprivacy` to project — declare UserDefaults + SystemBootTime access, add ITSAppUsesNonExemptEncryption to Info.plist | 1 hr | ✅ |
-| 5.9 | Complete App Store privacy nutrition label — data not collected (on-device only) | 30 min | 🔲 |
+| 5.9 | Complete App Store privacy nutrition label — data not collected (on-device only) | 30 min | ✅ |
 
 ### 5C — App Store Metadata
 
 | # | Task | Est. | Status |
 |---|---|---|---|
-| 5.10 | App Name (30 chars) and Subtitle (30 chars) | 15 min | 🔲 |
-| 5.11 | Keywords (100 chars): guitar, fretboard, notes, learn, trainer, ear, strings, frets, practice, quiz, memorize, tuner, mastery | 15 min | 🔲 |
-| 5.12 | App Description — lead with calibration + adaptive learning hook (NOT "only app that listens" — competitors have audio detection too). Use revised positioning from `FretShed_Competitive_Analysis.md`: Problem (detection unreliability) → Solution (calibration + adaptive mastery) → Features → Social proof | 1–2 hrs | 🔲 |
-| 5.13 | Age rating questionnaire — should be 4+ | 15 min | 🔲 |
-| 5.14 | App Review Notes — explain mic usage to reviewers, mention tap mode fallback | 15 min | 🔲 |
+| 5.10 | App Name (30 chars) and Subtitle (30 chars) | 15 min | ✅ |
+| 5.11 | Keywords (100 chars): guitar, fretboard, notes, learn, trainer, ear, strings, frets, practice, quiz, memorize, tuner, mastery | 15 min | ✅ |
+| 5.12 | App Description — lead with calibration + adaptive learning hook (NOT "only app that listens" — competitors have audio detection too). Use revised positioning from `FretShed_Competitive_Analysis.md`: Problem (detection unreliability) → Solution (calibration + adaptive mastery) → Features → Social proof | 1–2 hrs | ✅ |
+| 5.13 | Age rating questionnaire — should be 4+ | 15 min | ✅ |
+| 5.14 | App Review Notes — explain mic usage to reviewers, mention tap mode fallback | 15 min | ✅ |
 
 ### 5D — TestFlight Beta
 

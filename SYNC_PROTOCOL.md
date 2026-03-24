@@ -1,36 +1,184 @@
 # FretShed — Sync Protocol
 
-> **This file is shared by both Claude.ai and Claude Code.** Either side can read it but neither should edit it without coordinating with the user. Add it to both the Claude.ai Project Knowledge and the Claude Code project root.
+> **This file is shared by both Claude.ai and Claude Code.**
+> It lives in the GitHub repo and is fetched — never manually uploaded.
+> Neither side edits it without coordinating with John.
 
 ---
 
-## The Problem
+## Core Principle
 
-FretShed uses two interfaces with separate file ownership:
+**GitHub is the single source of truth. Claude Code is the only git writer. Claude.ai is read-only.**
 
-| File | Owned by | The other side… |
-|---|---|---|
-| `CLAUDE.md` | Claude Code | Claude.ai reads only |
-| `CLAUDE_STRATEGY.md` | Claude.ai | Claude Code reads only |
-| `ROADMAP.md` | Claude Code | Claude.ai reads only |
-| `ROADMAP_STRATEGY.md` | Claude.ai | Claude Code reads only |
-| `TEAM_OF_EXPERTS.md` | Either | Both read, coordinate edits |
-| `SYNC_PROTOCOL.md` | Shared | Both read only |
+```
+Claude.ai → reads from GitHub (raw URLs)
+          → proposes changes → packages them in handoff prompt
+Claude Code → applies changes → commits → pushes to GitHub
+```
 
-Because files can't transfer automatically, the user (John) is the bridge. This protocol makes that painless.
+John is no longer the transport layer for living documents.
 
 ---
 
-## How It Works: The Sync Ledger
+## File Ownership
 
-Each owned file has a **sync ledger** — a small section at the bottom that tracks two things:
+| File | Owned by | Writer | How it gets to GitHub |
+|---|---|---|---|
+| `CLAUDE.md` | Claude Code | Claude Code | Direct commit |
+| `ROADMAP.md` | Claude Code | Claude Code | Direct commit |
+| `CLAUDE_STRATEGY.md` | Claude.ai | Claude Code | Via handoff prompt at session end |
+| `ROADMAP_STRATEGY.md` | Claude.ai | Claude Code | Via handoff prompt at session end |
+| `SYNC_PROTOCOL.md` | Shared | Either (coordinate) | Direct commit |
+| `TEAM_OF_EXPERTS.md` | Either | Either (coordinate) | Direct commit |
+| `BUGLOG.md` | Claude Code | Claude Code | Direct commit |
 
-1. **Outbound changes** — "I changed something the other side needs to know about"
-2. **Inbound requests** — "The other side needs me to change something in my files"
+> **Why Claude Code writes Claude.ai-owned files:**
+> Claude.ai cannot commit to git. When Claude.ai updates CLAUDE_STRATEGY.md or
+> ROADMAP_STRATEGY.md, it outputs the full updated file content at session end.
+> Claude Code receives this via the handoff prompt and commits it.
 
-### Format
+---
 
-At the bottom of each owned file, maintain this section:
+## Claude.ai Project Knowledge
+
+The following files are **removed from Claude.ai Project Knowledge** and fetched live from GitHub instead.
+
+| File | Why removed |
+|---|---|
+| `CLAUDE.md` | Changes frequently; GitHub is always current |
+| `ROADMAP.md` | Changes frequently; GitHub is always current |
+| `CLAUDE_STRATEGY.md` | Changes frequently; GitHub is always current |
+| `ROADMAP_STRATEGY.md` | Changes frequently; GitHub is always current |
+| `BUGLOG.md` | Changes frequently; GitHub is always current |
+| `SYNC_PROTOCOL.md` | Rarely changes; GitHub fetch is sufficient |
+
+The following files **stay in Claude.ai Project Knowledge** (rarely change):
+
+| File | Why kept |
+|---|---|
+| `TEAM_OF_EXPERTS.md` | Rarely changes; acceptable as static reference |
+| `FretShed_Competitive_Analysis.md` | Rarely changes |
+| `FRETSHED-DESIGN-PROMPT.md` | Rarely changes |
+| `AUDIO_CALIBRATION.md` | Rarely changes |
+| `FretShed_Competitive_Marketing_Report_v2.docx` | Static |
+| `FretShed_Marketing_Report_v3.docx` | Static |
+| `FretShed_Community_Research_Report.docx` | Static |
+| `FretShed_Smart_Practice_Spec_v2.docx` | Static |
+
+> **Rule:** If a file in Project Knowledge changes meaningfully, delete it and re-upload.
+> But living documents never need re-uploading — they're always fetched from GitHub.
+
+---
+
+## Session Start: Claude.ai
+
+**Replace manual file uploads with the bootstrap script.**
+
+1. Run `./sync_prompt.sh` from project root (or `./sync_prompt.sh | pbcopy` to auto-copy)
+2. Paste the output at the start of the Claude.ai session
+3. Claude.ai fetches all living docs from GitHub raw URLs
+4. Claude.ai confirms sync status before any work begins
+
+No file uploads required.
+
+---
+
+## Session Start: Claude Code
+
+Add `git pull` as the first line of every Claude Code session prompt.
+
+---
+
+## Session End: Claude.ai
+
+At session end (triggered by "goodnight", "gn", "wrap up", etc.):
+
+1. **Update ROADMAP_STRATEGY.md** — mark tasks ✅/🚧, log sync ledger entries
+2. **Update CLAUDE_STRATEGY.md** — capture any business/product decisions made this session
+3. **Check Sync Ledger** — are there pending outbound items Claude Code needs to apply?
+4. **Output full file content** for any Claude.ai-owned files that changed this session (CLAUDE_STRATEGY.md and/or ROADMAP_STRATEGY.md) — wrapped in a clearly labeled code block
+5. **Generate paste-ready Claude Code prompt** (see format below) that includes:
+   - `git pull` first
+   - Write the full content of any changed Claude.ai-owned files
+   - Apply any Sync Ledger items to CLAUDE.md or ROADMAP.md
+   - Commit and push all changes with a descriptive message
+6. **Memory check** — use memory tool if any decisions warrant updating userMemories
+7. **Session summary** — what was accomplished, decisions locked, next task
+8. **Print WHAT YOU NEED TO DO block** (see format below)
+
+### WHAT YOU NEED TO DO block format
+
+```
+📋 WHAT YOU NEED TO DO:
+
+PASTE INTO CLAUDE CODE:
+[paste-ready prompt, or "nothing"]
+
+PROJECT KNOWLEDGE: Re-upload if changed this session:
+[list files, or "nothing — living docs are on GitHub"]
+
+NOTES:
+[anything else John needs to know]
+```
+
+> **Key change from old protocol:** The "DOWNLOAD & REPLACE IN CLAUDE.AI PROJECT" line
+> is removed. Living docs are never uploaded. Only static reference files ever need
+> re-uploading to Project Knowledge.
+
+---
+
+## Session End: Claude Code
+
+At session end:
+
+1. **Commit all changes** — including any Claude.ai-owned files received via handoff prompt
+2. **Push to GitHub:**
+   ```bash
+   git add -A && git commit -m "sync: [brief summary of session work]" && git push
+   ```
+3. **Update Sync Ledger** in CLAUDE.md and ROADMAP.md — log outbound changes Claude.ai needs
+4. **Generate sync report** for Claude.ai if there are pending items
+
+---
+
+## The "Sync Me" Command
+
+When John says **"sync me"** to either interface:
+
+### Claude.ai responds:
+
+```
+📋 SYNC REPORT — Claude.ai
+
+OUTBOUND (Claude Code needs to apply to CLAUDE.md / ROADMAP.md):
+- [ ] [list pending Sync Ledger items, or "none"]
+
+INBOUND (changes Claude Code made that I've absorbed from GitHub):
+- [ ] [list, or "none — fetched at session start"]
+
+PASTE INTO CLAUDE CODE (if needed):
+> "[paste-ready prompt]"
+```
+
+### Claude Code responds:
+
+```
+📋 SYNC REPORT — Claude Code
+
+OUTBOUND (Claude.ai needs to know about):
+- [ ] [list pending Sync Ledger items, or "none"]
+
+INBOUND (Claude.ai changes to apply):
+- [ ] [list, or "none"]
+
+COMMIT STATUS: [pushed / unpushed changes]
+```
+
+---
+
+## Sync Ledger Format
+
+Each owned file maintains a Sync Ledger at the bottom:
 
 ```markdown
 ## Sync Ledger
@@ -38,103 +186,50 @@ At the bottom of each owned file, maintain this section:
 ### Outbound (changes the other side needs)
 | Date | What Changed | Target | Status |
 |---|---|---|---|
-| 2026-03-03 | Updated Task 5.6 text | Claude.ai to note | ✅ Synced |
+| 2026-03-23 | Updated Phase 4 tasks | Claude.ai to note | 🔲 Pending |
 
 ### Inbound (changes requested by the other side)
 | Date | Change Requested | Source | Status |
 |---|---|---|---|
-| 2026-03-03 | Change Carrd → WordPress in Task 5.6 | ROADMAP_STRATEGY.md | ✅ Applied |
+| 2026-03-23 | Update Task 4.5 status | ROADMAP_STRATEGY.md | ✅ Applied |
 ```
 
-**Status values:** 🔲 Pending · ✅ Synced/Applied
+**Status values:** 🔲 Pending · ✅ Applied
 
 ---
 
-## The "Sync Me" Command
-
-When John says **"sync me"** to either interface, that interface runs this checklist:
-
-### If you're Claude.ai:
-
-1. **Check my outbound ledger** — Do any of my files (CLAUDE_STRATEGY.md, ROADMAP_STRATEGY.md) have pending outbound changes for Claude Code?
-2. **Check for unprocessed inbound** — Did Claude Code request changes that I haven't applied yet?
-3. **Generate a sync report:**
+## Paste-Ready Claude Code Prompt Format (from Claude.ai session end)
 
 ```
-📋 SYNC REPORT (Claude.ai → Claude Code)
+git pull
 
-OUTBOUND (Claude Code needs to apply):
-- [ ] ROADMAP.md Task 5.6: Change Carrd → WordPress
-- [ ] ROADMAP.md Task 4.13: Add two telemetry events
+# Write updated Claude.ai-owned files
+# [FILE: CLAUDE_STRATEGY.md]
+cat > CLAUDE_STRATEGY.md << 'ENDOFFILE'
+[full file content here]
+ENDOFFILE
 
-INBOUND (I need updated files from Claude Code):
-- [ ] Need latest ROADMAP.md (Claude Code updated Phase 4)
+# [FILE: ROADMAP_STRATEGY.md]
+cat > ROADMAP_STRATEGY.md << 'ENDOFFILE'
+[full file content here]
+ENDOFFILE
 
-FILES TO RE-UPLOAD TO CLAUDE.AI PROJECT:
-- (none pending)
+# Apply Sync Ledger items to Claude Code-owned files (if any):
+# [list specific changes to CLAUDE.md or ROADMAP.md]
 
-PASTE THIS TO CLAUDE CODE:
-> "Apply these sync items from ROADMAP_STRATEGY.md: [list]. Then mark them ✅ in your Sync Ledger as applied."
-```
-
-### If you're Claude Code:
-
-1. **Check my outbound ledger** — Do any of my files (CLAUDE.md, ROADMAP.md) have pending outbound changes for Claude.ai?
-2. **Check for unprocessed inbound** — Did Claude.ai request changes that I haven't applied yet?
-3. **Generate a sync report:**
-
-```
-📋 SYNC REPORT (Claude Code → Claude.ai)
-
-OUTBOUND (Claude.ai needs to know):
-- [ ] ROADMAP.md: Completed Tasks 4.8-4.12
-- [ ] CLAUDE.md: Added new architecture section
-
-INBOUND (I need to apply):
-- [ ] ROADMAP_STRATEGY.md requested Task 5.6 text change → Applied ✅
-
-FILES FOR JOHN TO RE-UPLOAD TO CLAUDE.AI:
-- ROADMAP.md (changed this session)
-- CLAUDE.md (changed this session)
-
-PASTE THIS TO CLAUDE.AI:
-> "Claude Code completed Tasks 4.8-4.12 in ROADMAP.md. I've uploaded the latest ROADMAP.md. Please review and update any strategy references."
+git add -A && git commit -m "sync: [session summary from Claude.ai]" && git push
 ```
 
 ---
 
-## Session Start & End Protocols
+## Quick Reference
 
-### Starting a session (either side)
-
-Add this to existing session-start checklists:
-
-> **Sync check:** Scan the Sync Ledger in my owned files. Are there any 🔲 Pending inbound items? If yes, flag them to John before starting new work.
-
-### Ending a session (either side)
-
-Add this to existing session-end protocols:
-
-> **Sync check:** Did I change any files this session? If yes:
-> 1. Log outbound changes in my Sync Ledger
-> 2. Tell John which files need to be re-uploaded/shared with the other interface
-> 3. If there are pending items for the other side, give John a ready-to-paste prompt
-
----
-
-## Quick Reference: Who Uploads What
-
-| Scenario | John does this |
+| Scenario | Action |
 |---|---|
-| Claude Code changed ROADMAP.md or CLAUDE.md | Upload new version to Claude.ai Project Knowledge (replace old one) |
-| Claude.ai changed ROADMAP_STRATEGY.md or CLAUDE_STRATEGY.md | Download the file, then add to Claude Code project root (or tell Claude Code to read it) |
-| Either side changed TEAM_OF_EXPERTS.md | Upload/sync to the other side |
-| Cross-file update needed | The requesting side logs it in Sync Ledger → John says "sync me" on the other side → that side applies it |
-
----
-
-## Migration: Replacing the Old Cross-File Updates Section
-
-The "Cross-File Updates Needed" section at the bottom of `ROADMAP_STRATEGY.md` is replaced by the Sync Ledger system. Existing pending items should be migrated to the ledger format.
-
-The same applies to Claude Code's session-end reminder about re-uploading files — that behavior continues, but now also includes logging to the Sync Ledger.
+| Starting a Claude.ai session | Run `./sync_prompt.sh`, paste output |
+| Starting a Claude Code session | Include `git pull` at top of prompt |
+| Claude.ai changes CLAUDE_STRATEGY.md | Output full file content → Claude Code writes + commits |
+| Claude.ai changes ROADMAP_STRATEGY.md | Output full file content → Claude Code writes + commits |
+| Claude Code changes CLAUDE.md or ROADMAP.md | Commit + push → Claude.ai fetches fresh next session |
+| Static Project Knowledge file changes | Delete from Project Knowledge → re-upload |
+| Mid-session file changed by Claude Code | Ask Claude.ai to re-fetch the raw URL |

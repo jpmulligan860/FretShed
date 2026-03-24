@@ -1,4 +1,5 @@
 ## Start of Every Session
+0. **Run `git pull`** — always before anything else, to pick up any commits from Claude.ai sessions (CLAUDE_STRATEGY.md, ROADMAP_STRATEGY.md, or sync items may have been updated)
 1. Read this file fully
 2. Read ROADMAP.md to know current technical task status
 3. **Scan the Sync Ledger in CLAUDE.md and ROADMAP.md** — find any 🔲 Pending inbound entries requested by Claude.ai. Apply them before starting new work.
@@ -408,16 +409,17 @@ Full analysis: `FretShed_Competitive_Analysis.md` in Claude.ai project files.
     ```
     📋 WHAT YOU NEED TO DO:
 
-    UPLOAD TO CLAUDE.AI PROJECT (replace existing):
-    - [list changed files: CLAUDE.md, ROADMAP.md, BUGLOG.md — or "nothing"]
-
     PASTE INTO CLAUDE.AI NEXT SESSION (if needed):
     - [paste-ready summary of outbound sync items, or "nothing"]
+
+    PROJECT KNOWLEDGE: Re-upload only if a static file changed:
+    - [list files, or "nothing — living docs are on GitHub"]
 
     NOTHING ELSE NEEDED.
     ```
 
-    > **Rule:** Never leave a session without generating this block. John should never have to guess what to do or which files to upload.
+    > **Rule:** Never leave a session without generating this block. John should never have to guess what to do.
+    > Living docs (CLAUDE.md, ROADMAP.md, BUGLOG.md, CLAUDE_STRATEGY.md, ROADMAP_STRATEGY.md) are never uploaded to Claude.ai Project Knowledge — they are fetched live from GitHub each session.
 
 12. **Update "What Did I Learn.md"** — Add up to 5 process lessons from this session (not technical details — lessons about the development process, using AI tools, project management, etc.). Keep it conversational. Then rewrite the executive summary at the top to reflect cumulative learnings across all sessions.
 

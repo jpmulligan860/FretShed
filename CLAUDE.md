@@ -16,8 +16,8 @@ FretShed is an iOS guitar fretboard training application that helps guitarists m
 
 > **Positioning note (Feb 2026):** Multiple competitors offer mic-based audio detection for fretboard training (Fret Pro, Solo, Guitar Blast, Fretonomy, plus broader apps like Yousician). FretShed is NOT "the only app that listens." Our defensible differentiators are: (1) environment calibration — no competitor calibrates to the user's room/guitar/input source; (2) Bayesian adaptive mastery scoring — no competitor dynamically weights quiz selection per fretboard position; (3) all-in-one practice toolkit (tuner + metronome + drone). See `FretShed_Competitive_Analysis.md` in the Claude.ai project for full details.
 
-**App Store name:** FretShed: Smart Practice System  
-**Subtitle:** Learn Every Guitar Fretboard Note
+**App Store name:** FretShed: Smart Practice
+**Subtitle:** Master the Guitar Fretboard
 **Bundle ID:** com.jpm.fretshed (set in App Store Connect — do not change once submitted)
 
 ---
@@ -193,7 +193,7 @@ Full analysis: `FretShed_Competitive_Analysis.md` in Claude.ai project files.
 ---
 
 ## Testing
-- Test suite: 452 tests passing (0 failures)
+- Test suite: 462 tests passing (0 failures)
 - Run: `xcodebuild test -scheme FretShed -destination 'platform=iOS Simulator,name=iPhone 16 Pro'`
 - All tests must pass before marking any task complete
 - New audio processing functions should have unit tests using pre-recorded PCM buffer fixtures
@@ -229,7 +229,7 @@ Full analysis: `FretShed_Competitive_Analysis.md` in Claude.ai project files.
 
 **Phase 4 Monetization (4.1–4.14) — COMPLETE.** EntitlementManager (@Observable, StoreKit 2): isPremium, loadProducts, purchase, restorePurchases, checkEntitlement. 3 product IDs (monthly $4.99, annual $29.99, lifetime $49.99). Injected into AppContainer. PaywallView: phase-aware headline, 3 value props, annual/monthly/lifetime cards with StoreKit displayPrice, "Try Free for 14 Days" CTA, legal text, restore, dismiss. Paywall triggers on locked focus modes (SessionSetupView), locked strings 1-3 (SessionSetupView + heatmap), locked frets 13+ (heatmap). Lock icons on locked cells/buttons. Free-tier enforced in QuizViewModel.buildCandidates() (strings 4-6, frets 0-12) and SmartPracticeEngine.sessionStrings. TelemetryDeck SDK (App ID A538B6A2-0A38-4CC8-8522-12AE1AED7EBF) with 7 analytics signals. Sandbox testing verified all gates. "Wireless Audio"→"External Audio". Legal URLs→fretshed.com. Phase gate: Phase 3/4 trigger PaywallView for free users via `requiresPremium(for:)`. Journey phase roadmap shows lock icons on gated phases.
 
-**Test suite:** 452 tests passing (0 failures)
+**Test suite:** 462 tests passing (0 failures)
 
 **Session Insight Engine (INS.1–INS.5) — COMPLETE.** SessionInsightEngine: pure algorithmic service generating pedagogically grounded insight cards. 10 insight types (weakString, strongString, hardestNote, tierTransition, consistencyTrend, closeToLevelUp, coldSpot, coverage, sessionDelta, knowledgeShapeMilestone). InsightPhraseLibrary with deterministic phrase cycling. Tier transition detection via pre-session score reverse-computation. Knowledge shape milestones per BaselineLevel (fire-once). Rotation rule (no same type twice), positivity threshold (force positive after 4 negatives), insight fatigue (shed card hidden every 4th session). Insight card wired to QuizView session results (portrait + landscape). Smart Practice CTA on Shed page uses SmartPracticeEngine.peekNextSessionDescription() — message matches actual session. Session length slider restored to Settings > Session Settings. 11 unit tests.
 
@@ -290,7 +290,7 @@ Full analysis: `FretShed_Competitive_Analysis.md` in Claude.ai project files.
 - UserSettings snapshot documented as design decision (live reference safe due to fullscreen overlay)
 - Backup/restore (F30): JSON export/import of all SwiftData models via Settings > Data Management
 
-**Finalized business model:** Free tier (strings 4–6, frets 0–12, Full Fretboard + Single String modes, audio detection, adaptive, full stats, Phases 1–2 on free strings, Phase 3–4 require premium). Premium ($4.99/mo, $29.99/yr, $49.99 lifetime, 14-day trial, multiple calibration profiles). Analytics: TelemetryDeck. Subtitle: "Learn Every Guitar Fretboard Note."
+**Finalized business model:** Free tier (strings 4–6, frets 0–12, Full Fretboard + Single String modes, audio detection, adaptive, full stats, Phases 1–2 on free strings, Phase 3–4 require premium). Premium ($4.99/mo, $29.99/yr, $49.99 lifetime, 14-day trial, multiple calibration profiles). Analytics: TelemetryDeck. Subtitle: "Master the Guitar Fretboard."
 
 **Shed Redesign (Phase 3.6) — IMPLEMENTED.** Complete redesign of the Practice ("Shed") tab:
 - `BaselinePrior.swift`: `BaselineLevel` enum (5 cases) seeds Bayesian mastery priors for new users based on experience level
@@ -350,6 +350,8 @@ Full analysis: `FretShed_Competitive_Analysis.md` in Claude.ai project files.
 - ContentView `onReceive` handlers retained only for `.launchQuiz` (from PracticeHomeView) and `.showPracticeTab` (from ProgressTabView empty state)
 - **Why ZStack over NavigationStack push:** onReceive handlers did not fire reliably while a pushed destination was active on iOS 26; NavigationStack destination also had a timing window where activeQuizVM was nil, producing a blank page
 - **Why closures over notifications:** eliminates the RunLoop-scheduled Combine dispatch chain entirely; closure → state mutation is synchronous and direct
+
+**Pre-Submission Codebase Review (Mar 2026) — COMPLETE.** 6-pass review (App Store risk, monetization gates, audio pipeline, SwiftData, view layer, code hygiene). Key fixes: (1) PitchDetector route change handler stale profileSource snapshot — now reads calibratedInputSource before overwriting; (2) MasteryRepository.save() hasChanges guard removed; (3) Repository save() methods guard `modelContext == nil` before insert; (4) PaywallView prominent trial disclosure line; (5) ITSAppUsesNonExemptEncryption restored to project.yml; (6) App Store name locked: "FretShed: Smart Practice" / "Master the Guitar Fretboard". 10 new CalibrationRepositoryTests. Test count 452→462 (0 failures).
 
 ---
 
@@ -466,6 +468,7 @@ All device-testing bugs are resolved. All feature ideas (F1–F36) are complete.
 | 2026-03-15 | Smart Practice Redesign complete (SP.1–SP.7). 4-phase learning progression (Foundation→Connection→Expansion→Fluency), temporal decay, note grouping engine, phase-aware messaging (~70 templates), heatmap focus indicator. SP.7: 8 phase transition bug fixes (phase-skipping prevention, placeholder substitution, contradictory messaging, race conditions). Session Insight Engine (INS.1–INS.5) also complete. Test count now 398. Next task: Phase 4 (Monetization). | ROADMAP_STRATEGY.md, CLAUDE_STRATEGY.md | ✅ Synced |
 | 2026-03-16 | SP.8 Phase Resequencing + Insight Accuracy (expert review findings). Phases resequenced: Foundation→Expansion→Connection→Fluency. Fret range 0-12, all 6 strings required. All free-tier restrictions removed (unrestricted until Phase 4). 7 insight false-claim bugs fixed + contradiction detection test infra (5 scenario tests). Musical context now phase-aware (chromaticFragment GroupType). Stale Shed phase refresh, weakest-string untried-cell counting, Next Up session consistency, quiz UI cleanup (merged level bar), TunerView cross-tab alert fix. Test count 425. Next task: Phase 4. | ROADMAP_STRATEGY.md, CLAUDE_STRATEGY.md | ✅ Synced |
 | 2026-03-18 | Spacing Gate & Smart Review system (SG.1–SG.9). Spaced repetition mastery: 3 checkpoints across 5+ days, single-step regression, completed gate permanent. Always-on review block (30%). Fluency rotation (4 modes). Heatmap: proficient=gold, mastered=green. Phase Roadmap on Journey tab. Woodshop font sweep (50+ fixes). Terminology consistency (mastered→proficient in phase messages). Default session length=20. Test count 448 (0 failures). Next: Phase 4. | ROADMAP_STRATEGY.md, CLAUDE_STRATEGY.md | ✅ Synced |
+| 2026-03-23 | App Store name locked: "FretShed: Smart Practice" / subtitle "Master the Guitar Fretboard". CLAUDE_STRATEGY.md lines 106–107 still say "FretShed: Guitar Fretboard" / "Learn Every Fretboard Note" — needs update. Pre-submission codebase review complete (6 passes). Phases 1–4 and 5.1–5.14 all marked complete. Test count 462 (0 failures). Next: Phase 5D (TestFlight Beta). | CLAUDE_STRATEGY.md | 🔲 Pending |
 
 ### Inbound (changes requested by Claude.ai)
 | Date | Change Requested | Source | Status |

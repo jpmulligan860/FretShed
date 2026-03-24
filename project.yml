@@ -52,6 +52,7 @@ targets:
       properties:
         CFBundleDisplayName: FretShed
         NSMicrophoneUsageDescription: "FretShed uses the microphone to detect the notes you play on your guitar."
+        ITSAppUsesNonExemptEncryption: false
         UILaunchStoryboardName: LaunchScreen
         UIRequiresFullScreen: true
         UIAppFonts:

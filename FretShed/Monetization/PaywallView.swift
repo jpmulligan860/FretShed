@@ -243,6 +243,14 @@ struct PaywallView: View {
                     .foregroundStyle(DesignSystem.Colors.cherry)
             }
 
+            // Trial summary — prominent, above full legal text
+            if selectedProductID != EntitlementManager.lifetimeID {
+                Text("Free 14-day trial. Auto-renews unless canceled.")
+                    .font(DesignSystem.Typography.accentDescription)
+                    .foregroundStyle(DesignSystem.Colors.text2)
+                    .multilineTextAlignment(.center)
+            }
+
             // Legal text
             Text(SubscriptionLegalText.fullDisclosure)
                 .font(DesignSystem.Typography.smallLabel)

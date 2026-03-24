@@ -112,6 +112,7 @@ struct BackupManager {
         decoder.dateDecodingStrategy = .iso8601
         let payload = try decoder.decode(BackupPayload.self, from: data)
 
+        // Validate version BEFORE deleting any data — if unsupported, user keeps their data.
         guard payload.version == 1 else {
             throw BackupError.unsupportedVersion(payload.version)
         }

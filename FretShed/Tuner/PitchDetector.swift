@@ -618,10 +618,12 @@ public final class PitchDetector {
                 guard let self, self.isRunning else { return }
                 // Re-detect input source for the new route.
                 let newSource = AudioInputSource.detectCurrent()
+                // Snapshot the profile's calibrated source BEFORE overwriting with the new route.
+                let previousProfileSource = self.calibratedInputSource
                 self.calibratedInputSource = newSource
                 // If new hardware matches the calibration profile, use profile's
                 // noise floor/AGC; otherwise let adaptive algorithms start fresh.
-                let routeMatches = profileSource == nil || newSource == profileSource
+                let routeMatches = previousProfileSource == nil || newSource == previousProfileSource
                 let routeNoiseFloor = routeMatches ? self.calibratedNoiseFloor : nil
                 let routeAGCGain = routeMatches ? self.calibratedAGCGain : nil
                 logger.info("Audio route changed (\(reason == .newDeviceAvailable ? "new device" : "device removed")) — input: \(newSource.displayName), profileMatch: \(routeMatches), restarting engine")

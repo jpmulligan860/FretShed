@@ -32,6 +32,8 @@ Building FretShed from a working prototype to an App Store-ready product taught 
 
 **Audit before you monetize.** A structured 6-pass codebase review before Phase 4 found 28 problems including a silent sample rate bug and a backup data loss issue. Systematic reviews catch what incremental development misses — schedule one before every major milestone.
 
+**Review your own fixes.** The "simplify" pass on tonight's pre-submission review caught a bug *in the fix itself* — a route change handler read `self.calibratedInputSource` after it had already been overwritten two lines above, making the comparison always true. It also caught that xcodegen had silently dropped `ITSAppUsesNonExemptEncryption` from Info.plist. Always run a second pass on your own work, especially when fixing subtle bugs under time pressure.
+
 ---
 
 ## Session Log
@@ -272,3 +274,18 @@ Building FretShed from a working prototype to an App Store-ready product taught 
 4. **StoreKit local config files are a game changer.** App Store Connect subscriptions can't be sandbox tested until metadata is complete and a binary is submitted. A local `.storekit` config file mocks the products instantly in Xcode — full purchase flow on device without any App Store Connect approval. Should have set this up on day one of Phase 4.
 
 5. **Terminology is a product decision, not a copy decision.** "Mastered," "proficient," "ready," "locked in" — each word implies a specific threshold to the user. When the Smart Practice CTA said "mastered" and the heatmap showed zero mastered cells, that wasn't a copy bug — it was a product inconsistency. One word, one meaning, everywhere. Audit every user-facing string against the data model before shipping.
+
+---
+
+### Session: Mar 23, 2026 — Pre-Submission Codebase Review
+*The "Run Simplify on Your Own Fixes" Session*
+
+1. **Always simplify-review your own fixes.** The 6-pass pre-submission review found real issues (stale route handler value, missing hasChanges guard removal, fragile repository insert pattern). But the *simplify pass on the fixes themselves* caught a logic bug where my route-change fix read `self.calibratedInputSource` after it was already overwritten two lines above — making the comparison always true. Review your reviews.
+
+2. **xcodegen can silently drop plist keys.** `ITSAppUsesNonExemptEncryption` was in the hand-edited Info.plist but not in project.yml. When xcodegen regenerated the project, it silently dropped the key. If you use xcodegen, every Info.plist key must live in project.yml or it will vanish on the next generate. This would have blocked App Store submission.
+
+3. **Lock your naming decisions in one place.** The App Store name appeared in CLAUDE.md, CLAUDE_STRATEGY.md, and ROADMAP.md — all different. One source of truth per fact. When a decision is made, grep for every reference and update them all in the same commit.
+
+4. **Structured audits with expert personas work.** Six experts (privacy, monetization, DSP, QA, SwiftUI, UX) reviewing in parallel covered ground that a single generic pass would miss. Parker caught the privacy manifest question, Darren caught the stale capture, Quinn caught the hasChanges inconsistency. Specialization matters even when the "experts" are all the same AI.
+
+5. **Don't fix P2s before verifying P0s.** I almost started fixing fatalError calls (P2) before confirming the privacy manifest situation (P0). The P0 turned out to be a non-issue, but if it hadn't been, I'd have wasted time polishing while a blocker sat unresolved. Triage first, fix in priority order.

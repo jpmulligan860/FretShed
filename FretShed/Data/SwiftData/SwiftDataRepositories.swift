@@ -18,7 +18,7 @@ public final class SwiftDataAttemptRepository: AttemptRepository {
     }
 
     public func save(_ attempt: Attempt) throws {
-        context.insert(attempt)
+        if attempt.modelContext == nil { context.insert(attempt) }
         try context.save()
     }
 
@@ -86,7 +86,7 @@ public final class SwiftDataSessionRepository: SessionRepository {
     }
 
     public func save(_ session: Session) throws {
-        context.insert(session)
+        if session.modelContext == nil { context.insert(session) }
         try context.save()
     }
 
@@ -169,8 +169,8 @@ public final class SwiftDataMasteryRepository: MasteryRepository {
     }
 
     public func save(_ score: MasteryScore) throws {
-        context.insert(score)
-        if context.hasChanges { try context.save() }
+        if score.modelContext == nil { context.insert(score) }
+        try context.save()
     }
 
     public func rebuild(from attempts: [Attempt]) throws {
@@ -223,7 +223,7 @@ public final class SwiftDataCalibrationRepository: CalibrationProfileRepository 
     }
 
     public func save(_ profile: AudioCalibrationProfile) throws {
-        context.insert(profile)
+        if profile.modelContext == nil { context.insert(profile) }
         try context.save()
     }
 

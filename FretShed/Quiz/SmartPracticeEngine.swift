@@ -89,7 +89,7 @@ final class SmartPracticeEngine {
                 gameMode: .untimed,
                 fretRangeStart: Self.sessionFretStart,
                 fretRangeEnd: LearningPhaseManager.phaseRequiredFretEnd,
-                isAdaptive: true
+                isAdaptive: true, isSmartPractice: true
             )
             // Complete diagnostic after building — next session will be phase-appropriate
             phaseManager.completeDiagnostic(using: allScores)
@@ -105,7 +105,7 @@ final class SmartPracticeEngine {
                 fretRangeStart: Self.sessionFretStart,
                 fretRangeEnd: LearningPhaseManager.phaseRequiredFretEnd,
                 targetStrings: [target],
-                isAdaptive: true
+                isAdaptive: true, isSmartPractice: true
             )
             return (session, description)
         }
@@ -195,7 +195,7 @@ final class SmartPracticeEngine {
             gameMode: .untimed,
             fretRangeStart: Self.sessionFretStart,
             fretRangeEnd: Self.sessionFretEnd,
-            isAdaptive: true
+            isAdaptive: true, isSmartPractice: true
         )
         alternatives.append((fullSession, "Full Fretboard", "Cover all positions", "rectangle.grid.3x2.fill"))
 
@@ -208,7 +208,7 @@ final class SmartPracticeEngine {
             fretRangeStart: Self.sessionFretStart,
             fretRangeEnd: Self.sessionFretEnd,
             targetStrings: [weakest],
-            isAdaptive: true
+            isAdaptive: true, isSmartPractice: true
         )
         alternatives.append((stringSession, "Single String", "Weakest: \(Self.stringOrdinal(weakest)) — \(name)", "custom.singleString.\(weakest)"))
 
@@ -349,7 +349,7 @@ final class SmartPracticeEngine {
                 fretRangeStart: Self.sessionFretStart,
                 fretRangeEnd: fretEnd,
                 targetStrings: [fallbackString],
-                isAdaptive: true
+                isAdaptive: true, isSmartPractice: true
             )
         }
 
@@ -386,7 +386,7 @@ final class SmartPracticeEngine {
             fretRangeStart: Self.sessionFretStart,
             fretRangeEnd: fretEnd,
             targetStrings: [targetString],
-            isAdaptive: true
+            isAdaptive: true, isSmartPractice: true
         )
 
         lastSessionPlan = plan
@@ -423,7 +423,7 @@ final class SmartPracticeEngine {
             fretRangeStart: Self.sessionFretStart,
             fretRangeEnd: fretEnd,
             targetStrings: [targetString],
-            isAdaptive: true
+            isAdaptive: true, isSmartPractice: true
         )
     }
 
@@ -453,7 +453,7 @@ final class SmartPracticeEngine {
             gameMode: .untimed,
             fretRangeStart: Self.sessionFretStart,
             fretRangeEnd: fretEnd,
-            isAdaptive: true
+            isAdaptive: true, isSmartPractice: true
         )
     }
 
@@ -468,7 +468,7 @@ final class SmartPracticeEngine {
                 gameMode: .untimed,
                 fretRangeStart: Self.sessionFretStart,
                 fretRangeEnd: fretEnd,
-                isAdaptive: true
+                isAdaptive: true, isSmartPractice: true
             )
 
         case .stringFocus:
@@ -479,7 +479,7 @@ final class SmartPracticeEngine {
                 fretRangeStart: Self.sessionFretStart,
                 fretRangeEnd: fretEnd,
                 targetStrings: [target],
-                isAdaptive: true
+                isAdaptive: true, isSmartPractice: true
             )
 
         case .noteFocus:
@@ -490,7 +490,7 @@ final class SmartPracticeEngine {
                 fretRangeStart: Self.sessionFretStart,
                 fretRangeEnd: fretEnd,
                 targetNotes: [target],
-                isAdaptive: true
+                isAdaptive: true, isSmartPractice: true
             )
 
         case .positionFocus:
@@ -500,7 +500,7 @@ final class SmartPracticeEngine {
                 gameMode: .untimed,
                 fretRangeStart: start,
                 fretRangeEnd: end,
-                isAdaptive: true
+                isAdaptive: true, isSmartPractice: true
             )
         }
     }
@@ -594,7 +594,7 @@ final class SmartPracticeEngine {
             fretRangeStart: Self.sessionFretStart,
             fretRangeEnd: fretEnd,
             targetStrings: [weakestString],
-            isAdaptive: true
+            isAdaptive: true, isSmartPractice: true
         )
     }
 

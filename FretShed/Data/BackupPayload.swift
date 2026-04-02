@@ -106,6 +106,7 @@ struct SessionBackup: Codable {
     let isCompleted: Bool
     let isPaused: Bool
     let isAdaptive: Bool
+    let isSmartPractice: Bool?
     let overallMasteryAtEnd: Double
     let chordProgressionDataBase64: String?
     let calibrationProfileID: UUID?
@@ -127,6 +128,7 @@ struct SessionBackup: Codable {
         self.isCompleted = session.isCompleted
         self.isPaused = session.isPaused
         self.isAdaptive = session.isAdaptive
+        self.isSmartPractice = session.isSmartPractice
         self.overallMasteryAtEnd = session.overallMasteryAtEnd
         self.chordProgressionDataBase64 = session.chordProgressionData?.base64EncodedString()
         self.calibrationProfileID = session.calibrationProfileID
@@ -151,6 +153,7 @@ struct SessionBackup: Codable {
         session.targetStrings = targetStrings
         session.isCompleted = isCompleted
         session.isPaused = isPaused
+        session.isSmartPractice = isSmartPractice ?? false
         session.overallMasteryAtEnd = overallMasteryAtEnd
         if let base64 = chordProgressionDataBase64 {
             session.chordProgressionData = Data(base64Encoded: base64)

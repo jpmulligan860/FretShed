@@ -890,8 +890,9 @@ public final class QuizViewModel: Identifiable {
     /// Review notes from completed strings are front-loaded before new content.
     /// The intro card ("Let's warm up…") only shows after 1+ calendar day away.
     private func buildWarmupBlockIfNeeded() {
-        // Only for adaptive (Smart Practice) sessions — skip custom sessions and assessments.
-        guard session.isAdaptive else { return }
+        // Review block only for Smart Practice sessions — custom adaptive sessions
+        // should respect their constraints without injecting cross-string review notes.
+        guard session.isSmartPractice else { return }
 
         let sessionLength = settings.defaultSessionLength
         let reviewCount = min(max(Int(round(Double(sessionLength) * 0.30)), 3), 10)

@@ -155,6 +155,11 @@ public final class Session {
     public var isPaused: Bool
     public var isAdaptive: Bool
 
+    /// True only for sessions built by SmartPracticeEngine. Controls review block injection.
+    /// Custom sessions are adaptive (weighted toward weak spots) but don't get review questions
+    /// from unrelated strings.
+    public var isSmartPractice: Bool = false
+
     // Snapshot of overall mastery when session ended (for history chart)
     public var overallMasteryAtEnd: Double
 
@@ -221,6 +226,7 @@ public final class Session {
         targetStrings: [Int] = [],
         chordProgression: ChordProgression? = nil,
         isAdaptive: Bool = false,
+        isSmartPractice: Bool = false,
         sessionTimeLimitSeconds: Int = 0
     ) {
         self.id = id
@@ -238,6 +244,7 @@ public final class Session {
         self.isCompleted = false
         self.isPaused = false
         self.isAdaptive = isAdaptive
+        self.isSmartPractice = isSmartPractice
         self.overallMasteryAtEnd = 0
         self.chordProgressionData = try? JSONEncoder().encode(chordProgression)
         self.sessionTimeLimitSeconds = sessionTimeLimitSeconds

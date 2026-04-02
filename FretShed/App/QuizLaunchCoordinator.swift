@@ -116,6 +116,7 @@ final class QuizLaunchCoordinator {
             targetStrings: session.targetStrings,
             chordProgression: session.chordProgression,
             isAdaptive: session.isAdaptive,
+            isSmartPractice: session.isSmartPractice,
             sessionTimeLimitSeconds: session.sessionTimeLimitSeconds
         )
         // Route through launchSession to ensure phaseBeforeQuiz is captured

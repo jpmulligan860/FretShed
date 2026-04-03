@@ -325,7 +325,7 @@ final class MetroDroneEngine {
 
     // MARK: Metronome Scheduling
 
-    private var metronomeTask: Task<Void, Never>?
+    private var scheduler: MetronomeScheduler?
 
     // MARK: Drone State
 
@@ -492,8 +492,8 @@ final class MetroDroneEngine {
         logger.info("Audio route changed — restarting engine")
 
         // Tear down current engine
-        metronomeTask?.cancel()
-        metronomeTask = nil
+        scheduler?.stop()
+        scheduler = nil
         clickPlayer?.stop()
         cuePlayer?.stop()
         engine?.stop()
@@ -531,8 +531,8 @@ final class MetroDroneEngine {
 
     private func teardownEngineIfIdle() {
         guard !isMetronomePlaying, !isDronePlaying else { return }
-        metronomeTask?.cancel()
-        metronomeTask = nil
+        scheduler?.stop()
+        scheduler = nil
         clickPlayer?.stop()
         cuePlayer?.stop()
         engine?.stop()
@@ -575,13 +575,11 @@ final class MetroDroneEngine {
         timeSignature: TimeSignature,
         accents: [BeatAccent],
         volume: Float,
-        subdivision: NoteSubdivision = .quarter,
-        delayFirstBeat: Bool = false,
-        startingBeat: Int? = nil
+        subdivision: NoteSubdivision = .quarter
     ) {
-        // Cancel previous scheduling task without tearing down the engine.
-        metronomeTask?.cancel()
-        metronomeTask = nil
+        // Stop previous scheduler without tearing down the engine.
+        scheduler?.stop()
+        scheduler = nil
 
         do {
             try ensureEngine()
@@ -591,9 +589,7 @@ final class MetroDroneEngine {
         }
 
         isMetronomePlaying = true
-        if startingBeat == nil {
-            currentBeat = 0
-        }
+        currentBeat = 0
         clickPlayer?.volume = volume
 
         // Store for route-change recovery
@@ -603,89 +599,72 @@ final class MetroDroneEngine {
         metronomeVolume = volume
         metronomeSubdivision = subdivision
 
-        let beatCount = timeSignature.beats
-        let interval = 60.0 / bpm
-        let subCount = subdivision.count
+        guard let player = clickPlayer,
+              let accent = accentBuffer,
+              let normal = normalBuffer,
+              let sub = subClickBuffer else { return }
 
-        let initialBeat = startingBeat ?? 0
-        metronomeTask = Task { [weak self] in
-            // When restarting, wait one full beat interval before the first
-            // click to avoid doubling up with the old task's final beat.
-            // Using the full interval (not subInterval) ensures the new
-            // tempo starts on a proper downbeat regardless of subdivision.
-            if delayFirstBeat {
-                try? await Task.sleep(for: .seconds(interval))
-                guard !Task.isCancelled else { return }
-            }
-            var beat = initialBeat
-            var subBeat = 0
-            while !Task.isCancelled {
-                guard let self else { return }
-                if subBeat == 0 {
-                    // Main beat click
-                    let accent = beat < accents.count ? accents[beat] : .normal
-                    self.scheduleClick(accent: accent)
-                    self.currentBeat = beat
-                    self.onBeat?(beat)
-                } else {
-                    // Sub-beat click (quieter)
-                    self.scheduleSubClick()
-                }
-                subBeat += 1
-                if subBeat >= subCount {
-                    subBeat = 0
-                    beat = (beat + 1) % beatCount
-                }
-                // Read BPM dynamically so speed trainer tempo changes
-                // take effect without restarting (and losing sub-beats).
-                let currentSubInterval = (60.0 / self.metronomeBPM) / Double(subCount)
-                try? await Task.sleep(for: .seconds(currentSubInterval))
-            }
+        let sched = MetronomeScheduler(
+            clickPlayer: player,
+            accentBuffer: accent,
+            normalBuffer: normal,
+            subClickBuffer: sub,
+            sampleRate: Self.sampleRate,
+            bpm: bpm,
+            timeSignature: timeSignature,
+            accents: accents,
+            subdivision: subdivision
+        )
+        sched.onBeat = { [weak self] beat in
+            self?.currentBeat = beat
+            self?.onBeat?(beat)
         }
-    }
-
-    private func scheduleClick(accent: BeatAccent) {
-        guard let player = clickPlayer else { return }
-        switch accent {
-        case .accent:
-            if let buf = accentBuffer {
-                player.scheduleBuffer(buf, completionHandler: nil)
-                Self.lastPlaybackTime.set(CFAbsoluteTimeGetCurrent())
-            }
-        case .normal:
-            if let buf = normalBuffer {
-                player.scheduleBuffer(buf, completionHandler: nil)
-                Self.lastPlaybackTime.set(CFAbsoluteTimeGetCurrent())
-            }
-        case .muted:
-            break
+        sched.onScheduleClick = { wallTime in
+            MetroDroneEngine.lastPlaybackTime.set(wallTime)
         }
-    }
-
-    private func scheduleSubClick() {
-        guard let player = clickPlayer, let buf = subClickBuffer else { return }
-        player.scheduleBuffer(buf, completionHandler: nil)
-        // Sub-clicks are too quiet to cause mic echo — no lastPlaybackTime update.
+        sched.start()
+        scheduler = sched
     }
 
     func stopMetronome() {
-        metronomeTask?.cancel()
-        metronomeTask = nil
+        scheduler?.stop()
+        scheduler = nil
         isMetronomePlaying = false
         currentBeat = 0
         teardownEngineIfIdle()
     }
 
-    func updateMetronomeTempo(bpm: Double, timeSignature: TimeSignature, accents: [BeatAccent], volume: Float, subdivision: NoteSubdivision = .quarter) {
-        guard isMetronomePlaying else { return }
-        startMetronome(bpm: bpm, timeSignature: timeSignature, accents: accents, volume: volume, subdivision: subdivision, delayFirstBeat: true)
-    }
-
-    /// Update BPM without restarting the scheduling loop. The loop reads
-    /// `metronomeBPM` dynamically, so the new tempo takes effect on the
-    /// next sleep cycle — no sub-beats are lost.
+    /// Seamlessly update BPM without restarting. The scheduler applies
+    /// the new interval on the next scheduled click — no gap, no stutter.
     func updateMetronomeBPM(_ bpm: Double) {
         metronomeBPM = bpm
+        scheduler?.updateBPM(bpm)
+    }
+
+    /// Queue a BPM change that takes effect on the next downbeat (beat 0).
+    /// Used by speed trainer for clean tempo transitions.
+    func queueBPMChangeOnDownbeat(_ bpm: Double) {
+        metronomeBPM = bpm
+        scheduler?.queueBPMChangeOnDownbeat(bpm)
+    }
+
+    /// Seamlessly change subdivision without restarting.
+    func updateMetronomeSubdivision(_ sub: NoteSubdivision) {
+        metronomeSubdivision = sub
+        scheduler?.updateSubdivision(sub)
+    }
+
+    /// Seamlessly change accent pattern without restarting.
+    func updateMetronomeAccents(_ accents: [BeatAccent]) {
+        metronomeAccents = accents
+        scheduler?.updateAccents(accents)
+    }
+
+    /// Seamlessly change time signature without restarting.
+    func updateMetronomeTimeSignature(_ ts: TimeSignature, accents: [BeatAccent]) {
+        metronomeBeatTotal = ts.beats
+        metronomeAccents = accents
+        scheduler?.updateTimeSignature(ts, accents: accents)
     }
 
     func updateMetronomeVolume(_ volume: Float) {

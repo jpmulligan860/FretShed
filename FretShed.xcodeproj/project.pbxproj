@@ -52,6 +52,7 @@
 		66C279472014C1E960E786AD /* BackupPayload.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B8C00EDBC8AED4D977595A /* BackupPayload.swift */; };
 		6710A90CC35D66AE87B9B2DC /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BD97CC80B02ADF5F5BAE2DAE /* Assets.xcassets */; };
 		721F80E6AEB10D3E83D48022 /* AppContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBA577A659DD4B654B8F0FC8 /* AppContainer.swift */; };
+		72E29702AFD2FCA460AA76A9 /* MetronomeScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53377E9926F227314937FFDC /* MetronomeScheduler.swift */; };
 		732F3144469B6E61C870621D /* JetBrainsMono-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 83169F0C3EF8AF1E5C2EC0C0 /* JetBrainsMono-Bold.ttf */; };
 		79B39BD08C62CD432F8B3600 /* EntitlementManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52332DCAAB016BCCEDF48907 /* EntitlementManager.swift */; };
 		7AEBB10B5EBC1324684332EF /* GoertzelTrackerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D8806FD352A0DEE58739125 /* GoertzelTrackerTests.swift */; };
@@ -145,6 +146,7 @@
 		502CB6D8E6413987C33A9AF8 /* SubscriptionLegalText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionLegalText.swift; sourceTree = "<group>"; };
 		5103ABD65D82C3BE8DF79C93 /* ProgressViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressViewModel.swift; sourceTree = "<group>"; };
 		52332DCAAB016BCCEDF48907 /* EntitlementManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EntitlementManager.swift; sourceTree = "<group>"; };
+		53377E9926F227314937FFDC /* MetronomeScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetronomeScheduler.swift; sourceTree = "<group>"; };
 		53B404AF01949E4B392B5CB9 /* CrimsonPro-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "CrimsonPro-Regular.ttf"; sourceTree = "<group>"; };
 		5585D79AF4719978F1162821 /* SwiftDataRepositories.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftDataRepositories.swift; sourceTree = "<group>"; };
 		5A2D1CE10BE1FD0F0079D8BE /* PhaseInsightLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhaseInsightLibrary.swift; sourceTree = "<group>"; };
@@ -460,6 +462,7 @@
 			isa = PBXGroup;
 			children = (
 				9795F3F426B68D2C05721457 /* MetroDroneEngine.swift */,
+				53377E9926F227314937FFDC /* MetronomeScheduler.swift */,
 				1BFFA59339D000888D580604 /* SignalMeasurement.swift */,
 				048F14BFF7B3F6CDF335910A /* Calibration */,
 			);
@@ -503,7 +506,7 @@
 			path = Repositories;
 			sourceTree = "<group>";
 		};
-		"TEMP_CF1DF59A-DDBF-4347-A924-0D55FA3965D5" /* SnapshotTests */ = {
+		"TEMP_763E36C2-CEB8-4D9F-979F-4D39DF905A14" /* SnapshotTests */ = {
 			isa = PBXGroup;
 			children = (
 			);
@@ -646,6 +649,7 @@
 				993B1B1E58774A2F966F9502 /* MetroDroneModels.swift in Sources */,
 				CE44A94F491D5F6CCA57A9E5 /* MetroDroneView.swift in Sources */,
 				DCAE617288969A478DD93580 /* MetroDroneViewModel.swift in Sources */,
+				72E29702AFD2FCA460AA76A9 /* MetronomeScheduler.swift in Sources */,
 				0ED47C8599C45EBD4037907C /* MusicalNote.swift in Sources */,
 				CCEB970E3E1C441046DD039C /* NoteGroupingEngine.swift in Sources */,
 				7BC1FC21CCA1EAF1B325D5CC /* OnboardingView.swift in Sources */,

@@ -200,6 +200,9 @@ final class MetroDroneViewModel {
     private var trainerBarCount = 0
     private var trainerRepCount = 0
 
+    /// BPM display update deferred until the scheduler applies it on the downbeat.
+    private var pendingDisplayBPM: Double?
+
 
     // MARK: Count-In Internal
 
@@ -447,8 +450,12 @@ final class MetroDroneViewModel {
 
         guard isSpeedTrainerActive else { return }
 
-        // Speed trainer tempo changes are queued on the scheduler and
-        // applied sample-accurately on the next downbeat (beat 0).
+        // Update display BPM on the downbeat, synced with the scheduler's
+        // audio tempo change (queued via queueBPMChangeOnDownbeat).
+        if beat == 0, let displayBPM = pendingDisplayBPM {
+            pendingDisplayBPM = nil
+            bpm = displayBPM
+        }
 
         trainerBarBeatCount += 1
 
@@ -474,18 +481,20 @@ final class MetroDroneViewModel {
         if nextBPM > speedTrainerEndBPM {
             if speedTrainerEndMode == .loopAtEnd {
                 currentTrainerBPM = speedTrainerStartBPM
-                bpm = currentTrainerBPM
-                engine.queueBPMChangeOnDownbeat(bpm)
-                if isDronePlaying { engine.updateDroneLFORate(bpm: bpm) }
+                // Defer display update to the downbeat (handleBeat at beat 0)
+                pendingDisplayBPM = currentTrainerBPM
+                engine.queueBPMChangeOnDownbeat(currentTrainerBPM)
+                if isDronePlaying { engine.updateDroneLFORate(bpm: currentTrainerBPM) }
             } else {
                 stopSpeedTrainer()
                 stopMetronome()
             }
         } else {
             currentTrainerBPM = nextBPM
-            bpm = currentTrainerBPM
-            engine.queueBPMChangeOnDownbeat(bpm)
-            if isDronePlaying { engine.updateDroneLFORate(bpm: bpm) }
+            // Defer display update to the downbeat (handleBeat at beat 0)
+            pendingDisplayBPM = currentTrainerBPM
+            engine.queueBPMChangeOnDownbeat(currentTrainerBPM)
+            if isDronePlaying { engine.updateDroneLFORate(bpm: currentTrainerBPM) }
         }
     }
 

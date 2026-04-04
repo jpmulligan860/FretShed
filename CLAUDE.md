@@ -353,6 +353,14 @@ Full analysis: `FretShed_Competitive_Analysis.md` in Claude.ai project files.
 
 **Pre-Submission Codebase Review (Mar 2026) — COMPLETE.** 6-pass review (App Store risk, monetization gates, audio pipeline, SwiftData, view layer, code hygiene). Key fixes: (1) PitchDetector route change handler stale profileSource snapshot — now reads calibratedInputSource before overwriting; (2) MasteryRepository.save() hasChanges guard removed; (3) Repository save() methods guard `modelContext == nil` before insert; (4) PaywallView prominent trial disclosure line; (5) ITSAppUsesNonExemptEncryption restored to project.yml; (6) App Store name locked: "FretShed: Smart Practice" / "Master the Guitar Fretboard". 10 new CalibrationRepositoryTests. Test count 452→462 (0 failures).
 
+**Custom Session Review Block Fix (Apr 2026) — FIXED.** Custom sessions from SessionSetupView were injecting cross-string review questions because `isAdaptive` controlled both adaptive weighting and the review block. Added `isSmartPractice: Bool` to Session model (default false). Only SmartPracticeEngine sets it true. Review block now gates on `isSmartPractice` instead of `isAdaptive`. Custom sessions keep adaptive weighting but no cross-string review injection. BackupPayload updated with backward compat.
+
+**Metronome Timing Rewrite (Apr 2026) — COMPLETE.** Replaced `Task.sleep` loop (10-50ms jitter) with sample-accurate pre-scheduling via `MetronomeScheduler`. Architecture: `AVAudioPlayerNode.scheduleBuffer(at: AVAudioTime)` with 100ms lookahead filled by 30ms `DispatchSourceTimer` on `.userInteractive` queue. Timer jitter doesn't affect audio. Seamless BPM/subdivision/accent/time signature changes — no restart, no gap. Speed trainer tempo changes queued for downbeat-aligned application. BPM display deferred to downbeat via `pendingDisplayBPM`. Eliminated `restartMetronome()` pattern entirely.
+
+**Device Compatibility Audit (5.18b) — COMPLETE.** Builds verified on iPhone SE 3 (375×667pt), iPhone 16 (393×852pt), iPhone 16 Pro Max (430×932pt). No P0/P1 layout issues. Tuner dial (340pt) fits SE with 17.5pt margin.
+
+**Dynamic Type Audit (5.18c) — REVIEWED.** DesignSystem typography tokens use `.custom(name:size:)` without `relativeTo:` — fonts don't scale with Dynamic Type. Deferred to post-launch (no competitor supports it; not an App Store rejection risk).
+
 ---
 
 ## Session End Protocol

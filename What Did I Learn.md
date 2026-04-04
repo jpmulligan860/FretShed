@@ -34,6 +34,10 @@ Building FretShed from a working prototype to an App Store-ready product taught 
 
 **Review your own fixes.** The "simplify" pass on tonight's pre-submission review caught a bug *in the fix itself* — a route change handler read `self.calibratedInputSource` after it had already been overwritten two lines above, making the comparison always true. It also caught that xcodegen had silently dropped `ITSAppUsesNonExemptEncryption` from Info.plist. Always run a second pass on your own work, especially when fixing subtle bugs under time pressure.
 
+**One flag, one behavior.** When you find yourself wanting to "partially" disable a boolean, you actually have two separate concepts sharing one flag. `isAdaptive` controlling both question weighting and review block injection was a design debt that produced a user-visible bug (cross-string review questions in custom sessions). Adding `isSmartPractice` took 5 minutes and cleanly separated the concerns.
+
+**Task.sleep is not a timing mechanism.** Cooperative concurrency scheduling has 10-50ms of jitter. For anything musical, use hardware-accurate scheduling (`AVAudioTime` + `scheduleBuffer(at:)`). A coarse timer filling a lookahead buffer gives you sample-accurate audio from a jittery timer. This pattern is standard in pro audio — learn it once, use it forever.
+
 ---
 
 ## Session Log
@@ -289,3 +293,18 @@ Building FretShed from a working prototype to an App Store-ready product taught 
 4. **Structured audits with expert personas work.** Six experts (privacy, monetization, DSP, QA, SwiftUI, UX) reviewing in parallel covered ground that a single generic pass would miss. Parker caught the privacy manifest question, Darren caught the stale capture, Quinn caught the hasChanges inconsistency. Specialization matters even when the "experts" are all the same AI.
 
 5. **Don't fix P2s before verifying P0s.** I almost started fixing fatalError calls (P2) before confirming the privacy manifest situation (P0). The P0 turned out to be a non-issue, but if it hadn't been, I'd have wasted time polishing while a blocker sat unresolved. Triage first, fix in priority order.
+
+---
+
+### Session: Apr 2–3, 2026 — Metronome Rewrite & Custom Session Fix
+*The "Task.sleep Is Not a Metronome" Session*
+
+1. **One flag controlling two behaviors is a design smell.** `isAdaptive` controlled both adaptive weighting (desired for custom sessions) and the review block (not desired). The fix wasn't to turn off the flag — it was to add a second flag (`isSmartPractice`) so each behavior could be controlled independently. When you find yourself wanting to "partially" disable a boolean, you actually have two separate concepts sharing one flag.
+
+2. **Task.sleep is not a timing mechanism.** It's a cooperative suspension on the Swift concurrency dispatch queue. At 120 BPM (500ms intervals), 10-50ms of jitter is audible. At 200+ BPM it's unusable. The fix was `AVAudioPlayerNode.scheduleBuffer(at: AVAudioTime)` — pre-scheduling clicks at exact sample positions. A coarse 30ms timer just keeps the schedule buffer full. The timer's jitter doesn't matter because clicks are already queued with hardware accuracy.
+
+3. **Decouple display updates from audio state changes.** The speed trainer BPM display jumped early because it was set in `advanceTrainerTempo()` while the audio change was queued for the next downbeat. Deferring the display update to `handleBeat(0)` — when the scheduler has already applied the change — kept audio and UI in sync.
+
+4. **"Seamless" means no restarts.** The old metronome restarted on every parameter change (BPM slider, subdivision, accents, time signature). Each restart cancelled the task and inserted a gap. The new scheduler accepts parameter updates atomically — the pump reads new values on the next iteration. Zero gaps, zero double-clicks, zero timing discontinuities.
+
+5. **Plan before you code, especially when reverting.** My first fix for the custom session issue set `isAdaptive = false`, which killed adaptive weighting. The user caught it, asked me to plan first, and the plan immediately revealed the two-behavior problem. Five minutes of planning saved a bad commit and a second revert.

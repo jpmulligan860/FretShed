@@ -351,8 +351,8 @@ Estimated: 18–25 hours
 
 | # | Task | Est. | Status |
 |---|---|---|---|
-| 5.18b | Device compatibility audit — test all 5 tabs + quiz + calibration on multiple screen sizes using Xcode Simulator: iPhone SE (3rd gen, 4.7"), iPhone 16 (6.1"), iPhone 16 Pro Max (6.9"), iPad (if supporting). Check: layout doesn't clip or overflow, text is readable, fretboard heatmap scales properly, tuner dial fits, landscape mode works on all sizes. Fix any layout issues. | 2–3 hrs | 🔲 |
-| 5.18c | Dynamic Type testing — test with accessibility text sizes (Large, Extra Large, AX1) in Simulator. Verify key screens (tuner, quiz, session setup, progress) remain usable. Fix critical clipping/overflow issues. | 1–2 hrs | 🔲 |
+| 5.18b | Device compatibility audit — test all 5 tabs + quiz + calibration on multiple screen sizes using Xcode Simulator: iPhone SE (3rd gen, 4.7"), iPhone 16 (6.1"), iPhone 16 Pro Max (6.9"), iPad (if supporting). Check: layout doesn't clip or overflow, text is readable, fretboard heatmap scales properly, tuner dial fits, landscape mode works on all sizes. Fix any layout issues. | 2–3 hrs | ✅ |
+| 5.18c | Dynamic Type testing — test with accessibility text sizes (Large, Extra Large, AX1) in Simulator. Verify key screens (tuner, quiz, session setup, progress) remain usable. Fix critical clipping/overflow issues. | 1–2 hrs | ✅ |
 
 ### 5E — Final Pre-Submission Checklist
 

@@ -950,12 +950,17 @@ public final class QuizViewModel: Identifiable {
         guard !completedStrings.isEmpty else { return [] }
 
         // Gather candidate scores from completed strings that have been practiced.
+        // Constrain review-note placement to the session's own fret window so a
+        // position-focused session (focusMode == .fretboardPosition) keeps its review
+        // notes inside the selected frets instead of scattering them across the neck.
+        // For non-position sessions this range is 0...phaseRequiredFretEnd (unchanged).
+        let reviewFretRange = session.fretRangeStart...session.fretRangeEnd
         let candidates: [(score: MasteryScore, fret: Int)] = allScores.compactMap { score in
             guard completedStrings.contains(score.stringNumber),
                   score.totalAttempts > 0,
                   let note = MusicalNote(rawValue: score.noteRaw),
                   let fret = fretboardMap.fret(for: note, onString: score.stringNumber,
-                                                inRange: 0...LearningPhaseManager.phaseRequiredFretEnd)
+                                                inRange: reviewFretRange)
             else { return nil }
             return (score, fret)
         }

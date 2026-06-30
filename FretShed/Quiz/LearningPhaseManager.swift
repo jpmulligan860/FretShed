@@ -705,7 +705,10 @@ final class LearningPhaseManager {
 
     // MARK: - Persistence
 
-    private func persist() {
+    /// Writes the current in-memory phase state to UserDefaults.
+    /// Internal (not private) so tests can seed phase state that a freshly
+    /// constructed `LearningPhaseManager()` will load.
+    func persist() {
         UserDefaults.standard.set(currentPhase.rawValue, forKey: Keys.currentPhase)
         UserDefaults.standard.set(currentTargetString ?? 0, forKey: Keys.targetString)
 

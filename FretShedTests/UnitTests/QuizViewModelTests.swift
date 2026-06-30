@@ -471,4 +471,70 @@ final class QuizViewModelTests: XCTestCase {
             vm.advanceManually()
         }
     }
+
+    // MARK: - Fretboard Position Constraint
+
+    /// Regression: a Fluency "Position Focus" session (Smart Practice) used to inject
+    /// review-block notes from across the whole neck, ignoring the selected fret window.
+    /// Every served question — focus AND review — must stay inside the position's frets.
+    func test_fretboardPositionSmartPractice_allQuestionsStayInFretWindow() async throws {
+        let fretStart = 5
+        let fretEnd = 8
+
+        // Put the learner in Fluency with every string "completed" so the review
+        // block has cross-string candidates to draw from.
+        let phaseManager = LearningPhaseManager()
+        phaseManager.currentPhase = .fluency
+        phaseManager.phaseOneCompletedStrings = Set(1...6)
+        phaseManager.phaseTwoCompletedStrings = Set(1...6)
+        phaseManager.currentTargetString = nil
+        phaseManager.currentPhaseTwoTargetString = nil
+        phaseManager.persist()   // so the fresh instance inside the VM reads this state
+        defer { phaseManager.reset() }
+
+        // Shared mastery repo so the VM sees the seeded scores on start().
+        // Seed low scores on every note/string so they rank as review candidates,
+        // including notes that live OUTSIDE the 5–8 window (which must be excluded).
+        let masteryRepo = SwiftDataMasteryRepository(context: ModelContext(container))
+        for string in 1...6 {
+            for note in MusicalNote.allCases {
+                let score = MasteryScore(note: note, stringNumber: string)
+                score.totalAttempts = 5
+                score.correctAttempts = 1
+                try masteryRepo.save(score)
+            }
+        }
+
+        let session = Session(
+            focusMode: .fretboardPosition,
+            gameMode: .untimed,
+            fretRangeStart: fretStart,
+            fretRangeEnd: fretEnd,
+            isAdaptive: true,
+            isSmartPractice: true
+        )
+        let settings = UserSettings()   // defaultSessionLength = 20 → ~6 review notes
+        let vm = QuizViewModel(
+            session: session,
+            fretboardMap: FretboardMap(),
+            settings: settings,
+            masteryRepository: masteryRepo,
+            sessionRepository: SwiftDataSessionRepository(context: ModelContext(container)),
+            attemptRepository: SwiftDataAttemptRepository(context: ModelContext(container)),
+            isPremium: true
+        )
+
+        await vm.start()
+        XCTAssertGreaterThan(vm.reviewQuestionCount, 0,
+            "Test should exercise the review block — got 0 review notes")
+
+        for _ in 0..<settings.defaultSessionLength {
+            guard vm.phase == .active else { break }
+            let q = try XCTUnwrap(vm.currentQuestion)
+            XCTAssertTrue((fretStart...fretEnd).contains(q.fret),
+                "Fret \(q.fret) (string \(q.string), \(q.note)) is outside the selected \(fretStart)–\(fretEnd) window")
+            vm.submit(detectedNote: q.note)
+            vm.advanceManually()
+        }
+    }
 }
